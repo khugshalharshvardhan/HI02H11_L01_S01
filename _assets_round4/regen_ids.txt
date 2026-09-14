@@ -1,0 +1,82 @@
+# Round-4 regeneration scope — the ONLY clips gen_tts may touch.
+# Everything else on disk stays exactly as recorded: a re-run of an unchanged line produces a
+# DIFFERENT take, which is a change the deck never asked for.
+#
+# Paste the comma list on the line marked IDS into gen_tts.py --only
+#
+# ---- RE-RECORD (20) — the file on disk is the OLD line and will be overwritten ----
+#   vo_g1_correct
+#       old: सही! पानी में प की आवाज़ है।
+#       new: शाबाश! इसमें प की आवाज़ है।
+#   vo_g1_hint
+#       old: शब्द को धीरे-धीरे बोलो — पा-नी। शुरू में कौन-सी आवाज़ है?
+#       new: ध्यान से सुनिए, इसमें प की आवाज़ नहीं है।
+#   vo_g1_prompt
+#       old: सुनो — क्या इस शब्द में प की आवाज़ है?
+#       new: प की आवाज़ वाले चित्र पर टैप कीजिए।
+#   vo_g2_hint
+#       old: हर शब्द सुनो — क्या उसमें प की आवाज़ सुनाई देती है?
+#       new: हर शब्द को ध्यान से देखो और सुनो। किस शब्द में प की आवाज़ आ रही है?
+#   vo_g3_correct
+#       old: सही! च की आवाज़ बार-बार आई।
+#       new: चूहे, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।
+#   vo_g3_reveal
+#       old: इस वाक्य में च की आवाज़ बार-बार आई।
+#       new: ध्यान से देखो, सही जवाब च है।
+#   vo_g3_try
+#       old: यह च की आवाज़ नहीं है। एक बार फिर सुनो।
+#       new: यह च की आवाज़ नहीं है।
+#   vo_g5_hint
+#       old: शब्द बोलो और सुनो — क्या उसमें प की आवाज़ आती है?
+#       new: शब्द बोलो और सुनो — उसमें प की आवाज़ है या च की?
+#   vo_g5_prompt
+#       old: हर शब्द सुनो और उसे सही टोकरी में डालो।
+#       new: हर चित्र का नाम सुनो और उसे सही टोकरी में डालो।
+#   vo_landing
+#       old: नमस्ते दोस्त मैं हूँ swiftee और आज हम जानेगें वाक्य में बार-बार आने वाली ध्वनि के बारे में।
+#       new: नमस्ते दोस्त! मैं हूँ Swiftee। आज हम जानेंगे कि वाक्य में कौन-सी ध्वनि बार-बार सुनाई देती है। सुनो—काला कौआ काँव-काँव करता। इस वाक्य में क की ध्वनि यानी आवाज़ बार-बार आ रही है।
+#   vo_line_l2
+#       old: चूहा चार चने चबाए।
+#       new: चूहे ने चार चने चबाए।
+#   vo_line_l3
+#       old: मामा मीठी मलाई लाए।
+#       new: मेरे मामा मीठी मलाई लाए।
+#   vo_p4_correct
+#       old: सही! शुरुआत में प की आवाज़ थी।
+#       new: सही! शुरुआत में न की आवाज़ थी।
+#   vo_p4_reveal
+#       old: शुरुआत में प की आवाज़ बार-बार आई।
+#       new: शुरुआत में न की आवाज़ बार-बार आई।
+#   vo_t1_explain
+#       old: पीतल, पतीले, पपीता, पीला — इन सब शब्दों में प की आवाज़ बार-बार आई।
+#       new: इन सब शब्दों में प की आवाज़ बार-बार आई।
+#   vo_t2_prompt
+#       old: हमने प की आवाज़ सुनी। यह आवाज़ इस अक्षर से लिखी जाती है — प।
+#       new: हमने प की आवाज़ सुनी। यह आवाज़ प अक्षर से लिखी जाती है। जैसे—प से पपीता।
+#   vo_t3_explain
+#       old: चूहा, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।
+#       new: चूहे, चार, चने, चबाए—इन सब शब्दों में च की आवाज़ बार-बार आई।
+#   vo_t4_prompt
+#       old: हमने च की आवाज़ सुनी। यह आवाज़ इस अक्षर से लिखी जाती है — च।
+#       new: हमने च की आवाज़ सुनी। यह आवाज़ च अक्षर से लिखी जाती है। जैसे—च से चूहा।
+#   vo_t5_explain
+#       old: मामा, मीठी, मलाई — इन सब शब्दों में म की आवाज़ बार-बार आई।
+#       new: मेरे, मामा, मीठी, मलाई—इन सब शब्दों में म की आवाज़ बार-बार आई।
+#   vo_t6_prompt
+#       old: हमने म की आवाज़ सुनी। यह आवाज़ इस अक्षर से लिखी जाती है — म।
+#       new: हमने म की आवाज़ सुनी। यह आवाज़ म अक्षर से लिखी जाती है। जैसे—म से मूली।
+#
+# ---- NEW (10) ----
+#   vo_line_l6     नानी नई नाव लाई।
+#   vo_snd_n       न से नाव।
+#   vo_t1_words    पीतल, पतीले, पपीता, पीला।
+#   vo_w_chand     चाँद
+#   vo_w_chinti    चींटी
+#   vo_w_ghar      घर
+#   vo_w_kela      केला
+#   vo_w_machhli   मछली
+#   vo_w_patang    पतंग
+#   vo_w_patta     पत्ता
+#
+# IDS:
+vo_g1_correct,vo_g1_hint,vo_g1_prompt,vo_g2_hint,vo_g3_correct,vo_g3_reveal,vo_g3_try,vo_g5_hint,vo_g5_prompt,vo_landing,vo_line_l2,vo_line_l3,vo_p4_correct,vo_p4_reveal,vo_t1_explain,vo_t2_prompt,vo_t3_explain,vo_t4_prompt,vo_t5_explain,vo_t6_prompt,vo_line_l6,vo_snd_n,vo_t1_words,vo_w_chand,vo_w_chinti,vo_w_ghar,vo_w_kela,vo_w_machhli,vo_w_patang,vo_w_patta

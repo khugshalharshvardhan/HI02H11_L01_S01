@@ -1,0 +1,653 @@
+# HI02H11_L01_S01 - engine_local vs the shared unified engine 2026.08.04b-r4-unified
+# This game is ISOLATED: these changes live in KG/HI02H11_L01_S01/engine_local/ ONLY and reach no
+# other lesson. Forward-port anything the fleet should inherit.
+
+--- shared/app.js
++++ engine_local/app.js
+@@ -1635,6 +1635,102 @@
+   setTimeout(go, CAP);
+ }
+ 
++/* ---------- 11b. REPEATED-SOUND HELPERS (HI02H11_L01_S01 · SME round 4) ----------
++   Three asks recur on nearly every page of this deck and none of them existed in the engine:
++     (1) "play the sentence with word-by-word highlighting synced with the VO"
++     (2) "highlight ONLY the target letter in each word - do not highlight the complete word"
++     (3) "play only the <letter> sound and show the letter on screen at the same time"
++   (1) and (2) are exactly what round 3 reported as NOT BUILT ("SENTENCE_SOUND has no per-word audio
++   and no per-word timing to hang a highlight on"). They are built here.
++
++   ON (2) AND DEVANAGARI: a bare consonant CANNOT be wrapped away from its own matra - that splits the
++   orthographic cluster and the browser renders an orphaned mark. This is the same shaping trap that
++   killed the "colour the aa-matra" attempt on HI01H04, so it is not re-attempted. The unit here is the
++   AKSHARA: peetal marks "पी", not "प" and not the whole word. That is the only technically sound
++   reading of the ask, and it still contrasts sharply against the rest of the word.
++
++   ON (1) AND TIMING: there is no forced aligner in this toolchain, so boundaries are PROPORTIONAL -
++   each token takes a share of the clip's REAL measured duration, weighted by akshara count with a
++   bump for long matras. Close, not frame-exact; see OPEN-6 in CHANGES.md. */
++
++const _DEV_VIRAMA = "\u094D";
++function _devIsMark(ch){
++  const c = ch.codePointAt(0);
++  return (c >= 0x0900 && c <= 0x0903)      /* candrabindu / anusvara / visarga */
++      || c === 0x093C                      /* nukta */
++      || (c >= 0x093A && c <= 0x094C)      /* dependent vowel signs (matras) */
++      || c === 0x094E || c === 0x094F
++      || (c >= 0x0951 && c <= 0x0957)
++      || (c >= 0x0962 && c <= 0x0963)
++      || c === 0x200C || c === 0x200D;     /* ZWNJ / ZWJ */
++}
++/* Split a Devanagari word into orthographic clusters (aksharas): a base letter, plus any combining
++   marks, plus (virama + the consonant it joins) for conjuncts. Hand-rolled rather than
++   Intl.Segmenter because Indic conjunct clustering (InCB) is only in newer ICU and this has to
++   behave identically in every browser the lesson ships to. */
++function splitAksharas(word){
++  const out = []; let cur = "", joinNext = false;
++  for(const ch of [...(word || "")]){
++    if(!cur){ cur = ch; continue; }
++    if(joinNext){ cur += ch; joinNext = false; continue; }   /* the consonant after a virama */
++    if(ch === _DEV_VIRAMA){ cur += ch; joinNext = true; continue; }
++    if(_devIsMark(ch)){ cur += ch; continue; }
++    out.push(cur); cur = ch;
++  }
++  if(cur) out.push(cur);
++  return out;
++}
++/* Does this word carry the target sound as the BASE of some akshara? */
++function wordHasSound(word, target){
++  return splitAksharas(word).some(a => a[0] === target);
++}
++/* Word markup with ONLY the target aksharas wrapped. Runs of non-target aksharas are emitted as one
++   plain text node - fewer inline boundaries, fewer chances to disturb shaping. */
++function aksharaHTML(word, target){
++  let out = "", buf = "";
++  for(const a of splitAksharas(word)){
++    if(target && a[0] === target){
++      if(buf){ out += buf; buf = ""; }
++      out += '<span class="tgt-akshara">' + a + '</span>';
++    } else buf += a;
++  }
++  return out + buf;
++}
++/* Relative spoken length of one token, in akshara-beats. */
++function _tokenWeight(t){
++  let n = 0;
++  for(const a of splitAksharas(t)){
++    n += 1;
++    if(/[\u093E\u0940\u0942\u0947\u0948\u094B\u094C]/.test(a)) n += 0.35;   /* aa ii uu e ai o au carry length */
++  }
++  return Math.max(1, n);
++}
++/* Play `src` and call apply(i) as each token becomes the one being spoken.
++   Anchored to the engine's own currentAudio, so stopAudio() and the generation guard still own the
++   clip exactly as they do for every other beat. Falls back to a synthetic timeline when the clip is
++   missing or its duration is unknown, so the animation still reads with placeholder/absent VO. */
++function karaokePlay(src, tokens, apply, onDone){
++  const w = (tokens || []).map(_tokenWeight);
++  const tot = w.reduce((a, b) => a + b, 0) || 1;
++  const FALLBACK_MS = 420 * tot;          /* ~one akshara-beat per 420ms when we cannot measure */
++  const t0 = performance.now();
++  let raf = 0, cur = -2;
++  const tick = ()=>{
++    const a = currentAudio;
++    const dur = (a && isFinite(a.duration) && a.duration > 0) ? a.duration * 1000 : FALLBACK_MS;
++    const el  = (a && a.currentTime > 0) ? a.currentTime * 1000 : (performance.now() - t0);
++    const frac = Math.min(1, el / dur);
++    let acc = 0, k = 0;
++    for(; k < w.length - 1; k++){ acc += w[k] / tot; if(frac < acc) break; }
++    if(k !== cur){ cur = k; apply(k); }
++    raf = requestAnimationFrame(tick);
++  };
++  const stop = ()=>{ if(raf) cancelAnimationFrame(raf); raf = 0; };
++  play(src || null, ()=>{ stop(); if(onDone) onDone(); });
++  if(tokens && tokens.length) raf = requestAnimationFrame(tick);
++  return stop;
++}
++
+ /* ---------- 12. SLIDE MODULES ---------- */
+ const SlideModules = {
+   INTRO: {
+@@ -1821,6 +1917,73 @@
+         host.appendChild(col);
+       } else {
+         host.appendChild(wrap);
++      }
++      if(slide.data.reveal_flow){
++        /* [S01r4] VO-SYNCED REVEAL (SME "Recommended Animation Flow" on all three MEET_LETTER pages):
++             letter appears -> VO explains -> letter lights up -> picture appears -> label appears
++             -> the target akshara inside the label lights up.
++           The deck asks for the letter to light "exactly in sync with the word <x> in the VO", and
++           these pages have ONE clip, not one per beat. So the cues are anchored to WORDS OF THE SPOKEN
++           LINE: the line is read from CARD.assets.audio_text (shown==spoken, so it IS the script) and
++           karaokePlay reports which word is being spoken; a cue fires when its word is reached.
++           Proportional, not force-aligned - see OPEN-6 in CHANGES.md.
++           Absent => the legacy d.auto demo below runs exactly as before. */
++        const rf  = slide.data.reveal_flow;
++        state.ownsAudio = true; state.demoRunning = true; setNavActive(false); setSwMood("teach");
++        const boxEl = host.querySelector(".meet-letter-box");
++        const picEl = host.querySelector(".meet-pic-box");
++        const lblEl = host.querySelector(".pic-label");
++        const imgEl = picEl && picEl.querySelector(".pic-img, .pic-emoji");
++        if(picEl) picEl.classList.add("seq-hidden");        /* same shared class as every other reveal */
++        if(lblEl) lblEl.classList.add("seq-hidden");
++
++        const lit = ()=>{ if(!boxEl) return; boxEl.classList.remove("ml-lit");
++          void boxEl.offsetWidth; boxEl.classList.add("ml-lit"); };      /* restart the pulse */
++        const act = {
++          letter: lit,
++          pic:    ()=>{ if(picEl){ picEl.classList.remove("seq-hidden"); picEl.classList.add("ml-in"); } },
++          label:  ()=>{ if(lblEl){ lblEl.classList.remove("seq-hidden"); lblEl.classList.add("ml-in"); } },
++          /* "highlight 'म' in 'मूली' again to reinforce the sound-letter connection" */
++          mark:   ()=>{ lit(); if(lblEl) lblEl.classList.add("ml-marked"); }
++        };
++        if(lblEl) lblEl.innerHTML = aksharaHTML(slide.data.word_hi || "", slide.data.letter);
++
++        const line = (CARD.assets && CARD.assets.audio_text &&
++                      CARD.assets.audio_text[(slide.audio || {}).prompt]) || "";
++        const toks = line ? line.split(/\s+/).filter(Boolean) : [];
++        /* resolve each cue to a token index, scanning forward so a repeated word maps in order */
++        const cues = []; let from = 0;
++        (rf.cues || []).forEach(c => {
++          let k = -1;
++          for(let j = from; j < toks.length; j++){ if(toks[j].indexOf(c.at) >= 0){ k = j; break; } }
++          if(k < 0) k = Math.min(from, Math.max(0, toks.length - 1));
++          cues.push({ k, do: c.do }); from = k + 1;
++        });
++        const fired = new Set();
++        const alive = ()=> CARD.slides[state.idx] === slide;
++        let done = false;
++        const finish = ()=>{ if(done) return; done = true;
++          /* anything the clip never reached still has to happen - a stalled clip must not leave the
++             picture hidden forever (that is a blank teach slide, and it is invisible to every gate) */
++          cues.forEach(c => { if(!fired.has(c)) { fired.add(c); (act[c.do] || (()=>{}))(); } });
++          state.demoRunning = false; setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true); };
++
++        const src = audioFor(slide, "prompt") || audioFor(slide, "word_name") || null;
++        if(toks.length){
++          karaokePlay(src, toks, (k)=>{
++            cues.forEach(c => { if(!fired.has(c) && k >= c.k){ fired.add(c); (act[c.do] || (()=>{}))(); } });
++          }, ()=>{ if(alive()) finish(); });
++        } else {
++          /* no script on record (VO not yet written) - still run the beats, evenly spaced */
++          let i = 0;
++          const tickCue = ()=>{ if(!alive() || i >= cues.length){ finish(); return; }
++            const c = cues[i++]; fired.add(c); (act[c.do] || (()=>{}))(); setTimeout(tickCue, 1100); };
++          play(src, ()=>{}); setTimeout(tickCue, 500);
++        }
++        state.replayAudio = ()=> play(src, ()=>{});
++        $("navBtn").onclick = ()=> completeSlide(true);
++        setTimeout(()=>{ if(alive()) finish(); }, 22000);      /* FAIL-SAFE: आगे never stays dead */
++        return;
+       }
+       // 16m: AUTONOMOUS demo (data.auto) — the 3-phase contract kills passive show-and-tell
+       // ("यह काम है"). The hand POINTS at the word + speaks it, then POINTS at the matra callout +
+@@ -4704,7 +4867,21 @@
+             }, 700);
+             $("hintBtn").classList.add("show","hint-glow");
+             SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
+-            after(()=> play(wrongClip(slide), ()=>{}));   /* [28i] graded ladder */
++            /* [S01r4] EARNED HAND, SME deck page 9: "After repeated incorrect attempts, show a
++               subtle hand nudge on one remaining correct option... Do not auto-select the answer."
++               This mechanic had NO hand at all - mountTapOptions grew one in [27d] but TAP_ALL never
++               routed through it, so the deck's "retain the same behaviour" was describing something
++               that did not exist here. handOnAnswer self-gates to tutorial/guided, so this lands on
++               page 9 (guided) and stays absent in practice, per the round-3 no-hand-in-practice rule.
++               It only points: the chip's own onclick is untouched, so the child still taps it. */
++            after(()=> play(wrongClip(slide), ()=>{
++              if(state.attempts < 2 || state.locked) return;
++              if(CARD.slides[state.idx] !== slide) return;
++              const t = chips.find((c, ix) => items[ix] && items[ix].has === true && !c.classList.contains("got"));
++              if(t){ handOnAnswer(t, slide); state.nudgeUsed = true;
++                     state.scaffoldLevel = Math.max(state.scaffoldLevel, 3);
++                     SwiftPAL.emit("nudge_invoked", { slide_id: slide.id, phase: slide.phase }); }
++            }));   /* [28i] graded ladder */
+           }
+         };
+         strip.appendChild(chip); chips.push(chip);
+@@ -4736,6 +4913,99 @@
+         state.audioReplays++; strip.querySelectorAll(".sentence-word").forEach(c => c.classList.add("said"));
+         play(whole, ()=>{}); };
+       stim.appendChild(strip); stim.appendChild(spk);
++      if(d.teach_seq){
++        /* [S01r4] TEACH SEQUENCE - the SME's "Recommended Animation Flow", authored per page.
++           Round 3 had to report the two highlight asks as NOT BUILT; this is them. The flow differs
++           per page (the cha/ma pages emphasise the letter BEFORE marking the words, the pa page marks
++           the words first and emphasises the letter after), so it is DATA, not a hardcoded order:
++             {step:"sentence"}            play whole_audio, karaoke-highlighting word by word
++             {step:"clear_words"}         drop the word-level highlighting  ("never leave whole words highlighted")
++             {step:"letter", audio:id}    reveal + emphasise the letter card, playing ONLY that sound
++             {step:"mark", audio:id, words:[...]}  play a clip while the target akshara lights up in
++                                          each listed word, one at a time, in step with the clip
++             {step:"say", audio:id}       just speak
++             {step:"pause", ms:n}         the SME's "brief pause ... so the child gets a moment"
++           Absent => the legacy d.auto reveal below is untouched. */
++        state.ownsAudio = true; state.demoRunning = true; setNavActive(false);
++        const qrow = document.createElement("div"); qrow.className = "q-row"; qrow.appendChild(stim);
++        const grid = document.createElement("div");
++        grid.className = "opt-grid ss-letter-card cols-" + ((d.options || []).length || 1);
++        const cells = (d.options || []).map(opt => {
++          const c = letterCell(opt.letter); c.classList.add("opt-cell", "seq-hidden");
++          grid.appendChild(c); return { c, opt };
++        });
++        qrow.appendChild(grid); host.appendChild(qrow);
++
++        const chips = [...strip.querySelectorAll(".sentence-word")];
++        const texts = (d.words || []).map(w => (typeof w === "string") ? w : w.text);
++        const clearWords = ()=> chips.forEach(c => c.classList.remove("said", "saying"));
++        /* Pre-render each word with its target aksharas wrapped, so "mark" can light just those. */
++        chips.forEach((c, i) => {
++          const t = c.querySelector(".sw-text");
++          if(t) t.innerHTML = aksharaHTML(texts[i], d.target_sound);
++        });
++
++        const alive = ()=> CARD.slides[state.idx] === slide;
++        let done = false;
++        const finish = ()=>{ if(done) return; done = true;
++          state.demoRunning = false; setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true); };
++
++        const STEPS = d.teach_seq.slice();
++        const run = (i)=>{
++          if(!alive()) return;
++          if(i >= STEPS.length){ finish(); return; }
++          const st = STEPS[i] || {};
++          const next = ()=> setTimeout(()=> run(i + 1), 260);
++          if(st.step === "sentence"){
++            /* word-by-word, in step with the VO; the spoken word is `saying`, the ones already read
++               stay `said` so the child can see the line accumulating. */
++            karaokePlay(whole, texts, (k)=>{
++              chips.forEach((c, j) => { c.classList.toggle("saying", j === k); if(j <= k) c.classList.add("said"); });
++            }, ()=>{ chips.forEach(c => c.classList.remove("saying")); next(); });
++            return;
++          }
++          if(st.step === "clear_words"){ clearWords(); next(); return; }
++          if(st.step === "pause"){ setTimeout(()=> run(i + 1), st.ms || 700); return; }
++          if(st.step === "letter"){
++            cells.forEach(x => { x.c.classList.remove("seq-hidden"); x.c.classList.add("ss-show"); });
++            const t = cells.find(x => x.opt.letter === d.target_sound) || cells[0];
++            if(t){ t.c.classList.add("correct", "reveal-pulse"); cells.forEach(x => { if(x !== t) x.c.classList.add("faded"); }); }
++            SwiftPAL.emit("sentence_sound_demo", { slide_id: slide.id, phase: slide.phase, sound: d.target_sound });
++            /* "play ONLY the <letter> sound ... at the same time show the letter clearly on screen" */
++            const a = st.audio ? ("assets/Audio/" + st.audio + "." + AUDIO_EXT) : (audioFor(slide, "target") || null);
++            play(a, next);
++            return;
++          }
++          if(st.step === "mark"){
++            /* Light the target akshara in each listed word, one at a time, paced by the clip that
++               names them. Words NOT listed are never marked - the deck is explicit about this on the
++               ma page: "Do not highlight लाए, because it does not contain the target sound". */
++            const listed = st.words || texts.filter(t => wordHasSound(t, d.target_sound));
++            const order  = listed.map(t => texts.indexOf(t)).filter(k => k >= 0);
++            const a = st.audio ? ("assets/Audio/" + st.audio + "." + AUDIO_EXT) : null;
++            karaokePlay(a, listed, (k)=>{
++              chips.forEach(c => c.classList.remove("mark-now"));
++              const idx = order[Math.min(k, order.length - 1)];
++              if(idx >= 0 && chips[idx]) chips[idx].classList.add("mark-now");
++              /* every listed word KEEPS its mark once reached - the ask is that the child sees the
++                 same sound recurring across the whole line, not one lamp moving along it */
++              for(let j = 0; j <= k && j < order.length; j++){
++                if(chips[order[j]]) chips[order[j]].classList.add("marked");
++              }
++            }, ()=>{ chips.forEach(c => c.classList.remove("mark-now")); next(); });
++            return;
++          }
++          /* "say" (and any unknown step) = just speak it */
++          play(st.audio ? ("assets/Audio/" + st.audio + "." + AUDIO_EXT) : null, next);
++        };
++
++        state.replayAudio = ()=> play(whole, ()=>{});
++        $("navBtn").onclick = ()=> completeSlide(true);
++        setTimeout(()=> run(0), 400);
++        /* FAIL-SAFE: आगे never stays dead if a clip blocks or stalls */
++        setTimeout(()=>{ if(alive()) finish(); }, STEPS.length * 9000 + 6000);
++        return;
++      }
+       if(d.auto){
+         // 16k: AUTONOMOUS tutorial demo (test-in-tutorial fix) — play the line, then REVEAL the
+         // repeating sound (highlight the correct sound chip); no child pick. Then explain + आगे.
+@@ -4773,6 +5043,120 @@
+ 
+   /* 16j NEW: sentence -> pick the matching picture (HI01H06 "वाक्य के लिए सही चित्र चुनो"). Sentence
+      chips as the stimulus + 2 picture options via the tap-to-answer contract. */
++  /* [S01r4] TAP_BALLOON_SOUND - NEW MECHANIC, SME deck page 8: "Remove the existing haan/nahin
++     activity and replace it with an interactive balloon-based activity for identifying the 'pa' sound."
++     It is a multi-select hunt like TAP_ALL_WITH_SOUND, but deliberately NOT that module, because the
++     deck's defining ask is the one TAP_ALL cannot honour: "Do not show any written instruction on the
++     screen. Do not show feedback text... Do not add object names or any text inside the balloons.
++     All instructions, hints, and feedback should come through VO only." TAP_ALL prints a word label
++     under every picture and a found/needed counter above them - i.e. it is a READING task wearing a
++     listening task's clothes, which is exactly what the deck is removing here.
++     Feedback ladder is the deck's, not the engine default: 1st wrong = shake + buzz and NO voice
++     line ("a short negative feedback sound only"); 2nd = shake + the hint clip; 3rd = the earned hand
++     on a balloon that is still correct. handOnAnswer self-gates by phase, so the hand appears in this
++     guided slide and would not in practice - the round-3 no-hand-in-practice ruling still holds. */
++  TAP_BALLOON_SOUND: {
++    mount(host, slide){
++      const d = slide.data || {};
++      const items = d.items || [];
++      const need = items.filter(it => it.has === true).length;
++      state.attempts = 0; state.locked = false; state.ownsAudio = true;
++      let found = 0;
++
++      const field = document.createElement("div"); field.className = "balloon-field";
++      const cells = [];
++      items.forEach((it, i) => {
++        const b = document.createElement("div");
++        /* seq-hidden, NOT a private class: capture_pages/render tooling settles staggered reveals by
++           stripping .seq-hidden, and a mechanic that invents its own name captures BLANK instead
++           (documented failure, HI01H02_L01_S01 shipped 4 blank match slides that way). */
++        b.className = "balloon bcol-" + (i % 6) + " seq-hidden";
++        b.style.setProperty("--bi", String(i));
++        b.innerHTML = '<div class="bal-body">' + imgOrEmoji(it.img, it.emoji, "bal-img", "bal-emoji") +
++                      '<span class="bal-shine"></span></div><span class="bal-tie"></span>';
++        field.appendChild(b); cells.push({ b, it });
++      });
++      host.appendChild(field);
++      /* the deck's reference screen is a bare stage: no prompt band, no hint chip, no आगे */
++      $("stage").classList.add("vo-only");
++      $("hintBtn").classList.remove("show"); $("hintBtn").style.display = "none";
++      $("navBtn").style.display = "none"; setNavActive(false);
++
++      const alive = ()=> CARD.slides[state.idx] === slide;
++      const sparkle = (el)=>{
++        if(document.documentElement.classList.contains("no-anim")) return;
++        const s = document.createElement("div"); s.className = "bal-sparkle";
++        for(let i = 0; i < 8; i++){
++          const p = document.createElement("i"); p.style.setProperty("--a", (i * 45) + "deg"); s.appendChild(p);
++        }
++        el.appendChild(s); setTimeout(()=>{ try{ s.remove(); }catch(e){} }, 900);
++      };
++      const remainingCorrect = ()=> cells.find(c => c.it.has === true && !c.b.classList.contains("popped"));
++
++      let busy = false;
++      cells.forEach(({ b, it }) => {
++        b.onclick = ()=>{
++          if(state.locked || busy || b.classList.contains("popped") || b.classList.contains("seq-hidden")) return;
++          if(isPlaying && !state._balFb) return;              /* never talk over the prompt */
++          if(state._balFb){ stopAudio(); state._balFb = false; }
++          stopNudge(); busy = true;
++          const vb = setTimeout(()=>{ busy = false; }, 4000);      /* fail-safe: a superseded onEnd must not soft-lock */
++          const name = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
++          const afterName = (cb)=>{ const go = ()=>{ clearTimeout(vb); busy = false; cb(); };
++            if(name) play(name, go); else go(); };
++
++          if(it.has === true){
++            b.classList.add("popped"); sparkle(b); sfxCorrect(); setSwMood("happy");
++            found++;
++            SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
++            afterName(()=>{
++              if(!alive()) return;
++              if(found >= need){
++                state.locked = true; setSwMood("celebrate"); confettiCannon();
++                SwiftPAL.emit(d.signal_name || "balloon_sound_first_try", {
++                  slide_id: slide.id, phase: slide.phase, value: state.attempts === 0,
++                  attempts: state.attempts, latency_ms: Date.now() - state.slideStart });
++                play(audioFor(slide, "done") || audioFor(slide, "correct") || null,
++                     ()=> setTimeout(()=> completeSlide(state.attempts === 0), 700));
++              } else {
++                play(audioFor(slide, "correct") || null, ()=>{});
++              }
++            });
++          } else {
++            state.attempts++; sfxWrongSoft(); setSwMood("tryagain");
++            b.classList.add("bal-shake");
++            setTimeout(()=> b.classList.remove("bal-shake"), 620);
++            SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
++            const n = state.attempts;
++            afterName(()=>{
++              if(!alive()) return;
++              /* 1st wrong: the buzz IS the feedback - the deck asks for no voice line here */
++              if(n < 2) return;
++              state._balFb = true; state.scaffoldLevel = Math.max(state.scaffoldLevel, 2);
++              SwiftPAL.emit("hint_shown", { slide_id: slide.id, attempts: n });
++              play(audioFor(slide, "hint") || audioFor(slide, "try_again") || null, ()=>{
++                state._balFb = false;
++                if(n >= 3 && alive()){                       /* "if the learner continues to struggle" */
++                  const t = remainingCorrect();
++                  if(t){ handOnAnswer(t.b, slide); state.nudgeUsed = true;
++                         state.scaffoldLevel = Math.max(state.scaffoldLevel, 3); }
++                }
++              });
++            });
++          }
++        };
++      });
++
++      /* instruction is VO-only, and the balloons float in after it so the child hears before they act */
++      state._balFb = false;
++      const reveal = ()=>{ if(!alive()) return;
++        cells.forEach(({ b }, i) => setTimeout(()=> b.classList.remove("seq-hidden"), i * 170)); };
++      play(audioFor(slide, "prompt") || null, reveal);
++      setTimeout(()=>{ if(alive()) reveal(); }, 9000);        /* FAIL-SAFE: balloons always arrive */
++      state.replayAudio = ()=> play(audioFor(slide, "prompt") || null, ()=>{});
++    }
++  },
++
+   SENTENCE_PICK_PIC: {
+     mount(host, slide){
+       const d = slide.data || {};
+@@ -4911,6 +5295,12 @@
+ 
+   // header prompt
+   $("promptText").textContent = slide.prompt_hi || "";
++  /* [S01r4] An EMPTY prompt band still painted its box, so the deck's "keep the screen
++     visually clean ... do not show any written instruction" (page 8) was unreachable from the
++     card. A band with nothing in it is chrome with no content; collapse it. */
++  { const _pb = $("promptText").parentElement;
++    if(_pb) _pb.style.display = (slide.prompt_hi ? "" : "none"); }
++  $("stage").classList.remove("vo-only");
+ 
+   // Hint button stays HIDDEN until the learner makes a wrong attempt, then it is
+   // exposed (graduated scaffold). Mastery uses the SAME scaffold — not excluded.
+@@ -5154,6 +5544,49 @@
+   try{ document.title = "SwiftPAL · " + (CARD.skill_code || "") + " · " + (CARD.title.hi || "").split(/[:：(]/)[0].trim(); }catch(e){}
+   // VISUAL-FIRST landing hero: SHOW the concept (shapes row / a finger-hand / an image), not just the title text
+   (function(){ const hero = CARD.landing_hero, el = $("sgHero"); if(!hero || !el) return;
++    if(hero.kind === "sentence_sound"){
++      /* [S01r4] SME deck page 1: the landing drops its heading and its unrelated pa/cha/ma letter
++         strip ("this may confuse the learner about the target sound") and instead SHOWS the idea -
++         one example line, word by word, with only the repeated sound lit in each word, then the crow
++         that the line is about. Same karaoke + akshara machinery as the teach pages, so the child
++         meets the convention here and it means the same thing for the rest of the lesson. */
++      const words = hero.words || [];
++      /* --i / --n drive the CSS stagger. The intro is a CSS ANIMATION, not a JS class dance, so the
++         END STATE is the stylesheet's default: a capture tool that freezes animation (capture_pages
++         does exactly that) sees the finished sentence, and a browser that never runs the script
++         shows it too. Nothing on this screen can render blank. */
++      el.innerHTML = '<div class="lh-strip" style="--n:' + words.length + '">' + words.map((w, i) =>
++          '<span class="lh-word" style="--i:' + i + '">' + aksharaHTML(w, hero.target_sound) + '</span>'
++        ).join("") + '</div>' +
++        (hero.picture_img ? '<div class="lh-pic">' +
++            imgOrEmoji(hero.picture_img, hero.picture_emoji, "lh-img", "lh-emoji") + '</div>' : "");
++      el.classList.add("show", "lh-hero");
++      /* "Remove the existing heading from this screen" - REMOVE, not hide. A display:none node
++         still reports a 0x0 rect, which sweep_overlap scores as an element spilling 300px
++         outside the card; the heading is gone either way, so take the reading that is also true.
++         document.title is set from CARD.title.hi above, not from this node. */
++      if(hero.hide_title){ const t = $("sgTitle"); if(t) t.remove(); }
++      const c0 = el.closest && el.closest(".sg-content"); if(c0) c0.classList.add("has-hero", "lh-content");
++      /* the animation is driven by the landing VO, which fires from boot()/the listen chip; expose a
++         runner so both paths animate rather than only the first. */
++      window._landingSentence = ()=>{
++        const strip = el.querySelector(".lh-strip");
++        const n = strip ? (+getComputedStyle(strip).getPropertyValue("--n") || (hero.words||[]).length) : 0;
++        /* restart the CSS intro: drop the class, force reflow, re-add */
++        el.classList.remove("lh-run"); void el.offsetWidth; el.classList.add("lh-run");
++        /* The crow's call rides the beat the crow arrives on, matching the CSS delays below — but it
++           is a TIMER, and the child can tap "शुरू करें" before it fires. Measured: the caw landed
++           two and a half seconds into the celebration screen in one test run. Fire it only while the
++           landing is still up. */
++        clearTimeout(window._lhSfx);
++        window._lhSfx = setTimeout(()=>{
++          const sg = document.getElementById("startGate");
++          if(sg && !sg.classList.contains("hidden")) playSfx(hero.picture_sfx);
++        }, 250 + n * 430 + 420);
++      };
++      window._landingSentence();
++      return;
++    }
+     if(hero.kind === "concept_strip"){
+       // r4/#2: each cell is a .sg-acell (keeps the staggered fingerPop pop-in) wrapping a visual example.
+       el.innerHTML = (hero.cells || []).map(c => `<div class="sg-acell">${conceptTileHTML(c)}</div>`).join("");
+@@ -5198,7 +5631,12 @@
+   // greeting lives HERE now (not on slide 0), which also kills the old overlap glitch where the
+   // landing VO and slide-0 VO could talk over each other.
+   const landSrc = (CARD.assets && CARD.assets.audio && CARD.assets.audio["vo_landing"]) || ("assets/Audio/vo_landing." + AUDIO_EXT);
+-  const playLanding = ()=>{ if(!$("startGate").classList.contains("hidden")) play(landSrc, ()=>{}); };
++  const playLanding = ()=>{ if($("startGate").classList.contains("hidden")) return;
++    /* [S01r4] the sentence animation is meant to run WITH the greeting ("the highlighting
++       should sync with the VO"), so it restarts on every play - including the listen chip,
++       which is the first time it is heard whenever autoplay was blocked. */
++    if(typeof window._landingSentence === "function") window._landingSentence();
++    play(landSrc, ()=>{}); };
+   const sgVo = $("sgVo"); if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); playLanding(); };
+   // ---- [engine JS] r4/P2 boot loader: loader.gif until assets warm, then it dismisses ITSELF into
+   // the landing (NO tap gate). DUAL auto-dismiss (window 'load' OR a 2.5s watchdog — never strand the
+
+--- shared/style.css
++++ engine_local/style.css
+@@ -1681,3 +1681,145 @@
+    overflow — 6px, which is half a heading collision. Pinning line-height makes every word's row the
+    same height regardless of its clusters. */
+ .stage.tut .meet-pair .meet-pic-box .pic-label{ font-size:26px; line-height:1.15; }
++
++/* ============================================================================================
++   [S01r4] HI02H11_L01_S01 — SME round 4. Scoped additions only: every selector below is either a
++   brand-new class or a modifier no existing lesson sets, so nothing already built changes.
++   ============================================================================================ */
++
++/* ---- the repeated sound, wherever it is shown -------------------------------------------------
++   ONE highlight style for every occurrence, on every page. The deck says this four separate times
++   ("Use the same highlight style/colour for every क" / "...for every च"), so it is a single token
++   rather than a per-page colour. Amber over navy ink reads as emphasis, not as correctness —
++   deliberately NOT the green/red answer colours, which already mean something else in this engine. */
++:root{ --tgt-ink:#C2590A; --tgt-glow:rgba(255,176,54,.60); }
++/* COLOUR + GLOW, NOT A HIGHLIGHTER BOX. A background on an inline span is painted over the font's
++   full em box, and Baloo 2's descent is deep — so a wash hung under a Devanagari akshara renders as
++   a detached amber block sitting BELOW the letter (measured; it read as a stray box, not emphasis).
++   Recolouring the akshara is unambiguous, needs no box geometry, and survives any glyph. */
++.tgt-akshara{ color:var(--tgt-ink); text-shadow:0 0 .34em var(--tgt-glow);
++  transition:color .22s ease, text-shadow .22s ease; }
++
++/* ---- SENTENCE_SOUND teach flow ---------------------------------------------------------------- */
++/* the word currently being spoken — a lift, not a fill, so it never reads as "the answer" */
++.sentence-word.saying{ background:#EAF3FF; border-color:#8BBFFF;
++  transform:translateY(-4px); box-shadow:0 10px 22px rgba(56,106,246,.20); }
++/* the explanation pass: the WORD goes quiet again and only its target akshara stays lit — that is
++   the ask, verbatim: "Do not highlight the complete word; only highlight the target letter" */
++.sentence-word.marked{ background:#fff; border-color:#EEF3FA; }
++.sentence-word.marked .tgt-akshara{ text-shadow:0 0 .5em var(--tgt-glow); }
++.sentence-word.mark-now{ transform:translateY(-4px); }
++.sentence-word.mark-now .tgt-akshara{ animation:tgtPulse .62s ease-in-out 2; }
++@keyframes tgtPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.16); } }
++/* the letter card is staged — it arrives when its sound plays, not before */
++.opt-cell.seq-hidden{ opacity:0; transform:scale(.86); pointer-events:none; }
++.opt-cell.ss-show{ opacity:1; transform:scale(1); transition:opacity .34s ease, transform .34s ease; }
++/* teach slide — there is nothing to pick, and one card must not inherit the 4-up grid's row
++   height: at min-height 184px it grew UP into the "फिर सुनो" replay pill (measured overlap 8px). */
++.opt-grid.ss-letter-card{ display:flex; justify-content:center; align-items:center;
++  margin-top:14px; pointer-events:none; }
++.opt-grid.ss-letter-card .opt-cell{ min-height:0; width:138px; height:138px; padding:6px; flex:0 0 auto; }
++
++/* ---- MEET_LETTER VO-synced reveal -------------------------------------------------------------- */
++.meet-pic-box.seq-hidden{ opacity:0; transform:translateY(14px) scale(.94); }
++.meet-pic-box.ml-in{ opacity:1; transform:none; transition:opacity .38s ease, transform .38s ease; }
++.pic-label.seq-hidden{ opacity:0; }
++.pic-label.ml-in{ opacity:1; transition:opacity .3s ease .12s; }
++.meet-letter-box.ml-lit{ animation:mlLit 1.15s ease-in-out 2; }
++@keyframes mlLit{ 0%,100%{ transform:scale(1); box-shadow:none; }
++  50%{ transform:scale(1.07); box-shadow:0 0 0 8px rgba(255,230,184,.85); } }
++.pic-label.ml-marked .tgt-akshara{ animation:tgtPulse .62s ease-in-out 3; }
++
++/* ---- a stage the deck asked to strip bare (page 8) ---------------------------------------------
++   "Only the mascot, balloons, object images, and required animations should be visible." */
++.stage.vo-only .prompt-band,
++.stage.vo-only .hint-btn,
++.stage.vo-only .nav-btn{ display:none !important; }
++
++/* ---- TAP_BALLOON_SOUND ------------------------------------------------------------------------- */
++.balloon-field{ display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:center;
++  gap:14px 44px; padding:6px 40px 0; width:100%;
++  /* Capped so exactly FOUR balloons fit a row. The cap is a BORDER-box width, so it must carry the
++     80px of side padding too: content 740 takes 4 (4x150+3x44=732) and refuses 5 (926). At 780 the
++     content was 700 and the set silently broke 3/3/2, overflowing further than before the fix. */
++  max-width:820px; margin:0 auto; }
++.balloon{ position:relative; width:150px; cursor:pointer; flex:0 0 auto;
++  animation:balFloat 3.4s ease-in-out infinite;
++  animation-delay:calc(var(--bi,0) * -0.47s);
++  transition:opacity .42s ease, transform .42s ease; }
++.balloon:nth-child(even){ margin-top:12px; }              /* stagger = more room between taps */
++.balloon.seq-hidden{ opacity:0; transform:translateY(46px) scale(.8); pointer-events:none; }
++.bal-body{ position:relative; width:150px; height:172px;
++  border-radius:50% 50% 48% 48% / 46% 46% 54% 54%;
++  display:flex; align-items:center; justify-content:center;
++  box-shadow:inset -14px -18px 34px rgba(0,0,0,.13), 0 14px 28px rgba(11,61,140,.16); }
++.bal-body::after{ content:""; position:absolute; bottom:-11px; left:50%; transform:translateX(-50%);
++  border-left:11px solid transparent; border-right:11px solid transparent;
++  border-top:13px solid currentColor; opacity:.85; }
++.bal-shine{ position:absolute; top:21px; left:24px; width:34px; height:45px; border-radius:50%;
++  background:rgba(255,255,255,.55); filter:blur(2px); pointer-events:none; }
++.bal-tie{ display:block; width:2px; height:34px; margin:8px auto 0;
++  background:linear-gradient(#B9C6DA, rgba(185,198,218,0)); }
++.bal-img{ width:88px; height:88px; object-fit:contain;
++  filter:drop-shadow(0 2px 4px rgba(0,0,0,.18)); pointer-events:none; }
++.bal-emoji{ font-size:70px; line-height:1; pointer-events:none; }
++/* six soft balloon colours — none of them red or green, which this engine reserves for answers */
++.balloon.bcol-0 .bal-body{ background:#FFD36E; color:#E9B33F; }
++.balloon.bcol-1 .bal-body{ background:#8FD0FF; color:#5FB0EC; }
++.balloon.bcol-2 .bal-body{ background:#C2B0F2; color:#9E87DF; }
++.balloon.bcol-3 .bal-body{ background:#FFB0C8; color:#EE8BAC; }
++.balloon.bcol-4 .bal-body{ background:#9FE3D4; color:#6FC8B5; }
++.balloon.bcol-5 .bal-body{ background:#FFC49B; color:#EDA173; }
++@keyframes balFloat{ 0%,100%{ transform:translateY(0) rotate(-1.2deg); }
++  50%{ transform:translateY(-13px) rotate(1.2deg); } }
++.balloon.popped{ pointer-events:none; animation:balPop .42s ease-out forwards; }
++@keyframes balPop{ 0%{ transform:scale(1); opacity:1; } 45%{ transform:scale(1.22); opacity:.9; }
++  100%{ transform:scale(.2); opacity:0; } }
++.balloon.bal-shake{ animation:balShake .6s ease-in-out; }
++@keyframes balShake{ 0%,100%{ transform:translateX(0) rotate(0); }
++  20%{ transform:translateX(-9px) rotate(-3deg); } 40%{ transform:translateX(9px) rotate(3deg); }
++  60%{ transform:translateX(-6px) rotate(-2deg); } 80%{ transform:translateX(6px) rotate(2deg); } }
++.bal-sparkle{ position:absolute; inset:0; pointer-events:none; z-index:3; }
++.bal-sparkle i{ position:absolute; top:46%; left:48%; width:9px; height:9px; border-radius:50%;
++  background:#FFD86B; box-shadow:0 0 8px #FFC93C;
++  animation:balSpark .78s ease-out forwards; transform:rotate(var(--a)) translateY(0); }
++@keyframes balSpark{ 0%{ opacity:1; transform:rotate(var(--a)) translateY(0) scale(1); }
++  100%{ opacity:0; transform:rotate(var(--a)) translateY(-86px) scale(.35); } }
++
++/* ---- landing: one example sentence instead of a heading + three loose letters -------------------- */
++.sg-title.sg-hide{ display:none; }
++.sg-art.lh-hero{ display:flex; flex-direction:column; align-items:center; gap:16px; width:100%; }
++.lh-strip{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:center; gap:6px 18px; }
++.lh-word{ font-family:"Baloo 2",system-ui,sans-serif; font-weight:800; font-size:52px;
++  color:var(--navy); }
++/* The intro runs only under .lh-run and every keyframe ENDS on the rule above, so freezing
++   animation (capture tooling) or never running the script both land on the finished sentence. */
++.lh-hero.lh-run .lh-word{ animation:lhWordIn .34s ease both;
++  animation-delay:calc(.25s + var(--i,0) * .43s); }
++.lh-hero.lh-run .lh-word .tgt-akshara{ animation:lhLight .34s ease both;
++  animation-delay:calc(.25s + var(--n,4) * .43s); }
++.lh-hero.lh-run .lh-pic{ animation:lhPicIn .42s ease both;
++  animation-delay:calc(.25s + var(--n,4) * .43s + .42s); }
++@keyframes lhWordIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
++@keyframes lhLight{ from{ color:var(--navy); text-shadow:none; }
++  to{ color:var(--tgt-ink); text-shadow:0 0 .34em var(--tgt-glow); } }
++@keyframes lhPicIn{ from{ opacity:0; transform:translateY(12px) scale(.9); } to{ opacity:1; transform:none; } }
++
++/* while the sentence is still arriving, the target sound sits in the ink colour like everything
++   else; it lights up only at the "highlight only the repeated sound" beat, which IS the point */
++
++
++
++.lh-img{ width:168px; height:168px; object-fit:contain; }
++.lh-emoji{ font-size:112px; line-height:1; }
++.sg-content.lh-content .sg-sub{ display:none; }
++
++@media (max-width:900px){
++  .balloon{ width:124px; } .bal-body{ width:124px; height:142px; }
++  .bal-img{ width:72px; height:72px; } .bal-emoji{ font-size:58px; }
++  .balloon-field{ max-width:640px; }
++  .lh-word{ font-size:38px; } .lh-img{ width:126px; height:126px; }
++}
++html.no-anim .balloon, html.no-anim .lh-word, html.no-anim .lh-pic,
++html.no-anim .meet-pic-box, html.no-anim .pic-label, html.no-anim .opt-cell.seq-hidden{
++  animation:none !important; transition:none !important; opacity:1 !important; transform:none !important; }

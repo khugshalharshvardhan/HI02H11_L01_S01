@@ -1,0 +1,10 @@
+{
+  "code": "HI02H11_L01_S01",
+  "kind": "fln",
+  "baseline_stamp": "2026.08.04b-r4-unified",
+  "seeded_from": "fln monolith (no maths factory in this checkout)",
+  "baseline_sha": {
+    "app.js": "bb669c006c71634320e1beb35c2375b4c1148b0a",
+    "style.css": "78d3d750e5d244bf3c4a12eb371b7d618c83d3bf"
+  }
+}
