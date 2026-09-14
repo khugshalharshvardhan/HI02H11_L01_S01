@@ -1684,14 +1684,26 @@ function splitAksharas(word){
 function wordHasSound(word, target){
   return splitAksharas(word).some(a => a[0] === target);
 }
-/* Word markup with ONLY the target aksharas wrapped. Runs of non-target aksharas are emitted as one
-   plain text node - fewer inline boundaries, fewer chances to disturb shaping. */
-function aksharaHTML(word, target){
+/* Word markup with ONLY the target marked. Runs of unmarked aksharas are emitted as one plain text
+   node - fewer inline boundaries, fewer chances to disturb shaping.
+
+   `bare` = mark the CONSONANT ALONE and leave its matra in the ink colour, i.e. क not का. Spiked
+   before it was wired (SME round 4b): rendered in the real embedded Baloo 2 and MEASURED - काला,
+   कौआ, काँव-काँव and करता। all come back with advance widths identical to the unwrapped word, and
+   the capture confirms the colour lands on the consonant only. So a post-base matra (ा ी ो ौ) and
+   a combining mark (ँ ं) BOTH separate cleanly, and the earlier blanket caution was too broad.
+   What genuinely does NOT separate: a PRE-BASE matra (ि is stored after its consonant and drawn
+   before it) and a virama conjunct - splitting either reorders or breaks the cluster. Those fall
+   back to marking the whole cluster rather than rendering something wrong. */
+function aksharaHTML(word, target, bare){
   let out = "", buf = "";
   for(const a of splitAksharas(word)){
     if(target && a[0] === target){
       if(buf){ out += buf; buf = ""; }
-      out += '<span class="tgt-akshara">' + a + '</span>';
+      const reorders = a.length > 1 && (a.indexOf("ि") >= 0 || a.indexOf(_DEV_VIRAMA) >= 0);
+      out += (bare && !reorders)
+        ? '<span class="tgt-akshara">' + a[0] + '</span>' + a.slice(1)
+        : '<span class="tgt-akshara">' + a + '</span>';
     } else buf += a;
   }
   return out + buf;
@@ -1730,6 +1742,81 @@ function karaokePlay(src, tokens, apply, onDone){
   if(tokens && tokens.length) raf = requestAnimationFrame(tick);
   return stop;
 }
+
+/* [S01r4c] COLOURING *ONLY* THE CONSONANT — क, NOT का.
+   r4b wrapped the bare consonant in its own span and the measured render came back unchanged: the
+   whole का was still amber. The span was correct; the assumption was not. Chrome SHAPES DEVANAGARI
+   ACROSS INLINE ELEMENT BOUNDARIES, so क and its ा still form one cluster, and the cluster paints in
+   the style of the element that opens it. Identical advance widths — which r4b read as proof that
+   the boundary was safe — were in fact the symptom: the browser had ignored the boundary entirely.
+   Markup cannot solve this, because any boundary that WOULD split the cluster also breaks its
+   rendering (a ZWNJ leaves an orphaned matra).
+
+   So don't split the text — split the PAINT. Same two-layer trick the engine already uses to redden
+   a matra in `_matraWordSVG`: draw the whole word, then draw the whole word again in the highlight
+   colour, clipped to the x-range the target consonant occupies. Both layers contain identical text,
+   so both shape identically and register exactly; only the paint is cut. */
+const _COMB_SND = /[ऀ-ःऺ-ॏ॑-ॗॢॣ‌‍़]/;
+let _sndCv = null, _sndCx = null;
+
+/* x-ranges (in CSS px from the word's left edge) of every BARE occurrence of `target`.
+   A cluster's consonant always starts at the cluster's own advance origin and runs for the
+   consonant's advance — the matra is placed after it — so no ink analysis is needed here, unlike
+   the matra case which has to hunt for the boundary. */
+/* Where each bare occurrence of `target` SITS in the word: its x offset, in CSS px from the word's
+   left edge. Offsets are advance sums, which is exactly how the shaper places the glyphs. */
+function _soundOffsets(word, target, fontPx){
+  if(!target) return [];
+  _sndCx = _sndCx || (_sndCv = document.createElement("canvas")).getContext("2d");
+  _sndCx.font = '800 ' + fontPx + 'px "Baloo 2","Noto Sans Devanagari",sans-serif';
+  const ch = [...(word || "")], hits = [];
+  let x = 0, i = 0;
+  while(i < ch.length){
+    let j = i + 1, joined = false;
+    while(j < ch.length){
+      if(_COMB_SND.test(ch[j])){ joined = (ch[j] === "\u094D"); j++; continue; }
+      if(joined){ joined = false; j++; continue; }
+      break;
+    }
+    const cluster = ch.slice(i, j).join("");
+    /* only a PLAIN base takes the overlay: a conjunct (क् + …) has no separable letterform, so it
+       would be a different glyph and must not be painted as if it were a standalone क */
+    if(ch[i] === target && cluster.indexOf("\u094D") < 0) hits.push(x);
+    x += _sndCx.measureText(cluster).width; i = j;
+  }
+  return hits;
+}
+
+/* One word, layered: the word itself, plus a copy of JUST THE LETTER laid over each occurrence.
+
+   Two earlier attempts painted more than the letter, and the reason is the same both times — they
+   tried to CUT a rectangle out of the whole word, and the letter is not a rectangle:
+     · clipping at the consonant's ADVANCE swept in the stretch of headline that bridges the gap to
+       the matra, so an orange bar hung past the क with nothing under it;
+     · clipping at its INK fixed that, but a full-height cut still caught anything FLOATING ABOVE the
+       letter's column — measured: 1078 orange px on कौआ's ौ arm, 919 on काँव's ँ.
+   So stop cutting. The overlay is now the letter and nothing else, positioned at the letter's own
+   offset: the matra and the candrabindu are not in the overlay's text at all, so no geometry can
+   accidentally include them. A leading consonant with a post-base matra renders the same glyph
+   standalone as it does in the word, which is what makes the two register. */
+function soundWordHTML(word, target, fontPx){
+  const esc = (s)=> String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const hits = _soundOffsets(word, target, fontPx);
+  return '<span class="sw-base">' + esc(word) + '</span>'
+    + hits.map(x => '<span class="sw-lit" data-ch="' + esc(target) + '" aria-hidden="true" style="left:'
+        + x.toFixed(2) + 'px">' + esc(target) + '</span>').join("");
+}
+
+/* Canvas metrics before the web font lands are the FALLBACK font's, so every clip would be cut in
+   the wrong place on a cold load. Recompute once Baloo 2 is actually available - same guard the
+   matra SVGs carry (refreshMatraWords), for the same reason. */
+function refreshSoundWords(root){
+  (root || document).querySelectorAll("[data-sw-word]").forEach(el=>{
+    el.innerHTML = soundWordHTML(el.dataset.swWord, el.dataset.swTarget,
+                                 parseFloat(el.dataset.swFs) || 52);
+  });
+}
+try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=> refreshSoundWords()); }catch(e){}
 
 /* ---------- 12. SLIDE MODULES ---------- */
 const SlideModules = {
@@ -5545,46 +5632,126 @@ function boot(){
   // VISUAL-FIRST landing hero: SHOW the concept (shapes row / a finger-hand / an image), not just the title text
   (function(){ const hero = CARD.landing_hero, el = $("sgHero"); if(!hero || !el) return;
     if(hero.kind === "sentence_sound"){
-      /* [S01r4] SME deck page 1: the landing drops its heading and its unrelated pa/cha/ma letter
-         strip ("this may confuse the learner about the target sound") and instead SHOWS the idea -
-         one example line, word by word, with only the repeated sound lit in each word, then the crow
-         that the line is about. Same karaoke + akshara machinery as the teach pages, so the child
-         meets the convention here and it means the same thing for the rest of the lesson. */
+      /* [S01r4b] SME deck page 1, re-cut to run IN STEP WITH THE GREETING.
+         The flow is the deck's, verbatim: "Sentence appears -> words appear one by one -> क gets
+         highlighted in each word -> crow appears -> crow sound plays -> VO continues", and its rider
+         "the highlighting should sync with the VO so the child can hear and visually notice the
+         repeated sound at the same time".
+         r4 ran this on fixed CSS delays, which cannot satisfy that rider - it looked right and was
+         synchronised to nothing. It is now driven off the greeting clip itself: the spoken line is
+         read from CARD.assets.audio_text (shown == spoken, so it IS the script), karaokePlay reports
+         which word is being spoken, and each beat fires when its own word is reached. Proportional,
+         not force-aligned (no forced aligner in this toolchain). */
       const words = hero.words || [];
-      /* --i / --n drive the CSS stagger. The intro is a CSS ANIMATION, not a JS class dance, so the
-         END STATE is the stylesheet's default: a capture tool that freezes animation (capture_pages
-         does exactly that) sees the finished sentence, and a browser that never runs the script
-         shows it too. Nothing on this screen can render blank. */
-      el.innerHTML = '<div class="lh-strip" style="--n:' + words.length + '">' + words.map((w, i) =>
-          '<span class="lh-word" style="--i:' + i + '">' + aksharaHTML(w, hero.target_sound) + '</span>'
-        ).join("") + '</div>' +
-        (hero.picture_img ? '<div class="lh-pic">' +
+      /* mark_bare => the layered paint-clip (only क); otherwise the plain akshara span (का). The
+         layered form carries its own data-sw-* so refreshSoundWords can re-cut the clips once the
+         real font has loaded. */
+      const _lhWord = (w)=> hero.mark_bare
+        ? ('<span class="lh-word lh-layered seq-hidden" data-sw-word="' + w
+             + '" data-sw-target="' + (hero.target_sound || "") + '" data-sw-fs="52">'
+             + soundWordHTML(w, hero.target_sound, 52) + '</span>')
+        : ('<span class="lh-word seq-hidden">' + aksharaHTML(w, hero.target_sound) + '</span>');
+      el.innerHTML = '<div class="lh-strip lh-dim">' + words.map(_lhWord).join("") + '</div>' +
+        (hero.picture_img ? '<div class="lh-pic seq-hidden">' +
             imgOrEmoji(hero.picture_img, hero.picture_emoji, "lh-img", "lh-emoji") + '</div>' : "");
       el.classList.add("show", "lh-hero");
-      /* "Remove the existing heading from this screen" - REMOVE, not hide. A display:none node
-         still reports a 0x0 rect, which sweep_overlap scores as an element spilling 300px
-         outside the card; the heading is gone either way, so take the reading that is also true.
+      [...el.querySelectorAll(".lh-word")].forEach((w, i)=> w.dataset.i = i);
+      /* "Remove the existing heading from this screen" - REMOVE, not hide. A display:none node still
+         reports a 0x0 rect, which sweep_overlap scores as an element spilling outside the card.
          document.title is set from CARD.title.hi above, not from this node. */
       if(hero.hide_title){ const t = $("sgTitle"); if(t) t.remove(); }
-      const c0 = el.closest && el.closest(".sg-content"); if(c0) c0.classList.add("has-hero", "lh-content");
-      /* the animation is driven by the landing VO, which fires from boot()/the listen chip; expose a
-         runner so both paths animate rather than only the first. */
-      window._landingSentence = ()=>{
+      const c0 = el.closest && el.closest(".sg-content");
+      if(c0) c0.classList.add("has-hero", "lh-content");
+
+      window._landingSentence = (src)=>{
+        window._lhRan = true;
         const strip = el.querySelector(".lh-strip");
-        const n = strip ? (+getComputedStyle(strip).getPropertyValue("--n") || (hero.words||[]).length) : 0;
-        /* restart the CSS intro: drop the class, force reflow, re-add */
-        el.classList.remove("lh-run"); void el.offsetWidth; el.classList.add("lh-run");
-        /* The crow's call rides the beat the crow arrives on, matching the CSS delays below — but it
-           is a TIMER, and the child can tap "शुरू करें" before it fires. Measured: the caw landed
-           two and a half seconds into the celebration screen in one test run. Fire it only while the
-           landing is still up. */
-        clearTimeout(window._lhSfx);
-        window._lhSfx = setTimeout(()=>{
-          const sg = document.getElementById("startGate");
-          if(sg && !sg.classList.contains("hidden")) playSfx(hero.picture_sfx);
-        }, 250 + n * 430 + 420);
+        const ws = [...el.querySelectorAll(".lh-word")];
+        const pic = el.querySelector(".lh-pic");
+        const onLanding = ()=>{ const sg = $("startGate"); return sg && !sg.classList.contains("hidden"); };
+
+        ws.forEach(w => { w.classList.add("seq-hidden"); w.classList.remove("lh-in"); });
+        if(strip) strip.classList.add("lh-dim");
+        if(pic){ pic.classList.add("seq-hidden"); pic.classList.remove("lh-in"); }
+
+        /* The call belongs to the crow's ARRIVAL, not to a timer running alongside it: fired here,
+           in the same statement that reveals the picture, it cannot drift and it cannot outlive the
+           screen. (r4 scheduled it on a setTimeout and it was measured landing on the CELEBRATION.) */
+        const showCrow = (withSound)=>{
+          if(!pic || !pic.classList.contains("seq-hidden")) return;
+          pic.classList.remove("seq-hidden"); pic.classList.add("lh-in");
+          if(withSound && onLanding()) playSfx(hero.picture_sfx);
+        };
+        const acts = {
+          light: ()=>{ if(strip) strip.classList.remove("lh-dim"); },   // every क lights at once
+          crow:  ()=>  showCrow(true)
+        };
+
+        const line = (CARD.assets && CARD.assets.audio_text &&
+                      CARD.assets.audio_text[hero.sync_audio || "vo_landing"]) || "";
+        const toks = line ? line.split(/\s+/).filter(Boolean) : [];
+        /* exact token first, then substring - "काला" lives inside the token "सुनो—काला", while a
+           bare "क" cue must land on the standalone word क and not on the क buried in "वाक्य" */
+        const findTok = (needle, start)=>{
+          for(let j = start; j < toks.length; j++) if(toks[j] === needle) return j;
+          for(let j = start; j < toks.length; j++) if(toks[j].indexOf(needle) >= 0) return j;
+          return -1;
+        };
+        const cues = []; let from = 0;
+        words.forEach((w, i)=>{
+          let k = findTok(w, from);
+          if(k < 0) k = Math.min(from, Math.max(0, toks.length - 1));
+          cues.push({ k, do: "word", i }); from = k + 1;
+        });
+        (hero.cues || []).forEach(c => {
+          let k = findTok(c.at, from);
+          if(k < 0) k = Math.min(from, Math.max(0, toks.length - 1));
+          cues.push({ k, do: c.do }); from = k + 1;
+        });
+
+        const fired = new Set();
+        const run = (c)=>{
+          if(fired.has(c)) return; fired.add(c);
+          if(c.do === "word"){ const w = ws[c.i];
+            if(w){ w.classList.remove("seq-hidden"); w.classList.add("lh-in"); } }
+          else (acts[c.do] || (()=>{}))();
+        };
+        let done = false, stopK = null;
+        /* Nothing to sync TO means show the finished sentence, not an empty card: an autoplay refusal
+           before the first gesture and a missing clip BOTH land here (play() fires its onEnd in both
+           cases), and so does a capture tool that freezes the page. The crow still arrives - silently,
+           because its call is meant to accompany a narrated arrival, not to bark on a cold load. */
+        const finish = ()=>{
+          if(done) return; done = true;
+          if(stopK) stopK();
+          if(!onLanding()) return;
+          cues.forEach(c => { if(c.do === "crow") { fired.add(c); showCrow(false); } else run(c); });
+        };
+
+        if(!toks.length){ finish(); play(src || null, ()=>{}); return; }
+        /* The timeline is only meaningful while ITS OWN clip is sounding. Tapping शुरू करें calls
+           stopAudio() (so currentAudio goes null) but the start gate stays up for the length of the
+           blur transition — so "is the gate still visible" is NOT a sufficient stop condition, and a
+           late crow cue could still fire its call over the first slide. Stop on either signal. */
+        let heard = false;
+        stopK = karaokePlay(src || null, toks, (k)=>{
+          if(currentAudio) heard = true;
+          if(!onLanding() || (heard && !currentAudio)){   // tapped through, or the greeting was cut
+            if(stopK) stopK(); done = true; return;
+          }
+          cues.forEach(c => { if(k >= c.k) run(c); });
+        }, finish);
       };
-      window._landingSentence();
+      /* Deliberately NOT invoked here: the greeting is owned by playLanding() (boot-loader dismissal,
+         or the first gesture when autoplay was refused), and starting a second copy from here would
+         put two voices on the landing. This is only the safety net - if the greeting never runs at
+         all, the cover must still show its sentence rather than an empty card. */
+      setTimeout(()=>{
+        if(window._lhRan) return;
+        el.querySelectorAll(".lh-word").forEach(w => { w.classList.remove("seq-hidden"); w.classList.add("lh-in"); });
+        const st = el.querySelector(".lh-strip"); if(st) st.classList.remove("lh-dim");
+        const pc = el.querySelector(".lh-pic"); if(pc){ pc.classList.remove("seq-hidden"); pc.classList.add("lh-in"); }
+      }, 6000);
       return;
     }
     if(hero.kind === "concept_strip"){
@@ -5635,7 +5802,7 @@ function boot(){
     /* [S01r4] the sentence animation is meant to run WITH the greeting ("the highlighting
        should sync with the VO"), so it restarts on every play - including the listen chip,
        which is the first time it is heard whenever autoplay was blocked. */
-    if(typeof window._landingSentence === "function") window._landingSentence();
+    if(typeof window._landingSentence === "function"){ window._landingSentence(landSrc); return; }
     play(landSrc, ()=>{}); };
   const sgVo = $("sgVo"); if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); playLanding(); };
   // ---- [engine JS] r4/P2 boot loader: loader.gif until assets warm, then it dismisses ITSELF into

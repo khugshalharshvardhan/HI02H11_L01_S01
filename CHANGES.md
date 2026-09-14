@@ -1,4 +1,6 @@
 # CHANGES.md — HI02H11_L01_S01 · SME round-4 revise · 2026-09-14
+### r4b/r4c/r4d (page-by-page pass) — **page 1 / cover**: only क marked (nothing else), VO-synced
+### flow, SME crow art + SME crow recording trimmed to one call. Rows 10-14; OPEN-5 closed.
 
 **Deck:** `HI02H11_L01_S01_SME_Review_Final_WITH_RECOMMENDATIONS.pptx` — 31 slides, 15 pages carrying asks.
 **Baseline reviewed:** `build/HI02H11_L01_S01.html`, engine `2026.08.04b-r4-unified` — **matches** the
@@ -40,11 +42,11 @@ tracker row still resolves; only the **sequence** changed.
 | 7 | "Remove the existing heading 'बार-बार आने वाली ध्वनि' from this screen." | ✅ | capture 01 — node **removed**, not hidden; `overlap` 0 findings |
 | 8 | "Remove the current 'प, च, म' highlighting animation." | ✅ | card-diff `landing_hero.cells` → `<absent>`, `kind` concept_strip → sentence_sound |
 | 9 | Add "काला कौआ काँव-काँव करता।" at top-centre | ✅ | capture 01 |
-| 10 | "The sentence should appear with a simple word-by-word animation." | ✅ | CSS stagger, `--i` per word; end state is the default so a frozen capture shows it complete |
-| 11 | "Highlight only the repeated 'क' … Do not highlight the complete word." | ✅ | capture 01 — 5 marked aksharas: का · कौ · काँ · काँ · क; the rest of each word stays navy |
-| 12 | "Add a clear crow illustration below the sentence… do not let it cover the sentence." | ⏳ | wired + laid out (capture 01 shows it below, not overlapping); **final art pending** — 🐦‍⬛ fallback today |
-| 13 | "A small 'काँव-काँव' sound effect … when the crow appears." | ⏳ | `sfx_kanv` wired, fires at the crow's beat; **needs a real recording** — see §Assets |
-| 14 | Flow: sentence → words one by one → 'क' lights → crow → crow sound → VO | ✅ | CSS timeline: words at .25s + .43s each, then the क light, then the crow +.42s, sfx on the same beat |
+| 10 | "The sentence should appear with a simple word-by-word animation." | ✅ | **r4b: each word lands when the voice reaches it** (token cue off `audio_text`), not on a timer |
+| 11 | "Highlight only the repeated 'क' … Do not highlight the complete word." | ✅ | **r4d: the letter क and nothing else.** The overlay is now a copy of the LETTER, positioned at the letter's offset — not a shape cut out of the word — so no matra, headline overhang or floating mark can be caught by geometry. Verified by zone measurement (0 orange px above the headline on काला and काँव-काँव, where the ँ lives) and by a 4× crop of each word. See the correction note below |
+| 12 | "Add a clear crow illustration below the sentence… do not let it cover the sentence." | ✅ | **SME-supplied art installed** as `obj_kauaa.png` (cartoon crow, beak open — it is calling, which is what the line describes). Alpha already clean, no keying needed; trimmed to its bbox and fitted to 512 px long edge to match the other object art. capture 01 shows it below the sentence, not overlapping |
+| 13 | "A small 'काँव-काँव' sound effect … when the crow appears." | ✅ | **r4d: SME-supplied recording**, trimmed to ONE call. The source is 10.8 s and holds ~8 caws; the cleanest isolated one (silence either side, peak at 1.44 s) was cut at **1.34–1.90 s** → 0.57 s, 15 ms fade-in / 80 ms fade-out, normalised to −3.2 dBFS peak, mono Opus, 5 KB. Fires in the same statement that reveals the crow — traced once at 9.6 s, never again. Untrimmed source kept at `_assets_round4/CROW_SOUND_EFFECT_source.mp3` |
+| 14 | Flow: sentence → words one by one → 'क' lights → crow → crow sound → VO continues | ✅ | **r4b: driven by the greeting, not by fixed delays.** Traced against a 12 s clip — काला 6.0 s · कौआ 6.5 s · काँव-काँव 7.0 s · करता। 7.5 s · every क lights 8.5 s (as the VO says «क») · crow + call 9.6 s · VO plays on |
 | 15 | New `vo_landing` (deck text, verbatim) | ⏳ | text in the card + `audio_text`; **clip is the old line** until regen |
 
 ## C · New page 2 (was page 4 · T3) · SENTENCE_SOUND — च — `capture 02`
@@ -331,10 +333,29 @@ Not fixed, because they are not this run's: everything under Observations.
 - **OPEN-4 · Register clash on page 8.** The balloon VO is **aap** ("टैप कीजिए", "ध्यान से सुनिए");
   every other line in the lesson is **tum**. Deck wording kept verbatim, as agreed — but the lesson now
   changes register on that one page.
-- **OPEN-5 · "Only the target letter" is implemented at AKSHARA granularity.** A bare consonant cannot
-  be wrapped away from its own matra without breaking the cluster — the browser renders an orphaned
-  mark. So पीतल lights **पी**, not "प" and not the whole word. This is the same shaping limit that
-  killed the matra-colour attempt on HI01H04; it is not re-attempted. Captures 02/04/06 show the result.
+- **OPEN-5 · CLOSED for page 1 (r4d): the cover marks the letter क and nothing else.**
+  This took three attempts and each one is worth recording, because each looked right and was not.
+  **r4** marked the whole akshara (का) and I flagged it as a Devanagari-shaping limit.
+  **r4b** wrapped the bare consonant in its own span and measured *identical advance widths*, which I
+  read as "the boundary held". It was the opposite: Chrome **shapes Devanagari across inline element
+  boundaries**, so क and its ा still formed one cluster and painted in the colour of the element that
+  opened it. Unchanged widths were the symptom, not the all-clear.
+  **r4c** stopped splitting the text and clipped the PAINT instead — the whole word drawn twice, the
+  top copy cut to the consonant's advance. Better, but an advance runs to where the *next* glyph
+  starts, so it swept in the stretch of headline bridging the gap to the matra: an orange bar hanging
+  past the क with nothing under it. Clipping to the consonant's **ink** fixed that, and a full-height
+  rectangle still caught anything FLOATING ABOVE the letter's column — measured at 4×: **1078 orange
+  px on कौआ's ौ arm, 919 on काँव's ँ**. A letter is not a rectangle, so no rectangle can express it.
+  **r4d** stops cutting altogether. The overlay is a copy of the LETTER ITSELF, positioned at that
+  letter's own offset: the matra and the candrabindu are not in the overlay's text at all, so no
+  geometry can include them by accident. A leading consonant with a post-base matra renders the same
+  glyph standalone as it does in the word, which is what makes the two register exactly.
+  **The lesson worth keeping: every one of these was caught by measuring pixels, and every one of them
+  passed a look at the screen first.** A conjunct (क् + …) has no separable letterform and is
+  deliberately left unmarked rather than painted with a glyph it does not have.
+  **Pages 2, 4 and 6 still mark the akshara** (पी, चू, मे) — out of scope for a page-1 pass, and the
+  mechanism now exists to switch them in one line whenever you want it.
+
 - **OPEN-6 · Word sync is duration-proportional, not force-aligned.** No forced aligner exists in this
   toolchain, so each word takes a share of the clip's measured duration weighted by akshara count.
   Close, not frame-exact — and it will shift slightly when the re-recorded clips land.
@@ -378,8 +399,9 @@ The game was left exactly as the deck specified on all of these.
 
 - All **30 regenerated clips** once they exist — none has been heard by anyone yet.
 - Any clip `gen_tts` recovers on a **fallback voice** (it prints its own EAR-CHECK list; paste it here).
-- **`sfx_kanv`** — must be a real recording or a licensed effect. Do not synthesize a bird at the
-  lesson's opening beat; the engine currently plays the landing silently, which is the better failure.
+- **`sfx_kanv`** — **a real recording** as of r4d, supplied by the SME and trimmed here to one call.
+  The synthesized stand-in from r4c is deleted. Still worth one listen at the trimmed length, since
+  the cut point was chosen from the energy envelope rather than by ear.
 - `sfx_correct` / `sfx_wrong` / `sfx_celebrate` — synthesized tones, inherited.
 
 ## Placeholder vs final
@@ -387,6 +409,7 @@ The game was left exactly as the deck specified on all of these.
 | Asset | State |
 |---|---|
 | 30 VO clips (20 re-records, 10 new) | **placeholder / stale** — text authored, audio pending |
-| 9 object pictures (6 new, 3 replacements) | **pending** — emoji fallback renders today |
-| `sfx_kanv` crow call | **not generatable** — needs a recording |
+| 8 object pictures (5 new, 3 replacements) | **pending** — emoji fallback renders today |
+| crow `obj_kauaa` | **final** — supplied by the SME, installed r4c |
+| `sfx_kanv` crow call | **final** — SME recording, trimmed to one 0.57 s call (r4d) |
 | Everything else (73 clips, 14 pictures, all UI) | final, unchanged, untouched by this round |

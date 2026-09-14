@@ -25,6 +25,18 @@
       "करता।"
     ],
     "target_sound": "क",
+    "mark_bare": true,
+    "sync_audio": "vo_landing",
+    "cues": [
+      {
+        "at": "क",
+        "do": "light"
+      },
+      {
+        "at": "ध्वनि",
+        "do": "crow"
+      }
+    ],
     "picture_img": "obj_kauaa",
     "picture_emoji": "🐦‍⬛",
     "picture_sfx": "sfx_kanv"

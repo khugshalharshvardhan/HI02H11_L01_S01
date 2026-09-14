@@ -1692,13 +1692,17 @@ body.is-start .phase-gate{
    ("Use the same highlight style/colour for every क" / "...for every च"), so it is a single token
    rather than a per-page colour. Amber over navy ink reads as emphasis, not as correctness —
    deliberately NOT the green/red answer colours, which already mean something else in this engine. */
-:root{ --tgt-ink:#C2590A; --tgt-glow:rgba(255,176,54,.60); }
-/* COLOUR + GLOW, NOT A HIGHLIGHTER BOX. A background on an inline span is painted over the font's
-   full em box, and Baloo 2's descent is deep — so a wash hung under a Devanagari akshara renders as
-   a detached amber block sitting BELOW the letter (measured; it read as a stray box, not emphasis).
-   Recolouring the akshara is unambiguous, needs no box geometry, and survives any glyph. */
-.tgt-akshara{ color:var(--tgt-ink); text-shadow:0 0 .34em var(--tgt-glow);
-  transition:color .22s ease, text-shadow .22s ease; }
+:root{ --tgt-ink:#C2590A; }
+/* COLOUR ALONE. Two things were tried and both bled onto the neighbouring glyph:
+   a BACKGROUND wash is painted over the font's full em box, and Baloo 2's descent is deep, so it hung
+   as a detached amber block below the letter; a text-shadow GLOW at .34em then spread ~18px in every
+   direction, which on क + ा is wider than the matra itself — measured on the rendered cover, the
+   orange run came back ~60 CSS px where a bare क is ~44, and the ा sat inside an amber halo. The
+   markup was correct the whole time; the paint was lying about it. Reported as "it is still
+   highlighting का".
+   Colour alone cannot bleed: amber on navy is already a strong contrast at this size, and it is the
+   one treatment that means exactly the span it is applied to. */
+.tgt-akshara{ color:var(--tgt-ink); transition:color .22s ease; }
 
 /* ---- SENTENCE_SOUND teach flow ---------------------------------------------------------------- */
 /* the word currently being spoken — a lift, not a fill, so it never reads as "the answer" */
@@ -1707,7 +1711,7 @@ body.is-start .phase-gate{
 /* the explanation pass: the WORD goes quiet again and only its target akshara stays lit — that is
    the ask, verbatim: "Do not highlight the complete word; only highlight the target letter" */
 .sentence-word.marked{ background:#fff; border-color:#EEF3FA; }
-.sentence-word.marked .tgt-akshara{ text-shadow:0 0 .5em var(--tgt-glow); }
+.sentence-word.marked .tgt-akshara{ font-weight:800; }
 .sentence-word.mark-now{ transform:translateY(-4px); }
 .sentence-word.mark-now .tgt-akshara{ animation:tgtPulse .62s ease-in-out 2; }
 @keyframes tgtPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.16); } }
@@ -1792,18 +1796,33 @@ body.is-start .phase-gate{
 .lh-strip{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:center; gap:6px 18px; }
 .lh-word{ font-family:"Baloo 2",system-ui,sans-serif; font-weight:800; font-size:52px;
   color:var(--navy); }
-/* The intro runs only under .lh-run and every keyframe ENDS on the rule above, so freezing
-   animation (capture tooling) or never running the script both land on the finished sentence. */
-.lh-hero.lh-run .lh-word{ animation:lhWordIn .34s ease both;
-  animation-delay:calc(.25s + var(--i,0) * .43s); }
-.lh-hero.lh-run .lh-word .tgt-akshara{ animation:lhLight .34s ease both;
-  animation-delay:calc(.25s + var(--n,4) * .43s); }
-.lh-hero.lh-run .lh-pic{ animation:lhPicIn .42s ease both;
-  animation-delay:calc(.25s + var(--n,4) * .43s + .42s); }
-@keyframes lhWordIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
-@keyframes lhLight{ from{ color:var(--navy); text-shadow:none; }
-  to{ color:var(--tgt-ink); text-shadow:0 0 .34em var(--tgt-glow); } }
-@keyframes lhPicIn{ from{ opacity:0; transform:translateY(12px) scale(.9); } to{ opacity:1; transform:none; } }
+/* [S01r4b] The intro is now driven by the GREETING, not by fixed delays - each word lands when the
+   voice reaches it (see the landing branch in app.js). The states below are just the two ends of it;
+   `seq-hidden` is the shared class every capture/settling tool already strips, and `lh-dim` is the
+   pre-highlight state, so a page that never runs its script still resolves to the finished cover. */
+.lh-word{ transition:opacity .3s ease, transform .3s ease; }
+.lh-word.lh-in{ opacity:1; transform:none; }
+/* before the "क" beat the target sits in the ink colour like the rest of the line - the whole point
+   of the beat is that the child SEES it light up exactly as they hear it named */
+.lh-strip.lh-dim .tgt-akshara{ color:var(--navy); }
+.lh-strip.lh-dim .sw-lit{ opacity:0; }
+
+/* [S01r4c] LAYERED WORD - the base copy, plus one absolutely-registered copy per marked consonant,
+   each clipped to that consonant's own advance. Both layers hold the SAME text, so they shape
+   identically and sit exactly on top of one another; clipping the paint is the only way to colour
+   part of a Devanagari cluster, because splitting the text splits the cluster. */
+.lh-word.lh-layered{ position:relative; display:inline-block; white-space:pre; }
+.lh-word.lh-layered .sw-base{ color:var(--navy); }
+/* `left` is written inline, per occurrence; top:0 puts the overlay on the same line box as the base,
+   so the two share a baseline and the glyphs register exactly. */
+.lh-word.lh-layered .sw-lit{
+  position:absolute; top:0; white-space:pre; pointer-events:none;
+  color:var(--tgt-ink); transition:opacity .22s ease;
+  /* it duplicates a letter, so keep it out of selections; aria-hidden keeps it out of the
+     accessibility tree too, so the sentence is read once */
+  -webkit-user-select:none; user-select:none; }
+.lh-pic{ transition:opacity .42s ease, transform .42s ease; }
+.lh-pic.lh-in{ opacity:1; transform:none; }
 
 /* while the sentence is still arriving, the target sound sits in the ink colour like everything
    else; it lights up only at the "highlight only the repeated sound" beat, which IS the point */

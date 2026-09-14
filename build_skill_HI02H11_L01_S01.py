@@ -471,6 +471,15 @@ def build_card():
         "hide_title": True,
         "words": ["काला", "कौआ", "काँव-काँव", "करता।"],
         "target_sound": "क",
+        # [r4b] mark the CONSONANT ONLY - क, not का. Spiked in the real font first: all four words
+        # keep their exact advance width and the colour lands on the क alone.
+        "mark_bare": True,
+        # the timeline is read off this clip, so every beat lands when its own word is spoken
+        "sync_audio": "vo_landing",
+        # ...after the four sentence words, which are cued from `words` automatically:
+        #   "क"     -> the greeting's own «इस वाक्य में क की ध्वनि…», where every क lights at once
+        #   "ध्वनि" -> the crow arrives (and calls) while the sentence stays up; the VO plays on
+        "cues": [{"at": "क", "do": "light"}, {"at": "ध्वनि", "do": "crow"}],
         "picture_img": "obj_kauaa",
         "picture_emoji": EMOJI["obj_kauaa"],
         "picture_sfx": "sfx_kanv",
