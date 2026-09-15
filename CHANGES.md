@@ -465,5 +465,6 @@ The game was left exactly as the deck specified on all of these.
 | 8 object pictures (5 new, 3 replacements) | **pending** — emoji fallback renders today |
 | crow `obj_kauaa` | **final** — supplied by the SME, installed r4c |
 | mouse `obj_chuha` | **final** — supplied by the SME, matte-stripped and re-framed, installed r4h |
+| radish `obj_muli` | **final** — supplied by the SME, installed r4l as-is (clean alpha, framing already matched) |
 | `sfx_kanv` crow call | **final** — SME recording, trimmed to one 0.57 s call (r4d) |
 | Everything else (73 clips, 14 pictures, all UI) | final, unchanged, untouched by this round |
