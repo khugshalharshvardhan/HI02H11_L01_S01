@@ -16,6 +16,16 @@
 ### 132 navy px in a 4 px band left of the orange, on चार at 8x. soundWordHTML now covers the bearing.
 ### Final: left band 132 → 0, inside the letter 6 px (the following ा stem, correctly navy), 0 above,
 ### 0 below. **page 3 (T4) + page 11 (G5)**: mouse art replaced with the SME-supplied file. Row 26.
+### r4k — **page 3 (T4)**, and with it pages 5 (T6) and 7 (T2): the picture LABEL marked the whole
+### akshara — चूहा came up with the ू coloured too — because it rendered through aksharaHTML, which
+### wraps the cluster. aksharaHTML's own `bare` flag is not the fix: it splits the span between the
+### consonant and its matra, and Chrome shapes a Devanagari cluster ACROSS inline boundaries and
+### paints it in the opening element's colour. The label now uses the same layered form as the cover
+### and the sentence chips, whose overlay text is the consonant ALONE. Verified on pixels at 6x:
+### चूहा, मूली and पपीता (two प) all mark the bare consonant and leave every matra navy.
+### One behaviour change: the consonant now lights amber ON THE VO CUE rather than arriving already
+### lit, and the scale-pulse is gone — pulsing the overlay alone would scale it off the base and show
+### the navy letter through. Matches the flow the module documents and the no-bounce ask.
 
 **Deck:** `HI02H11_L01_S01_SME_Review_Final_WITH_RECOMMENDATIONS.pptx` — 31 slides, 15 pages carrying asks.
 **Baseline reviewed:** `build/HI02H11_L01_S01.html`, engine `2026.08.04b-r4-unified` — **matches** the
