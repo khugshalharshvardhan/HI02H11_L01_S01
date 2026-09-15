@@ -315,10 +315,17 @@ def build_card():
     # new page 4 (was page 6) — म
     slides.append(teach_sentence(
         "T5", ["मेरे", "मामा", "मीठी", "मलाई", "लाए।"], "vo_line_l3", "म", "vo_snd_m",
+        # [r4j] MATCH THE च PAGE (SME: "page 3 is the same as page 1, match the animation").
+        # Row 33 asks to "highlight only म" in the same breath row 20 asks "only च", but this page
+        # shipped with the WHOLE AKSHARA lit - capture 04 shows मे, मा, मी amber, matra included -
+        # while the च page lights the bare consonant. Same two flags, so the two read alike; the
+        # engine then also drops the green reveal-pulse and the chip lift on the mark beat.
+        mark_bare=True,      # [r4j] bare म, never मे/मा
+        hide_replay=True,    # [r4j] no «फिर सुनो» pill; the Swiftie shoulder chip still replays the line
         seq=[
             {"step": "sentence"},
             {"step": "clear_words"},
-            {"step": "pause", "ms": 700},
+            {"step": "pause", "ms": 900},   # [r4j] the च page pause, so both breathe alike
             {"step": "letter", "audio": "vo_snd_m"},
             # "लाए" is listed nowhere here, on purpose: "Do not highlight लाए, because it does not
             # contain the target sound म."
@@ -333,6 +340,12 @@ def build_card():
     # for ("VO 2 plays with प highlighted in each target word -> letter प appears -> VO 3").
     slides.append(teach_sentence(
         "T1", ["पीतल", "के", "पतीले", "में", "पपीता", "पीला-पीला।"], "vo_line_l1", "प", "vo_snd_p",
+        # [r4j] Row 44 asks to "highlight only प" in the same words rows 20/33 ask "only च" /
+        # "only म", and the note below is explicit that only the STEP ORDER differs on this page.
+        # It had shipped with the whole akshara lit (पी - matra included). All three teach
+        # sentences now mark the bare consonant, as the cover does.
+        mark_bare=True,      # [r4j] bare प, never पी
+        hide_replay=True,    # [r4j] no «फिर सुनो» pill, matching pages 2 and 4
         seq=[
             {"step": "sentence"},
             {"step": "clear_words"},

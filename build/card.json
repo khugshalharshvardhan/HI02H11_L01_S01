@@ -209,7 +209,7 @@
           },
           {
             "step": "pause",
-            "ms": 700
+            "ms": 900
           },
           {
             "step": "letter",
@@ -226,8 +226,8 @@
             ]
           }
         ],
-        "mark_bare": false,
-        "hide_replay": false,
+        "mark_bare": true,
+        "hide_replay": true,
         "signal_name": "sentence_sound_first_try"
       }
     },
@@ -338,8 +338,8 @@
             "audio": "vo_t1_explain"
           }
         ],
-        "mark_bare": false,
-        "hide_replay": false,
+        "mark_bare": true,
+        "hide_replay": true,
         "signal_name": "sentence_sound_first_try"
       }
     },
