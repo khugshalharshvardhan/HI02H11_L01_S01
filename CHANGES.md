@@ -48,6 +48,18 @@
 ### Walked on behaviour: prompt -> वाक्य -> च/ल/र one at a time -> wrong ल (red+buzzShake, vo_g3_try,
 ### no hand) -> wrong र (hand on च, च .reveal-hold NOT .correct, vo_g3_reveal) -> tap च (vo_g3_correct).
 ### P4, the other pick-the-sound page, keeps its pill, its shuffle and its `hint` — flags default off.
+### VO-1 — **page 9 (G3)**: the letter options spoke their CARRIER PHRASES — "ल से लट्टू।" and
+### "र से रस्सी।" — where the page asks for the bare sound. vo_snd_l and vo_snd_r are now trimmed
+### to the consonant alone, the same way vo_snd_ch already was: ल 1.77s -> 0.40s, र 1.69s -> 0.38s,
+### against च's 0.38s. Cut points taken from a 20ms energy envelope (ल 0.28-0.68s, र 0.28-0.66s),
+### 12ms fade in / 30ms fade out so the cut cannot click. Verified one utterance per clip.
+### Originals kept at _assets_round4/vo_snd_originals/<id>.carrier.ogg.
+### ⚠ PAGE 13 IS NOW MIXED, and this is the part to decide on. vo_snd_l is shared: it is option ल on
+### page 9 AND on page 13 (P4). Page 13's other two options still speak carriers — "म से मछली।" and
+### "न से नाव।" — so that page now has one bare sound next to two phrases. vo_snd_m, vo_snd_p and
+### vo_snd_n were NOT trimmed: the instruction named page 9 only. Trimming them reaches pages
+### 3,4,5,6,7,8,10,11,12,13. Say the word and it is one run.
+### EAR-CHECK: all three cuts were chosen from energy envelopes, not by ear.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.
