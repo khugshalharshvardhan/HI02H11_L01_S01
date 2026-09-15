@@ -3,20 +3,20 @@
 ### trimmed to one call. Rows 10-14; OPEN-5 closed.
 ### r4e-r4g — **page 2 (T3)**: only च marked (no matra, no overhang, no fringe); फिर सुनो removed;
 ### ✓ badge removed; exactly two clips; the highlight no longer bounces. Rows 20, 21, 23.
-### r4h — **page 2 (T3)**, by Piyush (69519fc): the च overlay is now NESTED inside .sw-text using
+### S01r4h — **page 2 (T3)**, by Piyush (69519fc): the च overlay is now NESTED inside .sw-text using
 ### the cover's own .sound-layered structure, instead of being a sibling positioned by measured
 ### geometry. Root cause named there: an inline span's rect is its FONT box, an absolutely-positioned
 ### box is blockified and sits in a LINE box, and the two differ by the half-leading — ~9 px at 48 px.
 ### Nested, base and overlay share one line box and one baseline, so they register by construction.
 ### (A parallel fix here measured both baselines instead; it is superseded and layerSoundOnChip is
 ### now dead code. Piyush's removes the reason the boxes disagree rather than compensating for it.)
-### r4i — karaoke paces against the whole spoken line, not just the marked words (Piyush, 69519fc).
-### r4j — the nested form still clipped the overlay from the text origin, but च's ink starts 2 px
+### S01r4i — karaoke paces against the whole spoken line, not just the marked words (Piyush, 69519fc).
+### S01r4j — the nested form still clipped the overlay from the text origin, but च's ink starts 2 px
 ### LEFT of it (negative side bearing), so the navy base showed as a nub on the headline's left end:
 ### 132 navy px in a 4 px band left of the orange, on चार at 8x. soundWordHTML now covers the bearing.
 ### Final: left band 132 → 0, inside the letter 6 px (the following ा stem, correctly navy), 0 above,
 ### 0 below. **page 3 (T4) + page 11 (G5)**: mouse art replaced with the SME-supplied file. Row 26.
-### r4k — **page 3 (T4)**, and with it pages 5 (T6) and 7 (T2): the picture LABEL marked the whole
+### S01r4k — **page 3 (T4)**, and with it pages 5 (T6) and 7 (T2): the picture LABEL marked the whole
 ### akshara — चूहा came up with the ू coloured too — because it rendered through aksharaHTML, which
 ### wraps the cluster. aksharaHTML's own `bare` flag is not the fix: it splits the span between the
 ### consonant and its matra, and Chrome shapes a Devanagari cluster ACROSS inline boundaries and
@@ -26,6 +26,28 @@
 ### One behaviour change: the consonant now lights amber ON THE VO CUE rather than arriving already
 ### lit, and the scale-pulse is gone — pulsing the overlay alone would scale it off the base and show
 ### the navy letter through. Matches the flow the module documents and the no-bounce ask.
+
+### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
+### the two series independently reached "r4j" meaning different things (engine: the left
+### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.
+### Asset swaps carry no code tag, so they are ART-n.
+### ART-2 — **page 7 (T2) + pages 8 (G1) and 9 (G2)**: पपीता art replaced with the SME-supplied
+### papaya. Normalised like the mouse, not installed raw: the file carried 10,539 px of pure-red
+### background-removal matte at alpha≤24 reaching the canvas edge, and its subject was cropped
+### almost edge-to-edge (98.2%W/99.0%H) — dropped in as-is it would have rendered ~20% oversized
+### and touching the box edges. Matte stripped, trimmed to true ink, re-padded to the outgoing
+### asset's ink:canvas ratio: 80.8%W/93.4%H, matching it exactly. Left at native resolution on
+### purpose — a straight RGBA downscale blends edge colour toward the transparent pixels beside it
+### and leaves a dark halo (measured: 3,693 new semi-transparent px), and the correct premultiplied
+### resize needs numpy, which this environment lacks. The dist step re-encodes anyway.
+### ART-1 — **page 5 (T6) + page 11 (P1)**: मूली art replaced with the SME-supplied radish, installed
+### as-is (clean alpha, framing already matched the outgoing asset).
+### ⚠ TWO COPIES OF THE RECIPE. `build_skill_HI02H11_L01_S01.py` lives BOTH at the repo root and in
+### the factory's scripts/. Piyush's r4j (mark_bare on T5 and T1) went into the REPO copy; a rebuild
+### run from the FACTORY copy therefore regenerated card.json without it and silently reverted his
+### fix — the recipe said mark_bare=True while the shipped card said false. Caught by diffing the
+### two copies. Before any rebuild, reconcile repo recipe -> factory recipe first; the repo copy is
+### the one collaborators edit.
 
 **Deck:** `HI02H11_L01_S01_SME_Review_Final_WITH_RECOMMENDATIONS.pptx` — 31 slides, 15 pages carrying asks.
 **Baseline reviewed:** `build/HI02H11_L01_S01.html`, engine `2026.08.04b-r4-unified` — **matches** the
@@ -477,5 +499,6 @@ The game was left exactly as the deck specified on all of these.
 | 8 object pictures (5 new, 3 replacements) | **pending** — emoji fallback renders today |
 | crow `obj_kauaa` | **final** — supplied by the SME, installed r4c |
 | mouse `obj_chuha` | **final** — supplied by the SME, matte-stripped and re-framed, installed r4h |
+| radish `obj_muli` | **final** — supplied by the SME, installed r4l as-is (clean alpha, framing already matched) |
 | `sfx_kanv` crow call | **final** — SME recording, trimmed to one 0.57 s call (r4d) |
 | Everything else (73 clips, 14 pictures, all UI) | final, unchanged, untouched by this round |
