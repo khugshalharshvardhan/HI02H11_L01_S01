@@ -175,14 +175,15 @@ tracker row still resolves; only the **sequence** changed.
 | # | Change (verbatim) | Status | Proof |
 |---|---|---|---|
 | 66 | Instruction text + VO | N/C | already present, unchanged |
-| 67 | Options appear one by one after the instruction VO | N/C | `reveal_seq` already on |
-| 68 | **4 options only** — correct पपीता/पतंग · incorrect केला/आम | ✅ | card-diff items 5→4; पतंग + केला art pending |
-| 69 | Clear image + word label per option | N/C | existing layout |
-| 70 | Correct: positive highlight, stays marked, not re-selectable | N/C | existing |
-| 71 | Wrong: shake + brief red + **do not remove the option** + hint VO | ⚑ | see **OPEN-3** — kept the existing ladder, as item 5 of the same page instructs |
-| 72 | Hint VO "हर शब्द को ध्यान से देखो और सुनो…" | ⏳ | text in card; `vo_g2_hint` re-record pending |
+| 67 | Options appear one by one after the instruction VO | ✅ | **[S01r4p] NEWLY BUILT — the earlier N/C was wrong.** The card has carried `reveal_seq` since round 4, but only `mountTapOptions` and `sortSeqReveal` ever read that flag; TAP_ALL_WITH_SOUND never did, so all four chips were on screen from mount, under the instruction VO. Now the same shape as mountTapOptions: prompt plays to COMPLETION, then each chip fades in speaking its own word, then taps open. Per-clip 4.5s fallback + 16s global net so an ungenerated clip cannot soft-lock. Measured: 2 of 4 chips still hidden at t=120ms. **Also fixes P1 and P7**, which carry the same flag |
+| 68 | **4 options only** — correct पपीता/पतंग · incorrect केला/आम | ✅ | card-diff items 5→4. **[S01r4q] art no longer pending** — the SME supplied a banana/kite/mango sheet; `obj_kela.png` and `obj_patang.png` cut from it at 313×349 to match the existing objects. `obj_aam.png` left alone (it already had real art). Source sheet parked in `_assets_round4/` rather than `assets/Images/`, so it is not shipped |
+| 69 | Clear image + word label per option | ✅ | **[S01r4q]** all four now render real PNGs. पतंग — one of the two CORRECT answers — had been falling back to the 🪁 emoji, and केला to 🍌 |
+| 70 | Correct: positive highlight, stays marked, not re-selectable | ✅ | green card + ✓ badge, `.got` persists, and the handler returns early on an already-got chip — all pre-existing. **[S01r4p]** adds the deck's "small sparkle/tick animation" (the ✓ was STATIC). **[S01r4q]** the tick was then called out as "does not look good": a bare 40px green glyph on the corner with no ground of its own, sitting ON the picture. Now a filled green disc, white tick, white ring, hung just outside the corner |
+| 71 | Wrong: shake + brief red + **do not remove the option** + hint VO | ✅ | shake + red were already there. **[S01r4q] the hint half is now RULED** — the SME asked to "play only this Hint VO", so a wrong tap plays the slide's own `hint` clip and nothing else: not the `try_again` rung the ladder used to open with, and not the tapped word's own clip either. `wrongClip` stays as the fallback for any slide with no hint authored. Lock-on-2nd-wrong still open, see **OPEN-3** |
+| 72 | Hint VO "हर शब्द को ध्यान से देखो और सुनो…" | ⏳ | text in card; **[S01r4q] it is now the ONLY clip a wrong tap plays**. `vo_g2_hint.ogg` exists; re-record pending |
 | 73 | "Keep the current hint logic… do not introduce a new hint flow." | N/C | untouched |
-| 74 | Hand nudge on a remaining correct option after repeated wrongs; no auto-select | ✅ | **newly built** — this mechanic had no hand at all. `behaviour`: appears after 2 wrongs, lands on a correct card, does not select it |
+| 74 | Hand nudge on a remaining correct option after repeated wrongs; no auto-select | ✅ | **newly built** — this mechanic had no hand at all: appears after 2 wrongs, lands on a correct card, does not select it. **Re-checked r4q**: `HAND_PHASES` = tutorial+guided and this page is guided so it fires; `.nudge-hand` runs `nudgeMove 1s ease-in-out infinite`, the gentle pulse the deck asks for; it only points — the chip's own onclick is untouched |
+| 75 | **SME r4q** — "remove 0/2" | ✅ | the `.tap-all-count` readout is off the screen; `found` and `need` still drive completion and the प badge keeps the row. Applies to the whole mechanic, so **P1 and P7 lose their counters too** |
 
 ## K · New page 10 (was page 10 · G3) · pick the repeated sound — च — `capture 10`
 
@@ -359,10 +360,13 @@ Not fixed, because they are not this run's: everything under Observations.
   `_assets_round4/GENERATE_ASSETS.md` is the runbook, `regen_ids.txt` the exact scope.
 - **OPEN-2 · The deck has no page-14 slide.** `01_CHANGE_LIST.md` carries one; every ask in it is
   "keep", and the slide is byte-identical. Confirm nothing was lost in transcription.
-- **OPEN-3 · Page 9 is internally inconsistent.** Item 4 says "Do not remove the option"; item 5 says
-  "keep the current hint logic… do not introduce a completely new hint flow" — and the current logic
-  greys-and-locks a card on the **2nd** wrong tap. Followed item 5. The option is never removed from
-  the screen, only locked. One ruling settles it.
+- **OPEN-3 · Page 9 — HALF RULED (r4q).** Item 4 said "Do not remove the option" while item 5 said
+  "keep the current hint logic… do not introduce a completely new hint flow".
+  **Settled:** the SME has since asked to "play only this Hint VO", so the ladder no longer opens with
+  `try_again` — a wrong tap plays `vo_g2_hint` and nothing else.
+  **Still open:** the card is still greyed-and-locked on the **2nd** wrong tap. It is never removed
+  from the screen, only locked, which is why this was read as satisfying item 4 — but if "do not
+  remove" was meant as "stays tappable forever", that lock has to go. One ruling settles it.
 - **OPEN-4 · Register clash on page 8.** The balloon VO is **aap** ("टैप कीजिए", "ध्यान से सुनिए");
   every other line in the lesson is **tum**. Deck wording kept verbatim, as agreed — but the lesson now
   changes register on that one page.

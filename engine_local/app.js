@@ -5120,9 +5120,9 @@ const SlideModules = {
       const badge = document.createElement("div"); badge.className = "tap-all-sound"; badge.style.cursor = "pointer";
       badge.innerHTML = `<span class="ink-glyph">${d.target_sound || ""}</span>`;
       badge.onclick = ()=>{ state.audioReplays++; play(audioFor(slide, "target") || null); };
-      const counter = document.createElement("div"); counter.className = "tap-all-count";
-      const setCount = ()=>{ counter.innerHTML = `<span class="c-found">${found}</span> / ${need}`; };
-      head.appendChild(badge); head.appendChild(counter);
+      /* [S01r4q] SME: "remove 0/2". The running tally is off the screen; `found` and `need` still
+         drive completion, they just no longer have a readout. The प badge keeps the row. */
+      head.appendChild(badge);
       const strip = document.createElement("div"); strip.className = "tap-all-strip";
       const chips = [];
       items.forEach(it => {
@@ -5133,7 +5133,7 @@ const SlideModules = {
           if(state.locked || chip.classList.contains("got") || chip.classList.contains("nope")) return;
           const after = (cb)=>{ if(src) play(src, cb); else cb(); };
           if(it.has === true){
-            chip.classList.add("got"); sfxCorrect(); found++; setCount();
+            chip.classList.add("got"); sfxCorrect(); found++;
             SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, word: it.word_hi });
             after(()=>{
               if(found >= need){
@@ -5165,19 +5165,23 @@ const SlideModules = {
                that did not exist here. handOnAnswer self-gates to tutorial/guided, so this lands on
                page 9 (guided) and stays absent in practice, per the round-3 no-hand-in-practice rule.
                It only points: the chip's own onclick is untouched, so the child still taps it. */
-            after(()=> play(wrongClip(slide), ()=>{
+            /* [S01r4q] SME: "play only this Hint VO" - the slide's own `hint` clip (vo_g2_hint,
+               "हर शब्द को ध्यान से देखो और सुनो..."), NOT the vo_g2_try rung the ladder used to open with,
+               and not the tapped word's own clip either: the deck's wrong-tap flow is shake -> red ->
+               hint -> retry, with no word in it. Reading it off the slide means P1/P7 get their own.
+               wrongClip stays as the fallback for any slide that has no hint clip authored. */
+            play(audioFor(slide, "hint") || wrongClip(slide), ()=>{
               if(state.attempts < 2 || state.locked) return;
               if(CARD.slides[state.idx] !== slide) return;
               const t = chips.find((c, ix) => items[ix] && items[ix].has === true && !c.classList.contains("got"));
               if(t){ handOnAnswer(t, slide); state.nudgeUsed = true;
                      state.scaffoldLevel = Math.max(state.scaffoldLevel, 3);
                      SwiftPAL.emit("nudge_invoked", { slide_id: slide.id, phase: slide.phase }); }
-            }));   /* [28i] graded ladder */
+            });
           }
         };
         strip.appendChild(chip); chips.push(chip);
       });
-      setCount();
       wrap.appendChild(head); wrap.appendChild(strip);
       host.appendChild(wrap);
       $("hintBtn").onclick = ()=>{ if(state.locked) return; state.hintUsed = true;
@@ -5185,6 +5189,42 @@ const SlideModules = {
         play(audioFor(slide, "hint") || audioFor(slide, "try_again") || null, ()=>{}); };
       $("navBtn").style.display = "none"; setNavActive(false);
       state.replayAudio = ()=> play(audioFor(slide, "prompt") || null, ()=>{});
+
+      /* [S01r4p] OPTION ENTRY - "after the instruction VO finishes, show the options one by one".
+         The card has carried `reveal_seq` since round 4 and CHANGES row 67 recorded it as already
+         satisfied, but ONLY mountTapOptions and sortSeqReveal ever read that flag: this mechanic
+         never did, so all four chips were on screen from mount, underneath the instruction VO.
+         Deliberately the SAME shape as mountTapOptions' reveal rather than a second one - prompt
+         plays to COMPLETION, then each chip fades in speaking its own word, then taps open. Every
+         step carries a per-clip fallback and there is a global net, so a missing or blocked clip can
+         never soft-lock the page; this deck still has ungenerated clips, so that matters.
+         ownsAudio is read by mountSlide AFTER mount returns, so setting it here is what stops
+         autoPlayChain from starting a second, overlapping copy of the prompt. */
+      if(d.reveal_seq){
+        chips.forEach(c => c.classList.add("tap-seq-hidden"));
+        state.locked = true; state.ownsAudio = true; state.revealing = true;
+        let revDone = false;
+        const enableAll = ()=>{ if(revDone) return; revDone = true;
+          state.locked = false; state.revealing = false; state.ownsAudio = false;
+          chips.forEach(c => c.classList.remove("tap-seq-hidden")); };
+        const sayThen = (src, next)=>{
+          if(revDone || CARD.slides[state.idx] !== slide) return;
+          let advanced = false, fb = null;
+          const go = ()=>{ if(advanced || revDone) return; advanced = true; if(fb) clearTimeout(fb); next(); };
+          play(src || null, go);
+          fb = setTimeout(go, 4500);                      // never stall on one clip
+        };
+        const revStep = (i)=>{
+          if(revDone || CARD.slides[state.idx] !== slide) return;
+          if(i >= chips.length){ enableAll(); return; }
+          chips[i].classList.remove("tap-seq-hidden");
+          const aid = items[i] && items[i].audio;
+          sayThen(aid ? ("assets/Audio/" + aid + "." + AUDIO_EXT) : null,
+                  ()=> setTimeout(()=> revStep(i + 1), 180));
+        };
+        sayThen(audioFor(slide, "prompt") || null, ()=> revStep(0));
+        setTimeout(()=>{ if(CARD.slides[state.idx] === slide) enableAll(); }, 16000);   // global net
+      }
     }
   },
 
