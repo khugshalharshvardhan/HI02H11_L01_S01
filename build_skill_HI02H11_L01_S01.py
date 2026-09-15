@@ -256,12 +256,15 @@ def tap_all(sid, phase, sound, prompt, items, clips):
     }
 
 
-def sort_two(sid, phase, prompt, bins, items, clips, signal):
+def sort_two(sid, phase, prompt, bins, items, clips, signal, drag_demo=False):
     return {
         "id": sid, "phase": phase, "eis": "enactive", "type": "SORT_VACHAN",
         "prompt_hi": prompt,
         "audio": clips,
-        "data": {"bins": bins, "items": items, "reveal_seq": True, "signal_name": signal},
+        # [r4v] drag_demo: show the hand travelling from a tile to the middle of the bins row
+        # once, so the child sees HOW to drag. Points between the baskets, never at the right one.
+        "data": {"bins": bins, "items": items, "reveal_seq": True, "signal_name": signal,
+                 "drag_demo": drag_demo},
     }
 
 
@@ -440,7 +443,8 @@ def build_card():
          _item("चाँदी", "obj_chandi", "vo_w_chandi", gender="P")],
         {"prompt": "vo_g5_prompt", "target": "vo_snd_p", "hint": "vo_g5_hint",
          "try_again": "vo_g5_try", "correct": "vo_g5_correct"},
-        "sound_sort_first_try"))
+        "sound_sort_first_try",
+        drag_demo=True))   # [r4v] page 10 only - the SME asked for a how-to-drag demo here
 
     # ══ PRACTICE ═══════════════════════════════════════════════════════════════════════
     # new page 12 (was page 13) — 5 options down to 4; माला leaves this page

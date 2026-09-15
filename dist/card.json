@@ -611,7 +611,8 @@
           }
         ],
         "reveal_seq": true,
-        "signal_name": "sound_sort_first_try"
+        "signal_name": "sound_sort_first_try",
+        "drag_demo": true
       }
     },
     {
@@ -719,7 +720,8 @@
           }
         ],
         "reveal_seq": true,
-        "signal_name": "sound_position_first_try"
+        "signal_name": "sound_position_first_try",
+        "drag_demo": false
       }
     },
     {

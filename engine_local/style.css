@@ -228,6 +228,28 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .sort-bin.dd-zone .bin-title{ height:auto; min-height:56px; width:100%; box-sizing:border-box;
                               padding:6px 10px; line-height:1.18; }
 .sort-bin.dd-zone .bin-items{ width:100%; min-height:128px; }
+/* [S01r4x] BASKET LABEL AS A PILL ON THE TOP EDGE (SME sketch): the label straddles the dashed
+   border like a fieldset legend instead of sitting as a block inside the box. Taken out of the flex
+   flow and centred on the top border - .dd-zone already sets position:relative, so this needs no new
+   stacking context - which hands the whole inside of the basket to .bin-items. padding-top keeps a
+   dropped picture from sliding under the pill. */
+.sort-bin.dd-zone{ padding-top:30px; overflow:visible; }
+/* [S01r4z] A DROPPED PICTURE CENTRES ON BOTH AXES.
+   X was already centred - .bin-items has justify-content:center. Y was not: it carried
+   align-content:flex-start and no height of its own beyond min-height:128px, so inside a 252px
+   basket the row was pinned to the TOP with all the slack hanging below it. It now grows to fill
+   whatever height the basket has left and centres its line, and the basket's vertical padding is
+   made symmetric so "centre of the content box" is also the centre of the dashed box.
+   30px top/bottom still clears the label pill, which hangs about 20px down into the box: a 124px
+   tile centred in the resulting 186px content area starts ~61px below the box top. */
+.sort-bin.dd-zone{ padding:30px 12px; }
+.sort-bin.dd-zone .bin-items{ flex:1 1 auto; align-content:center; align-items:center; }
+.sort-bin.dd-zone .bin-title{
+  position:absolute; top:0; left:50%; transform:translate(-50%,-50%);
+  width:auto; max-width:calc(100% - 24px); height:auto; min-height:0;
+  padding:5px 20px; border-radius:16px; background:#fff;
+  font-size:26px; line-height:1.15; white-space:nowrap;
+  box-shadow:0 2px 10px rgba(11,61,140,.12); }
 .sort-tray{display:flex;gap:18px;justify-content:center;flex-wrap:nowrap;}
 /* [24a A5] tray ghost-slot: a placed sort card leaves a faint same-size dashed placeholder at its
    exact tray origin (holds the flex slot so remaining cards don't shift; vachan/gender parity) */
@@ -1124,6 +1146,27 @@ body.tut-page{background:#FFFFFF;}
 .tap-all-item .lbl{font-size:24px;font-weight:800;color:var(--navy);}
 .tap-all-item.got{border-color:var(--correct);background:var(--correct-bg);box-shadow:0 6px 14px rgba(0,177,50,.18);}
 .tap-all-item.got::after{content:"\2713";position:absolute;top:6px;right:10px;font-size:40px;font-weight:900;color:var(--correct);}
+/* [S01r4p/r4q] OPTION ENTRY + the correct-tap reward. RESTORED: a factory rebuild (commit
+   9934644) regenerated app.js/style.css from a copy that never had these, wiping both.
+   The chip hides on the class only, so revealing is just removing it. The base transition has no
+   `opacity` and runs transform at .15s - a snap, not an entrance - so it is restated in full here;
+   .wrong-flash still wins with its transition:none. The tick was a bare 40px glyph on the corner
+   sitting ON the picture with no ground of its own; it is a filled badge now. */
+.tap-all-item{ transition:opacity .34s ease, transform .3s cubic-bezier(.2,.9,.3,1.25),
+               border-color .15s, background .15s, box-shadow .15s; }
+.tap-all-item.tap-seq-hidden{ opacity:0; transform:translateY(16px) scale(.92); pointer-events:none; }
+.tap-all-item.got{ animation:tapGotPop .44s ease-out; }
+.tap-all-item.got::after{ content:"\2713"; position:absolute; top:-13px; right:-13px;
+  width:46px; height:46px; border-radius:50%; box-sizing:border-box;
+  display:flex; align-items:center; justify-content:center;
+  font-size:25px; line-height:1; font-weight:900; color:#fff;
+  background:var(--correct); border:3px solid #fff;
+  box-shadow:0 4px 12px rgba(0,140,40,.38);
+  animation:tapTickIn .44s cubic-bezier(.2,.9,.25,1.5); }
+@keyframes tapGotPop{ 0%{transform:scale(1);} 38%{transform:scale(1.07);} 100%{transform:scale(1);} }
+@keyframes tapTickIn{ 0%{opacity:0;transform:scale(.3) rotate(-20deg);}
+                      60%{opacity:1;transform:scale(1.18) rotate(4deg);}
+                      100%{opacity:1;transform:scale(1) rotate(0);} }
 /* [27a] ✕ dropped (third and last ✕ site) — red ring only, same language as the pick cards. The
    ✓ on .got STAYS: the ruling removed the wrong-mark, not the right-mark, and TAP_ALL needs a
    persistent tick to show which items are already banked. Lock/dim kept, as with .sentence-word. */
