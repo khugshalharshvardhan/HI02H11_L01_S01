@@ -253,6 +253,9 @@ tracker row still resolves; only the **sequence** changed.
 | 52 | Final VO "हमने 'प' की आवाज़ सुनी… जैसे—प से पपीता।" | ⏳ | text in card; `vo_t2_prompt` re-record pending |
 
 ## I · New page 8 (was page 8 · G1) · **NEW BALLOON MECHANIC** — `capture 08`
+| 119 | **SME r5c** — real balloon art, recoloured, element on top | ✅ | the balloon was drawn in CSS (a border-radius blob, a triangle knot, a blurred shine). The SME supplied one yellow balloon, measured at hue **49.3°**, cropped to body+knot (the long ribbon dropped, `.bal-tie` still draws the string) and installed as `assets/UI/balloon.png` 321×420. It rides a `::before` rather than `.bal-body` itself, because the per-balloon colour is a `hue-rotate` and a filter on `.bal-body` would tint the OBJECT PICTURE sitting on it. Rotations are computed from 49.3° to the six palette hues the mechanic already used. First attempt left a coloured RECTANGLE behind each balloon: the `bcol` rules set `background` at (0,3,0) and my reset was (0,2,0) |
+| 120 | **SME r5c** — balloons rise from the bottom of the screen | ✅ | **the old entrance never ran.** `.balloon` carried `animation:balFloat` AND `transition:transform`, and an animation beats a transition on the same property, so `.seq-hidden{transform:translateY(46px)}` was dead code and the balloons only faded in. The float moves to a new `.bal-lift` wrapper and `.balloon` keeps the transform, so the rise works — measured `matrix(0.9,0,0,0.9,0,680)` where it used to compute to the float's own matrix. 680px clears a 600px `overflow:hidden` stage, so they enter from off-screen. `.popped` and `.bal-shake` stop fighting balFloat as a side effect |
+| 121 | **SME r5d** — the balloon page becomes the last page | ✅ | order is now `T3 T4 T5 T6 T1 T2 G2 G3 G5 P1 P2 P4 P7 **G1** P8`, i.e. last activity before the celebration. `phase_distribution` re-derives to 6/3/6. **G1’s phase changes guided→practice** — the phase-transition gate fires on a phase BOUNDARY, so leaving it guided after four practice slides would have replayed the guided interstitial near the end. See **OPEN-16** |
 
 | # | Change (verbatim) | Status | Proof |
 |---|---|---|---|
@@ -331,6 +334,7 @@ tracker row still resolves; only the **sequence** changed.
 | # | Change | Status | Proof |
 |---|---|---|---|
 | 94–98 | Keep the instruction, the two bins, the 4 options, the drag behaviour and the hint logic | N/C | **card-diff reports this slide byte-identical.** Every ask on this page was "keep" |
+| 117 | **SME r5a** — new चंपा and सपना art | ✅ | cut from the SME’s champa/sapna sheet, trimmed to alpha and scaled to a 349px long edge to match the other objects: `obj_champa` 349×266, `obj_sapna` 349×235. Source parked in `_assets_round4/` rather than `assets/Images/`, so it is not shipped. पानी and पायल on this page already carried the r4s art, so all four options now share one illustration style |
 
 > ⚠️ This page has **no slide in the deck** — its entries come from `01_CHANGE_LIST.md` only. All of
 > them are "keep", and nothing changed. See **OPEN-2**.
@@ -343,7 +347,8 @@ tracker row still resolves; only the **sequence** changed.
 | 100 | Keep the instruction + VO | N/C | unchanged |
 | 101 | Keep the sentence visible; **no word-by-word highlighting** | ✅ | no `teach_seq` on this slide — `sweep` shows 0 lit aksharas |
 | 102 | 3 letters म/ल/न one at a time, each speaking; correct = **न** | ✅ | capture 14; `vo_snd_n` authored (new clip, regen pending) |
-| 103 | "Keep the existing hint logic exactly the same." | ✅ | ladder untouched; `vo_p4_reveal` / `vo_p4_correct` re-pointed प→न because they NAME the answer |
+| 103 | "Keep the existing hint logic exactly the same." | ⛑ | `vo_p4_reveal` / `vo_p4_correct` were re-pointed प→न because they NAME the answer. **[r5b] the ladder is no longer untouched**: the `hint` key is dropped so the reveal can reach `vo_p4_reveal`, which it never could while a hint existed — the page had no way to state its own answer. Same call as page 9 (row 72 area); `vo_p4_hint` is now unused. See **OPEN-15** |
+| 118 | **SME r5b** — give page 13 page 9’s treatment | ✅ | the SME: "page 9 and page 13 are almost similar, just content changes". P4 is the same `SENTENCE_SOUND` question as G3 and now carries the same four changes: `hide_replay` (no «फिर से सुनो» pill), `seq_say_whole` (the sentence plays itself before the letters), `fixed_order` (entry order pinned म → ल → न), and **the `hint` key dropped**. That last one was a live defect, not cosmetic: the reveal path speaks `audioFor("hint") || audioFor("reveal")`, so while a hint existed the reveal repeated "शब्द के अंत की आवाज़ नहीं…" and **this page never actually told the child the answer** (`vo_p4_reveal`, "शुरुआत में न की आवाज़ बार-बार आई।", was unreachable). `vo_p4_hint` is retired; `vo_p4_try` already carries the same "you heard the LAST sound" steer |
 
 ## P · New page 15 (was page 19 · P7) · TAP_ALL — च — `capture 15`
 
@@ -533,6 +538,20 @@ Not fixed, because they are not this run's: everything under Observations.
   and every drop is still made by the child; (b) [28f] grants a hand in GUIDED only after 2 failed
   attempts, and this one arrives unearned. It is opt-in per slide (`data.drag_demo`), stops after 3
   passes and on the first press, so reverting is a one-line card change if the SME prefers.
+- **OPEN-15 · Two authored hint clips are now unused.** `vo_g3_hint` (r4p) and `vo_p4_hint` (r5b)
+  were both dropped from their cards so the REVEAL could reach `vo_*_reveal`: the engine speaks
+  `audioFor("hint") || audioFor("reveal") || …` at the reveal, so any authored hint silently
+  swallowed the reveal line and the page could never state its own answer. Both pages now run the
+  deck's two rungs (try_again, then reveal). The clips still exist in `assets/Audio/` and in
+  `audio_text`; if the SME wants a genuine third rung, the fix is in the engine - give the reveal
+  its own lookup instead of sharing the hint one - not in the cards.
+- **OPEN-16 · The balloon page lost its hand nudge when it moved to the end.** Moving it after the
+  practice block meant changing its phase guided→practice, or the phase-transition gate would have
+  replayed the guided interstitial near the end of the lesson. But `HAND_PHASES` is tutorial+guided,
+  so a practice slide earns no hand even after two wrong taps - the earned nudge built for this page
+  in round 4 (row 74) is now unreachable. Three ways out, all one-liners, none of them mine to pick:
+  keep it guided and accept a late interstitial; add practice to HAND_PHASES for this mechanic only;
+  or accept that the last activity before the celebration runs without a hand.
 - **OPEN-12 · The no-bounce treatment is scoped to page 2 only.**
   Pages 4 and 6 still lift the word chip and pulse the mark on their beat, because they mark the whole
   akshara and were not in scope. The CSS keys off `[data-sw-word]`, which only a bare-marking chip

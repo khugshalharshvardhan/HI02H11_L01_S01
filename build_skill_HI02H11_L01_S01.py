@@ -381,29 +381,6 @@ def build_card():
                               "vo_t2_prompt", "vo_w_papita", "vo_snd_p", cue_word="पपीता"))
 
     # ══ GUIDED ═════════════════════════════════════════════════════════════════════════
-    # new page 8 (was page 8) — the हाँ/नहीं check is GONE; balloons replace it.
-    # prompt_hi is empty and stays empty: "Do not show any written instruction on the screen."
-    slides.append({
-        "id": "G1", "phase": "guided", "eis": "iconic", "type": "TAP_BALLOON_SOUND",
-        "prompt_hi": "",
-        "audio": {"prompt": "vo_g1_prompt", "target": "vo_snd_p",
-                  "correct": "vo_g1_correct", "hint": "vo_g1_hint"},
-        "data": {
-            "target_sound": "प",
-            # the deck's own option list, correct and incorrect
-            "items": [
-                _item("पतंग",  "obj_patang",   "vo_w_patang",   has=True),
-                _item("आम",    "obj_aam",      "vo_w_aam",      has=False),
-                _item("पपीता", "obj_papita",   "vo_w_papita",   has=True),
-                _item("केला",  "obj_kela",     "vo_w_kela",     has=False),
-                _item("पत्ता",  "obj_patta",    "vo_w_patta",    has=True),
-                _item("घर",    "obj_ghar",     "vo_w_ghar",     has=False),
-                _item("पानी",  "obj_pani",     "vo_w_pani",     has=True),
-                _item("मछली",  "obj_machhli",  "vo_w_machhli",  has=False),
-            ],
-            "signal_name": "balloon_sound_first_try",
-        },
-    })
     # new page 9 (was page 9) — 4 options: 2 correct, 2 not
     slides.append(tap_all(
         "G2", "guided", "प", VO["vo_g2_prompt"],
@@ -477,8 +454,17 @@ def build_card():
         [{"letter": "म", "audio": "vo_snd_m"},
          {"letter": "ल", "audio": "vo_snd_l"},
          {"letter": "न", "audio": "vo_snd_n"}],
-        {"prompt": "vo_p4_prompt", "target": "vo_snd_n", "hint": "vo_p4_hint",
-         "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct"}))
+        # [r5b] NO `hint` KEY, for the same reason as G3 above: the reveal path speaks
+        #   audioFor("hint") || audioFor("reveal") || ...
+        # so while a hint was authored, the REVEAL never reached vo_p4_reveal
+        # ("शुरुआत में न की आवाज़ बार-बार आई।") - it repeated the hint, so this page never actually
+        # told the child the answer. vo_p4_hint is retired; vo_p4_try already carries the
+        # "you heard the LAST sound, we want the repeated one" steer that it duplicated.
+        {"prompt": "vo_p4_prompt", "target": "vo_snd_n",
+         "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct"},
+        hide_replay=True,      # [r5b] page 9's treatment - no «फिर से सुनो» pill
+        seq_say_whole=True,    # [r5b] ...so the sentence plays itself, before the letters
+        fixed_order=True))     # [r5b] pin the entry order म -> ल -> न
     # new page 15 (was page 19) — 5 options down to 4
     slides.append(tap_all(
         "P7", "practice", "च", VO["vo_p7_prompt"],
@@ -488,6 +474,35 @@ def build_card():
          _item("लाल",   "obj_laal",   "vo_w_laal",   has=False)],
         {"prompt": "vo_p7_prompt", "target": "vo_snd_ch", "hint": "vo_p7_hint",
          "try_again": "vo_p7_try", "reveal": "vo_p7_reveal", "done": "vo_p7_done"}))
+    # [r5d] MOVED TO THE END (SME: "the balloon page should be the last page"). It used to sit at
+    # new page 8, between the teach block and the tap-all. Two things travel with it:
+    #   - phase guided -> practice. The phase-transition gate fires on a phase BOUNDARY, so leaving
+    #     it "guided" after four practice slides would have replayed the guided interstitial near
+    #     the end of the lesson. Monotonic phases keep that gate firing once each.
+    #   - that change also removes its hand nudge: HAND_PHASES is tutorial+guided, so a practice
+    #     slide earns no hand even after 2 wrong taps. Flagged in CHANGES (OPEN-16).
+    # prompt_hi is empty and stays empty: "Do not show any written instruction on the screen."
+    slides.append({
+        "id": "G1", "phase": "practice", "eis": "iconic", "type": "TAP_BALLOON_SOUND",
+        "prompt_hi": "",
+        "audio": {"prompt": "vo_g1_prompt", "target": "vo_snd_p",
+                  "correct": "vo_g1_correct", "hint": "vo_g1_hint"},
+        "data": {
+            "target_sound": "प",
+            # the deck's own option list, correct and incorrect
+            "items": [
+                _item("पतंग",  "obj_patang",   "vo_w_patang",   has=True),
+                _item("आम",    "obj_aam",      "vo_w_aam",      has=False),
+                _item("पपीता", "obj_papita",   "vo_w_papita",   has=True),
+                _item("केला",  "obj_kela",     "vo_w_kela",     has=False),
+                _item("पत्ता",  "obj_patta",    "vo_w_patta",    has=True),
+                _item("घर",    "obj_ghar",     "vo_w_ghar",     has=False),
+                _item("पानी",  "obj_pani",     "vo_w_pani",     has=True),
+                _item("मछली",  "obj_machhli",  "vo_w_machhli",  has=False),
+            ],
+            "signal_name": "balloon_sound_first_try",
+        },
+    })
     # new page 16 (was page 20) — no change requested
     slides.append({
         "id": "P8", "phase": "practice", "eis": "iconic", "type": "CELEBRATION",
