@@ -1855,8 +1855,13 @@ body.is-start .phase-gate{
    lift and no glow here now — the letter turns amber and stays put.
    Scoped by [data-sw-word], which only a bare-marking chip carries, so the akshara pages are
    untouched. */
-.sentence-word[data-sw-word].mark-now{ transform:none; }
-.sentence-word[data-sw-word].mark-now > .sw-lit{ animation:none; }
+.sentence-word.bare-mark.mark-now{ transform:none; }
+.sentence-word.bare-mark.mark-now .sw-lit{ animation:none; }
+/* [S01r4h] The overlay is nested inside .sw-text now (the cover's own structure), so it is no
+   longer a direct child of the chip and the `>` rules above cannot reach it. Same contract as
+   before — invisible while the line is being READ, amber on the explanation beat — new selector. */
+.sentence-word .sw-text.sound-layered .sw-lit{ opacity:0; transition:opacity .22s ease; }
+.sentence-word.marked .sw-text.sound-layered .sw-lit{ opacity:1; }
 .lh-pic{ transition:opacity .42s ease, transform .42s ease; }
 .lh-pic.lh-in{ opacity:1; transform:none; }
 
@@ -3964,7 +3969,12 @@ function demoCountSet(setEl, count, numerals, onDone){   // count the "how many?
 let _inkCtx = null;
 function centerInkGlyph(span){
   if(!span || !span.parentElement) return;
-  const glyph = (span.textContent || "").trim();
+  /* [S01r4h] Read the WORD, not the word plus its overlay. A bare-marking sentence chip now
+     holds the layered form (.sw-base + one .sw-lit per occurrence) inside this very span, so
+     textContent would read "चूहेच" and the width-fit below would shrink the word to buy room for
+     a letter that is painted ON TOP of it and occupies no advance at all. */
+  const _swBase = span.querySelector && span.querySelector(".sw-base");
+  const glyph = ((_swBase ? _swBase.textContent : span.textContent) || "").trim();
   if(!glyph) return;
   const box = span.parentElement;
   const cs = getComputedStyle(span);
@@ -4544,14 +4554,29 @@ function _soundInkBox(target, fontPx){
 function soundWordHTML(word, target, fontPx){
   const esc = (s)=> String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   const hits = _soundOffsets(word, target, fontPx);
-  const inkW = _soundInkW(target, fontPx);
+  const box  = _soundInkBox(target, fontPx);
+  /* [S01r4j] COVER THE LEFT SIDE BEARING. The glyph's ink starts at box.left, which is NEGATIVE for
+     च (-2px at 48px) — the stroke reaches back past the text origin. Clipping from 0 therefore shaved
+     that sliver off the overlay and left the navy base showing through as a nub on the left end of
+     the headline bar: measured 132 navy px in a 4px band left of the orange, on चार at 8x.
+     Shift the box left by the bearing plus a hairline for the base's antialiasing, pad it back by the
+     same amount so the glyph still sits on its own origin, and widen the clip to match. Extending
+     LEFT is safe: the overlay's text is the target letter alone, so the only ink that can be revealed
+     out there is the target's own — never the preceding glyph's. */
+  const lead = Math.max(0, -box.left) + Math.max(0.5, fontPx * 0.02);
+  const w = lead + box.right;
   return '<span class="sw-base">' + esc(word) + '</span>'
     + hits.map(x => '<span class="sw-lit" data-ch="' + esc(target) + '" aria-hidden="true" style="left:'
-        + x.toFixed(2) + 'px;clip-path:inset(-0.5em calc(100% - ' + inkW.toFixed(2) + 'px) -0.5em 0)">'
+        + (x - lead).toFixed(2) + 'px;padding-left:' + lead.toFixed(2)
+        + 'px;clip-path:inset(-0.5em calc(100% - ' + w.toFixed(2) + 'px) -0.5em 0)">'
         + esc(target) + '</span>').join("");
 }
 
-/* Lay the letter-overlay over a sentence chip whose .sw-text has ALREADY been fitted and centred.
+/* [S01r4h] DEAD — no longer called; kept only so the reasoning below stays on the record.
+   Superseded by the nested .sound-layered form (see the SENTENCE_SOUND chip setup). Do NOT rewire
+   this: positioning the overlay against the chip is what put the orange letter ~9px off the navy
+   one, and no amount of offset arithmetic fixes two boxes with different half-leading.
+   Lay the letter-overlay over a sentence chip whose .sw-text has ALREADY been fitted and centred.
    Reads the fitted font and the centring transform off the glyph span and copies both, so the
    overlay tracks whatever centerInkGlyph decided — including its per-word shrink. */
 function layerSoundOnChip(chip){
@@ -4639,7 +4664,12 @@ function layerSoundOnChip(chip){
   });
 }
 function refreshSoundChips(root){
-  (root || document).querySelectorAll(".sentence-word[data-sw-word]").forEach(layerSoundOnChip);
+  /* [S01r4h] The chips are layered in place now, so this is the job refreshSoundWords already
+     does for the landing: re-cut every layered word from its LIVE computed size, after the fit and
+     the centring have run. Kept under its own name because the mount path calls it by that name,
+     and because the root scope matters — an unscoped refreshSoundWords() would also re-cut the
+     landing hero on every slide mount. */
+  refreshSoundWords(root || document);
 }
 
 /* Re-lay every layered word from the LIVE element, and never from an assumed size.
@@ -7882,13 +7912,27 @@ const SlideModules = {
           const t = c.querySelector(".sw-text");
           if(!t) return;
           if(d.mark_bare){
-            /* The overlay must NOT live inside .sw-text. That span is an .ink-glyph, and
-               centerInkGlyph() width-fits it from `span.textContent` — an overlay child makes that
-               read "चूहेच" instead of "चूहे", and the fitter duly shrank the word from 48px to 20px.
-               Measured, and it is why the sentence came out tiny. The overlay is a SIBLING, copying
-               the span's FITTED size and transform, so the fitter sees exactly what it always saw. */
-            c.dataset.swWord = texts[i];
-            c.dataset.swTarget = d.target_sound || "";
+            /* [S01r4h] SAME STRUCTURE AS THE COVER. The overlay now lives INSIDE .sw-text, exactly
+               as the landing hero's .lh-word does, instead of being a sibling positioned by measured
+               geometry.
+               Why the sibling had to go: it was absolutely positioned against the CHIP, from
+               getBoundingClientRect() on .sw-text. An inline span's rect is its FONT BOX, but an
+               absolutely-positioned box is blockified and its text sits in a LINE BOX — so the two
+               differ by the half-leading, (line-height − (ascent+descent))/2. .sentence-word sets
+               line-height:1.1 and Baloo 2's Devanagari font box is ~1.4em, so at 48px the orange
+               letter landed ~9px off the navy one: the doubled glyph in the report. Every earlier
+               round moved that number without removing the reason the two boxes disagree.
+               Nested, the question cannot arise — .sw-base and .sw-lit share one line box and one
+               baseline (top:0), so they register by construction, and because .sound-layered is
+               inline-block centerInkGlyph's translateY now moves BOTH together.
+               centerInkGlyph reads .sw-base, so the width-fit still sees "चूहे", not "चूहेच". */
+            t.classList.add("sound-layered");
+            t.dataset.swWord = texts[i];
+            t.dataset.swTarget = d.target_sound || "";
+            t.innerHTML = soundWordHTML(texts[i], d.target_sound,
+                                        parseFloat(getComputedStyle(t).fontSize) || 48);
+            /* the chip-level hook the CSS used to get from data-sw-word, which now sits on .sw-text */
+            c.classList.add("bare-mark");
           } else {
             t.innerHTML = aksharaHTML(texts[i], d.target_sound);
           }
@@ -7944,16 +7988,61 @@ const SlideModules = {
             const listed = st.words || texts.filter(t => wordHasSound(t, d.target_sound));
             const order  = listed.map(t => texts.indexOf(t)).filter(k => k >= 0);
             const a = st.audio ? ("assets/Audio/" + st.audio + "." + AUDIO_EXT) : null;
-            karaokePlay(a, listed, (k)=>{
+            /* `lift` is the travelling emphasis (.mark-now); `n` is how many listed words have been
+               reached. Every reached word KEEPS its mark - the ask is that the child sees the same
+               sound recurring across the whole line, not one lamp moving along it. */
+            const markUpTo = (n, lift)=>{
               chips.forEach(c => c.classList.remove("mark-now"));
-              const idx = order[Math.min(k, order.length - 1)];
-              if(idx >= 0 && chips[idx]) chips[idx].classList.add("mark-now");
-              /* every listed word KEEPS its mark once reached - the ask is that the child sees the
-                 same sound recurring across the whole line, not one lamp moving along it */
-              for(let j = 0; j <= k && j < order.length; j++){
-                if(chips[order[j]]) chips[order[j]].classList.add("marked");
+              const j = Math.min(Math.max(n, 0), order.length - 1);
+              if(lift && chips[order[j]]) chips[order[j]].classList.add("mark-now");
+              for(let q = 0; q <= j; q++){
+                if(chips[order[q]]) chips[order[q]].classList.add("marked");
               }
-            }, ()=>{ chips.forEach(c => c.classList.remove("mark-now")); next(); });
+            };
+            /* [S01r4i] PACE AGAINST THE WHOLE SPOKEN LINE, NOT JUST THE WORDS BEING MARKED.
+               karaokePlay spreads the tokens it is given across the FULL duration of the clip. Handed
+               only the four listed words, it therefore stretched them over a clip that says
+               "चूहे, चार, चने, चबाए—इन सब शब्दों में च की आवाज़ बार-बार आई।" - the four words are spoken in
+               roughly its first third and the rest names none of them. चबाए duly lit at ~63% of
+               the clip, half a sentence after the voice had said it.
+               The landing hero already had the answer: tokenise the SPOKEN SCRIPT from
+               CARD.assets.audio_text, find where each shown word falls in it, and let karaokePlay
+               run the whole token list. Proportional to the real script, so the tail carries its own
+               weight instead of being handed to the last word. Same approach, same data, and no
+               forced aligner in this toolchain either way.
+               Only engages when the script is LONGER than the words being marked (T3, T5). T1's
+               vo_t1_words is exactly its four words, so it keeps the original pacing untouched. */
+            const line = (st.audio && CARD.assets && CARD.assets.audio_text &&
+                          CARD.assets.audio_text[st.audio]) || "";
+            const toks = line ? line.split(/\s+/).filter(Boolean) : [];
+            if(toks.length > listed.length){
+              /* Trailing danda / comma / dash differ between the chip and the script - the chip reads
+                 "चबाए।" while the script runs it into "चबाए—इन" - so compare on the bare word. */
+              const bare = (s)=> String(s).replace(/[।॥,.!?—–-]+$/g, "");
+              const findTok = (needle, start)=>{
+                const nb = bare(needle);
+                for(let j = start; j < toks.length; j++) if(bare(toks[j]) === nb) return j;
+                for(let j = start; j < toks.length; j++) if(toks[j].indexOf(nb) >= 0) return j;
+                return -1;
+              };
+              const at = []; let from = 0;
+              listed.forEach(w => {
+                let k = findTok(w, from);
+                if(k < 0) k = Math.min(from, toks.length - 1);   // unmatched: keep the reading order
+                at.push(k); from = k + 1;
+              });
+              const last = at[at.length - 1];
+              karaokePlay(a, toks, (k)=>{
+                let n = -1;
+                for(let j = 0; j < at.length; j++) if(k >= at[j]) n = j;
+                /* past the last named word the voice has moved on to the explanation, so drop the
+                   travelling emphasis - the marks themselves stay lit for the rest of the clip */
+                if(n >= 0) markUpTo(n, k <= last);
+              }, ()=>{ chips.forEach(c => c.classList.remove("mark-now")); next(); });
+              return;
+            }
+            karaokePlay(a, listed, (k)=> markUpTo(k, true),
+                        ()=>{ chips.forEach(c => c.classList.remove("mark-now")); next(); });
             return;
           }
           /* "say" (and any unknown step) = just speak it */

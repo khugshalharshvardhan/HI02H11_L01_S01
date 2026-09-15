@@ -3,11 +3,19 @@
 ### trimmed to one call. Rows 10-14; OPEN-5 closed.
 ### r4e-r4g — **page 2 (T3)**: only च marked (no matra, no overhang, no fringe); फिर सुनो removed;
 ### ✓ badge removed; exactly two clips; the highlight no longer bounces. Rows 20, 21, 23.
-### r4h — **page 2 (T3)**: the च highlight sat ~12 px high because the overlay was aligned by its
-### TOP, not its BASELINE — the base .sw-text box is 76.8 px tall against the overlay's 52.8 px, so
-### matching tops misaligned the baselines and left the bottom of the च navy (the "cut in half /
-### still overlapping" report). Both baselines are now measured. Navy inside the letter 404 → 21 px.
-### **page 3 (T4) + page 11 (G5)**: mouse art replaced with the SME-supplied file. Row 26.
+### r4h — **page 2 (T3)**, by Piyush (69519fc): the च overlay is now NESTED inside .sw-text using
+### the cover's own .sound-layered structure, instead of being a sibling positioned by measured
+### geometry. Root cause named there: an inline span's rect is its FONT box, an absolutely-positioned
+### box is blockified and sits in a LINE box, and the two differ by the half-leading — ~9 px at 48 px.
+### Nested, base and overlay share one line box and one baseline, so they register by construction.
+### (A parallel fix here measured both baselines instead; it is superseded and layerSoundOnChip is
+### now dead code. Piyush's removes the reason the boxes disagree rather than compensating for it.)
+### r4i — karaoke paces against the whole spoken line, not just the marked words (Piyush, 69519fc).
+### r4j — the nested form still clipped the overlay from the text origin, but च's ink starts 2 px
+### LEFT of it (negative side bearing), so the navy base showed as a nub on the headline's left end:
+### 132 navy px in a 4 px band left of the orange, on चार at 8x. soundWordHTML now covers the bearing.
+### Final: left band 132 → 0, inside the letter 6 px (the following ा stem, correctly navy), 0 above,
+### 0 below. **page 3 (T4) + page 11 (G5)**: mouse art replaced with the SME-supplied file. Row 26.
 
 **Deck:** `HI02H11_L01_S01_SME_Review_Final_WITH_RECOMMENDATIONS.pptx` — 31 slides, 15 pages carrying asks.
 **Baseline reviewed:** `build/HI02H11_L01_S01.html`, engine `2026.08.04b-r4-unified` — **matches** the
