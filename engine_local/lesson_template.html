@@ -4440,9 +4440,7 @@ function karaokePlay(src, tokens, apply, onDone){
   const tot = w.reduce((a, b) => a + b, 0) || 1;
   const FALLBACK_MS = 420 * tot;          /* ~one akshara-beat per 420ms when we cannot measure */
   const t0 = performance.now();
-  let raf = 0, cur = -2, ended = false, finished = false;
-  const stop = ()=>{ if(raf) cancelAnimationFrame(raf); raf = 0; };
-  const finish = ()=>{ if(finished) return; finished = true; stop(); if(onDone) onDone(); };
+  let raf = 0, cur = -2;
   const tick = ()=>{
     const a = currentAudio;
     const dur = (a && isFinite(a.duration) && a.duration > 0) ? a.duration * 1000 : FALLBACK_MS;
@@ -4451,22 +4449,10 @@ function karaokePlay(src, tokens, apply, onDone){
     let acc = 0, k = 0;
     for(; k < w.length - 1; k++){ acc += w[k] / tot; if(frac < acc) break; }
     if(k !== cur){ cur = k; apply(k); }
-    /* [S01r4m] A CLIP THAT NEVER PLAYED MUST NOT TRUNCATE THE WALK.
-       play() reports "ended" 1.2s after an onerror, so a MISSING file ended this ticker while it was
-       still on token 0 - and the caller's onDone ran, moving the flow on. Measured on the pi page:
-       vo_t1_words.ogg does not exist yet (CHANGES row 46 is still generation-pending), so the mark
-       beat lit ONLY the first word and left the other three navy. Same trap for an autoplay refusal,
-       which also ends instantly and on every page's first beat.
-       So "the clip ended" is no longer sufficient to stop: the walk also has to have REACHED the last
-       token. With no audio, currentAudio is null and the tick already falls back to the synthetic
-       420ms-per-akshara timeline, so the marking still reads - silently, but complete. When the clip
-       DOES play, frac is ~1 by the time it ends, cur is already the last token, and this finishes
-       exactly as before. */
-    if(ended && cur >= w.length - 1){ finish(); return; }
     raf = requestAnimationFrame(tick);
   };
-  play(src || null, ()=>{ ended = true;
-    if(!tokens || !tokens.length || cur >= w.length - 1) finish(); });
+  const stop = ()=>{ if(raf) cancelAnimationFrame(raf); raf = 0; };
+  play(src || null, ()=>{ stop(); if(onDone) onDone(); });
   if(tokens && tokens.length) raf = requestAnimationFrame(tick);
   return stop;
 }
