@@ -299,7 +299,8 @@ tracker row still resolves; only the **sequence** changed.
 | 100 | Keep the instruction + VO | N/C | unchanged |
 | 101 | Keep the sentence visible; **no word-by-word highlighting** | ✅ | no `teach_seq` on this slide — `sweep` shows 0 lit aksharas |
 | 102 | 3 letters म/ल/न one at a time, each speaking; correct = **न** | ✅ | capture 14; `vo_snd_n` authored (new clip, regen pending) |
-| 103 | "Keep the existing hint logic exactly the same." | ✅ | ladder untouched; `vo_p4_reveal` / `vo_p4_correct` re-pointed प→न because they NAME the answer |
+| 103 | "Keep the existing hint logic exactly the same." | ⛑ | `vo_p4_reveal` / `vo_p4_correct` were re-pointed प→न because they NAME the answer. **[r5b] the ladder is no longer untouched**: the `hint` key is dropped so the reveal can reach `vo_p4_reveal`, which it never could while a hint existed — the page had no way to state its own answer. Same call as page 9 (row 72 area); `vo_p4_hint` is now unused. See **OPEN-15** |
+| 118 | **SME r5b** — give page 13 page 9’s treatment | ✅ | the SME: "page 9 and page 13 are almost similar, just content changes". P4 is the same `SENTENCE_SOUND` question as G3 and now carries the same four changes: `hide_replay` (no «फिर से सुनो» pill), `seq_say_whole` (the sentence plays itself before the letters), `fixed_order` (entry order pinned म → ल → न), and **the `hint` key dropped**. That last one was a live defect, not cosmetic: the reveal path speaks `audioFor("hint") || audioFor("reveal")`, so while a hint existed the reveal repeated "शब्द के अंत की आवाज़ नहीं…" and **this page never actually told the child the answer** (`vo_p4_reveal`, "शुरुआत में न की आवाज़ बार-बार आई।", was unreachable). `vo_p4_hint` is retired; `vo_p4_try` already carries the same "you heard the LAST sound" steer |
 
 ## P · New page 15 (was page 19 · P7) · TAP_ALL — च — `capture 15`
 
@@ -489,6 +490,13 @@ Not fixed, because they are not this run's: everything under Observations.
   and every drop is still made by the child; (b) [28f] grants a hand in GUIDED only after 2 failed
   attempts, and this one arrives unearned. It is opt-in per slide (`data.drag_demo`), stops after 3
   passes and on the first press, so reverting is a one-line card change if the SME prefers.
+- **OPEN-15 · Two authored hint clips are now unused.** `vo_g3_hint` (r4p) and `vo_p4_hint` (r5b)
+  were both dropped from their cards so the REVEAL could reach `vo_*_reveal`: the engine speaks
+  `audioFor("hint") || audioFor("reveal") || …` at the reveal, so any authored hint silently
+  swallowed the reveal line and the page could never state its own answer. Both pages now run the
+  deck's two rungs (try_again, then reveal). The clips still exist in `assets/Audio/` and in
+  `audio_text`; if the SME wants a genuine third rung, the fix is in the engine - give the reveal
+  its own lookup instead of sharing the hint one - not in the cards.
 - **OPEN-12 · The no-bounce treatment is scoped to page 2 only.**
   Pages 4 and 6 still lift the word chip and pulse the mark on their beat, because they mark the whole
   akshara and were not in scope. The CSS keys off `[data-sw-word]`, which only a bare-marking chip

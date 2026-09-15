@@ -733,7 +733,6 @@
       "audio": {
         "prompt": "vo_p4_prompt",
         "target": "vo_snd_n",
-        "hint": "vo_p4_hint",
         "try_again": "vo_p4_try",
         "reveal": "vo_p4_reveal",
         "correct": "vo_p4_correct"
@@ -771,9 +770,9 @@
         ],
         "signal_name": "sentence_sound_first_try",
         "reveal_seq": true,
-        "hide_replay": false,
-        "seq_say_whole": false,
-        "fixed_order": false
+        "hide_replay": true,
+        "seq_say_whole": true,
+        "fixed_order": true
       }
     },
     {

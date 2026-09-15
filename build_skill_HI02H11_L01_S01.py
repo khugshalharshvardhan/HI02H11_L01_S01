@@ -477,8 +477,17 @@ def build_card():
         [{"letter": "म", "audio": "vo_snd_m"},
          {"letter": "ल", "audio": "vo_snd_l"},
          {"letter": "न", "audio": "vo_snd_n"}],
-        {"prompt": "vo_p4_prompt", "target": "vo_snd_n", "hint": "vo_p4_hint",
-         "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct"}))
+        # [r5b] NO `hint` KEY, for the same reason as G3 above: the reveal path speaks
+        #   audioFor("hint") || audioFor("reveal") || ...
+        # so while a hint was authored, the REVEAL never reached vo_p4_reveal
+        # ("शुरुआत में न की आवाज़ बार-बार आई।") - it repeated the hint, so this page never actually
+        # told the child the answer. vo_p4_hint is retired; vo_p4_try already carries the
+        # "you heard the LAST sound, we want the repeated one" steer that it duplicated.
+        {"prompt": "vo_p4_prompt", "target": "vo_snd_n",
+         "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct"},
+        hide_replay=True,      # [r5b] page 9's treatment - no «फिर से सुनो» pill
+        seq_say_whole=True,    # [r5b] ...so the sentence plays itself, before the letters
+        fixed_order=True))     # [r5b] pin the entry order म -> ल -> न
     # new page 15 (was page 19) — 5 options down to 4
     slides.append(tap_all(
         "P7", "practice", "च", VO["vo_p7_prompt"],
