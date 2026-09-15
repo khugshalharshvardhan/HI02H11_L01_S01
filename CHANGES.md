@@ -27,6 +27,15 @@
 ### lit, and the scale-pulse is gone — pulsing the overlay alone would scale it off the base and show
 ### the navy letter through. Matches the flow the module documents and the no-bounce ask.
 
+### r4l — **page 5 (T6) + page 11 (P1)**: मूली art replaced with the SME-supplied radish, installed
+### as-is (clean alpha, framing already matched the outgoing asset).
+### ⚠ TWO COPIES OF THE RECIPE. `build_skill_HI02H11_L01_S01.py` lives BOTH at the repo root and in
+### the factory's scripts/. Piyush's r4j (mark_bare on T5 and T1) went into the REPO copy; a rebuild
+### run from the FACTORY copy therefore regenerated card.json without it and silently reverted his
+### fix — the recipe said mark_bare=True while the shipped card said false. Caught by diffing the
+### two copies. Before any rebuild, reconcile repo recipe -> factory recipe first; the repo copy is
+### the one collaborators edit.
+
 **Deck:** `HI02H11_L01_S01_SME_Review_Final_WITH_RECOMMENDATIONS.pptx` — 31 slides, 15 pages carrying asks.
 **Baseline reviewed:** `build/HI02H11_L01_S01.html`, engine `2026.08.04b-r4-unified` — **matches** the
 factory engine, so the deck reviewed the build we hold. Route: REVIEW (current engine, contract-shaped).
