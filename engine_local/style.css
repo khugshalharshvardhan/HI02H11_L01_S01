@@ -217,39 +217,6 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .sort-bin.fem .bin-title{color:#5B3FB0;}
 .sort-bin.hover{box-shadow:0 0 0 7px rgba(56,106,246,.15);}
 .sort-bin .bin-items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-content:flex-start;}
-/* [S01r4t] THE BASKET CARRIES BOTH .sort-bin AND .dd-zone - dd-zone is the drop-detection hook the
-   module adds - and `.dd-zone{width:150px;height:150px}` is declared LATER at equal specificity, so
-   it silently won. Measured: a 150px basket against a 116px tile. That is why the label wrapped to
-   three lines and overflowed its fixed 56px title box (scrollHeight 100 vs clientHeight 56), and why
-   two pictures could never sit side by side in one basket. Sized on the COMBINED selector so it
-   beats .dd-zone without touching the drop hook. .bin-items had collapsed to 0x0 and now reserves a
-   real row: 2 x 116px tile + 8px gap fits inside the padding with room to spare. */
-.sort-bin.dd-zone{ width:320px; height:auto; min-height:252px; justify-content:flex-start; }
-.sort-bin.dd-zone .bin-title{ height:auto; min-height:56px; width:100%; box-sizing:border-box;
-                              padding:6px 10px; line-height:1.18; }
-.sort-bin.dd-zone .bin-items{ width:100%; min-height:128px; }
-/* [S01r4x] BASKET LABEL AS A PILL ON THE TOP EDGE (SME sketch): the label straddles the dashed
-   border like a fieldset legend instead of sitting as a block inside the box. Taken out of the flex
-   flow and centred on the top border - .dd-zone already sets position:relative, so this needs no new
-   stacking context - which hands the whole inside of the basket to .bin-items. padding-top keeps a
-   dropped picture from sliding under the pill. */
-.sort-bin.dd-zone{ padding-top:30px; overflow:visible; }
-/* [S01r4z] A DROPPED PICTURE CENTRES ON BOTH AXES.
-   X was already centred - .bin-items has justify-content:center. Y was not: it carried
-   align-content:flex-start and no height of its own beyond min-height:128px, so inside a 252px
-   basket the row was pinned to the TOP with all the slack hanging below it. It now grows to fill
-   whatever height the basket has left and centres its line, and the basket's vertical padding is
-   made symmetric so "centre of the content box" is also the centre of the dashed box.
-   30px top/bottom still clears the label pill, which hangs about 20px down into the box: a 124px
-   tile centred in the resulting 186px content area starts ~61px below the box top. */
-.sort-bin.dd-zone{ padding:30px 12px; }
-.sort-bin.dd-zone .bin-items{ flex:1 1 auto; align-content:center; align-items:center; }
-.sort-bin.dd-zone .bin-title{
-  position:absolute; top:0; left:50%; transform:translate(-50%,-50%);
-  width:auto; max-width:calc(100% - 24px); height:auto; min-height:0;
-  padding:5px 20px; border-radius:16px; background:#fff;
-  font-size:26px; line-height:1.15; white-space:nowrap;
-  box-shadow:0 2px 10px rgba(11,61,140,.12); }
 .sort-tray{display:flex;gap:18px;justify-content:center;flex-wrap:nowrap;}
 /* [24a A5] tray ghost-slot: a placed sort card leaves a faint same-size dashed placeholder at its
    exact tray origin (holds the flex slot so remaining cards don't shift; vachan/gender parity) */
@@ -259,31 +226,6 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .sort-item img{width:72px;height:72px;object-fit:contain;} .sort-item img.fallback{display:none;}
 .sort-item .emoji{font-size:58px;line-height:1;} .sort-item .lbl{font-size:16px;font-weight:700;color:var(--navy);}
 .sort-item.snapped{box-shadow:none;cursor:default;}
-/* [S01r4s] page 10 drop feedback. Correct: "settle into the box with a small positive animation" -
-   .snapped only removed the shadow before, so a tile arrived in the bin with no beat of its own.
-   Wrong: the tile now shakes; makeDraggable already springs it home, and buzzShake is the same
-   shake the wrong-tap chips use, so the two mechanics read alike. */
-.sort-item.snapped{ animation:sortSettle .4s cubic-bezier(.2,.9,.25,1.3); }
-.sort-item.sort-shake{ animation:buzzShake .4s; }
-/* [S01r4u] SME: "too small - make it feel draggable for kids". The tray tile was 116px carrying a
-   72px picture and a 16px label, i.e. SMALLER than the 150px drop zone it is dragged into, which is
-   backwards for a six-year-old's finger. The TRAY tile grows; the SNAPPED tile deliberately does
-   NOT, because two of them have to keep fitting side by side in the 290px basket row
-   (2 x 124 + 8px gap = 256, inside 290). cursor:grab and the chunky bottom edge already existed -
-   the edge is deepened so the tile reads as a physical thing to pick up.
-   Shape sorts are untouched: `.shape-sort .sort-item` is (0,2,0) and beats these (0,1,0)/(0,2,0). */
-.sort-item{ width:164px; height:164px; border-radius:20px; gap:6px;
-            box-shadow:0 7px 0 rgba(11,61,140,.16); }
-.sort-item img{ width:104px; height:104px; }
-.sort-item .emoji{ font-size:84px; }
-.sort-item .lbl{ font-size:22px; }
-.sort-item.snapped{ width:124px; height:124px; border-radius:16px; gap:2px; }
-.sort-item.snapped img{ width:76px; height:76px; }
-.sort-item.snapped .emoji{ font-size:60px; }
-.sort-item.snapped .lbl{ font-size:16px; }
-@keyframes sortSettle{ 0%{transform:scale(.74);opacity:.55;}
-                       55%{transform:scale(1.08);opacity:1;}
-                       100%{transform:scale(1);opacity:1;} }
  .sort-item.snapped .emoji{font-size:44px;} .sort-item.snapped .lbl{font-size:13px;}
 .sort-item.snapped .shape-svg{width:52px;height:52px;}
 
@@ -1146,27 +1088,6 @@ body.tut-page{background:#FFFFFF;}
 .tap-all-item .lbl{font-size:24px;font-weight:800;color:var(--navy);}
 .tap-all-item.got{border-color:var(--correct);background:var(--correct-bg);box-shadow:0 6px 14px rgba(0,177,50,.18);}
 .tap-all-item.got::after{content:"\2713";position:absolute;top:6px;right:10px;font-size:40px;font-weight:900;color:var(--correct);}
-/* [S01r4p/r4q] OPTION ENTRY + the correct-tap reward. RESTORED: a factory rebuild (commit
-   9934644) regenerated app.js/style.css from a copy that never had these, wiping both.
-   The chip hides on the class only, so revealing is just removing it. The base transition has no
-   `opacity` and runs transform at .15s - a snap, not an entrance - so it is restated in full here;
-   .wrong-flash still wins with its transition:none. The tick was a bare 40px glyph on the corner
-   sitting ON the picture with no ground of its own; it is a filled badge now. */
-.tap-all-item{ transition:opacity .34s ease, transform .3s cubic-bezier(.2,.9,.3,1.25),
-               border-color .15s, background .15s, box-shadow .15s; }
-.tap-all-item.tap-seq-hidden{ opacity:0; transform:translateY(16px) scale(.92); pointer-events:none; }
-.tap-all-item.got{ animation:tapGotPop .44s ease-out; }
-.tap-all-item.got::after{ content:"\2713"; position:absolute; top:-13px; right:-13px;
-  width:46px; height:46px; border-radius:50%; box-sizing:border-box;
-  display:flex; align-items:center; justify-content:center;
-  font-size:25px; line-height:1; font-weight:900; color:#fff;
-  background:var(--correct); border:3px solid #fff;
-  box-shadow:0 4px 12px rgba(0,140,40,.38);
-  animation:tapTickIn .44s cubic-bezier(.2,.9,.25,1.5); }
-@keyframes tapGotPop{ 0%{transform:scale(1);} 38%{transform:scale(1.07);} 100%{transform:scale(1);} }
-@keyframes tapTickIn{ 0%{opacity:0;transform:scale(.3) rotate(-20deg);}
-                      60%{opacity:1;transform:scale(1.18) rotate(4deg);}
-                      100%{opacity:1;transform:scale(1) rotate(0);} }
 /* [27a] ✕ dropped (third and last ✕ site) — red ring only, same language as the pick cards. The
    ✓ on .got STAYS: the ruling removed the wrong-mark, not the right-mark, and TAP_ALL needs a
    persistent tick to show which items are already banked. Lock/dim kept, as with .sentence-word. */
@@ -1959,3 +1880,107 @@ body.is-start .phase-gate{
 html.no-anim .balloon, html.no-anim .lh-word, html.no-anim .lh-pic,
 html.no-anim .meet-pic-box, html.no-anim .pic-label, html.no-anim .opt-cell.seq-hidden{
   animation:none !important; transition:none !important; opacity:1 !important; transform:none !important; }
+
+
+/* ═══ [S01r4q] fln-animation-toolkit — recipe 7 (paper-physics confetti) + recipe 19 (correct
+   select) + the shared answer tempo. Source: github.com/ananya-goswami/fln-animation-toolkit,
+   blocks lifted between its own BEGIN/END markers. The kit's recipes 1/2 (start-screen sky),
+   20 (wrong select) and 21 (object outline) are deliberately NOT installed — see CHANGES.md. ═══ */
+
+/* ---- answer-tempo: ONE tempo both answer effects derive from, so they cannot drift.
+   --fx-beat is this engine's existing buzzShake tempo (.4s), which is why the wrong
+   answer already matches without being touched. ---- */
+:root{ --fx-beat:.4s; --fx-reward:2; }
+
+/* ---- recipe 7: confetti. Three nested elements because one element cannot run three
+   transform animations at once: .p falls at constant speed (paper reaches terminal velocity
+   almost immediately), .w swings sideways, .f tumbles about two axes and flashes its darker
+   back face. The old confettiFall was a single element on a fixed diagonal. ---- */
+.fx-confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:100001;}
+.fx-confetti .p{position:absolute;top:0;left:var(--x);
+  animation:cfFall var(--fall) linear var(--delay) both;}
+.fx-confetti .w{display:block;perspective:600px;
+  animation:cfGlide var(--rockT) linear var(--delay) infinite both;}
+.fx-confetti .f{display:block;position:relative;transform-style:preserve-3d;
+  width:calc(var(--w) * var(--z));height:calc(var(--h) * var(--z));
+  opacity:var(--dim,1);
+  animation:cfRock var(--rockT) linear var(--delay) infinite both;}
+.fx-confetti .f.tum{animation:cfTumble var(--rockT) linear var(--delay) infinite both;}
+.fx-confetti .f::before,.fx-confetti .f::after{content:"";position:absolute;inset:0;
+  border-radius:inherit;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
+.fx-confetti .f::before{background:var(--c);}
+.fx-confetti .f::after{background:var(--c2);transform:rotateY(180deg);}
+.fx-confetti .sq{--w:8px;  --h:8px;  border-radius:1px;}
+.fx-confetti .rc{--w:6px;  --h:13px; border-radius:1px;}
+.fx-confetti .ln{--w:2.5px;--h:16px; border-radius:2px;}
+.fx-confetti .st{--w:11px; --h:11px;}
+/* clip-path goes on the FACES, not on .f — on .f it forces transform-style flat and kills
+   the two-sided tumble */
+.fx-confetti .st::before,.fx-confetti .st::after{
+  clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,
+                    50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
+@keyframes cfFall{
+  0%{transform:translate(0,-40px);opacity:0;}
+  5%{opacity:1;}
+  86%{opacity:1;}
+  100%{transform:translate(var(--drift,0px),var(--dist,820px));opacity:0;}
+}
+@keyframes cfGlide{
+  0%  {transform:translate(calc(var(--sway) * -1), 0);}
+  45% {transform:translate(var(--sway), calc(var(--bob) * -1));}
+  50% {transform:translate(var(--sway), 0);}
+  95% {transform:translate(calc(var(--sway) * -1), calc(var(--bob) * -1));}
+  100%{transform:translate(calc(var(--sway) * -1), 0);}
+}
+@keyframes cfRock{
+  0%  {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(var(--amp));}
+  45% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(calc(var(--amp) * 0.86));}
+  50% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(calc(var(--amp) * -1));}
+  95% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(calc(var(--amp) * -0.86));}
+  100%{transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(var(--amp));}
+}
+@keyframes cfTumble{
+  0%  {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(0deg);}
+  42% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(72deg);}
+  58% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(108deg);}
+  100%{transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(180deg);}
+}
+
+/* ---- recipe 19: correct select. The tile presses IN before it pops — that anticipation dip
+   at 11% is what makes the pop read as caused by the child's finger. Sparks lift off the TOP
+   ARC only, so they never cross the letter the child is reading.
+   NOTE this engine keeps its ✓ badge: the kit's house rule drops it ("the green outline IS the
+   mark") but removing it is a pedagogy change no SME here has signed off, so `.ck-correct::after`
+   is NOT neutralised. Flagged in CHANGES.md. ---- */
+.opt-cell.ck-correct{
+  --ckT:calc(var(--fx-beat) * var(--fx-reward));
+  overflow:visible !important;
+  z-index:6;
+  animation:ckPop calc(var(--ckT) * .68) ease-in-out both;
+}
+.ck-crown{position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  overflow:visible;z-index:2;}
+.ck-crown i{position:absolute;left:50%;top:50%;width:var(--ss);height:var(--ss);
+  margin:calc(var(--ss) / -2) 0 0 calc(var(--ss) / -2);
+  background:var(--ck-spark,#FFC93C);
+  clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,
+                    50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+  animation:ckSpark calc(var(--ckT) * .72) cubic-bezier(.15,.7,.35,1)
+            calc(var(--ckT) * .27) both;}
+@keyframes ckPop{
+  0%  {transform:scale(1);}
+  11% {transform:scale(.966);}
+  50% {transform:scale(1.055);}
+  72% {transform:scale(.992);}
+  100%{transform:scale(1);}
+}
+@keyframes ckSpark{
+  0%  {transform:translate(var(--x0),var(--y0)) scale(.3) rotate(0deg);opacity:0;}
+  25% {opacity:1;}
+  100%{transform:translate(var(--sx),var(--sy)) scale(1) rotate(var(--sr));opacity:0;}
+}
+/* R5 — the decoration goes, the MARK stays */
+html.no-anim .ck-crown, html.no-anim .fx-confetti{display:none;}
+@media (prefers-reduced-motion: reduce){
+  .ck-crown,.fx-confetti{display:none;}
+}

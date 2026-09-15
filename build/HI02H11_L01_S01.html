@@ -1892,6 +1892,110 @@ html.no-anim .balloon, html.no-anim .lh-word, html.no-anim .lh-pic,
 html.no-anim .meet-pic-box, html.no-anim .pic-label, html.no-anim .opt-cell.seq-hidden{
   animation:none !important; transition:none !important; opacity:1 !important; transform:none !important; }
 
+
+/* ═══ [S01r4q] fln-animation-toolkit — recipe 7 (paper-physics confetti) + recipe 19 (correct
+   select) + the shared answer tempo. Source: github.com/ananya-goswami/fln-animation-toolkit,
+   blocks lifted between its own BEGIN/END markers. The kit's recipes 1/2 (start-screen sky),
+   20 (wrong select) and 21 (object outline) are deliberately NOT installed — see CHANGES.md. ═══ */
+
+/* ---- answer-tempo: ONE tempo both answer effects derive from, so they cannot drift.
+   --fx-beat is this engine's existing buzzShake tempo (.4s), which is why the wrong
+   answer already matches without being touched. ---- */
+:root{ --fx-beat:.4s; --fx-reward:2; }
+
+/* ---- recipe 7: confetti. Three nested elements because one element cannot run three
+   transform animations at once: .p falls at constant speed (paper reaches terminal velocity
+   almost immediately), .w swings sideways, .f tumbles about two axes and flashes its darker
+   back face. The old confettiFall was a single element on a fixed diagonal. ---- */
+.fx-confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:100001;}
+.fx-confetti .p{position:absolute;top:0;left:var(--x);
+  animation:cfFall var(--fall) linear var(--delay) both;}
+.fx-confetti .w{display:block;perspective:600px;
+  animation:cfGlide var(--rockT) linear var(--delay) infinite both;}
+.fx-confetti .f{display:block;position:relative;transform-style:preserve-3d;
+  width:calc(var(--w) * var(--z));height:calc(var(--h) * var(--z));
+  opacity:var(--dim,1);
+  animation:cfRock var(--rockT) linear var(--delay) infinite both;}
+.fx-confetti .f.tum{animation:cfTumble var(--rockT) linear var(--delay) infinite both;}
+.fx-confetti .f::before,.fx-confetti .f::after{content:"";position:absolute;inset:0;
+  border-radius:inherit;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
+.fx-confetti .f::before{background:var(--c);}
+.fx-confetti .f::after{background:var(--c2);transform:rotateY(180deg);}
+.fx-confetti .sq{--w:8px;  --h:8px;  border-radius:1px;}
+.fx-confetti .rc{--w:6px;  --h:13px; border-radius:1px;}
+.fx-confetti .ln{--w:2.5px;--h:16px; border-radius:2px;}
+.fx-confetti .st{--w:11px; --h:11px;}
+/* clip-path goes on the FACES, not on .f — on .f it forces transform-style flat and kills
+   the two-sided tumble */
+.fx-confetti .st::before,.fx-confetti .st::after{
+  clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,
+                    50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
+@keyframes cfFall{
+  0%{transform:translate(0,-40px);opacity:0;}
+  5%{opacity:1;}
+  86%{opacity:1;}
+  100%{transform:translate(var(--drift,0px),var(--dist,820px));opacity:0;}
+}
+@keyframes cfGlide{
+  0%  {transform:translate(calc(var(--sway) * -1), 0);}
+  45% {transform:translate(var(--sway), calc(var(--bob) * -1));}
+  50% {transform:translate(var(--sway), 0);}
+  95% {transform:translate(calc(var(--sway) * -1), calc(var(--bob) * -1));}
+  100%{transform:translate(calc(var(--sway) * -1), 0);}
+}
+@keyframes cfRock{
+  0%  {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(var(--amp));}
+  45% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(calc(var(--amp) * 0.86));}
+  50% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(calc(var(--amp) * -1));}
+  95% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(calc(var(--amp) * -0.86));}
+  100%{transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(var(--amp));}
+}
+@keyframes cfTumble{
+  0%  {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(0deg);}
+  42% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(72deg);}
+  58% {transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(108deg);}
+  100%{transform:rotateZ(var(--tilt)) rotateY(var(--yaw)) rotateX(180deg);}
+}
+
+/* ---- recipe 19: correct select. The tile presses IN before it pops — that anticipation dip
+   at 11% is what makes the pop read as caused by the child's finger. Sparks lift off the TOP
+   ARC only, so they never cross the letter the child is reading.
+   NOTE this engine keeps its ✓ badge: the kit's house rule drops it ("the green outline IS the
+   mark") but removing it is a pedagogy change no SME here has signed off, so `.ck-correct::after`
+   is NOT neutralised. Flagged in CHANGES.md. ---- */
+.opt-cell.ck-correct{
+  --ckT:calc(var(--fx-beat) * var(--fx-reward));
+  overflow:visible !important;
+  z-index:6;
+  animation:ckPop calc(var(--ckT) * .68) ease-in-out both;
+}
+.ck-crown{position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  overflow:visible;z-index:2;}
+.ck-crown i{position:absolute;left:50%;top:50%;width:var(--ss);height:var(--ss);
+  margin:calc(var(--ss) / -2) 0 0 calc(var(--ss) / -2);
+  background:var(--ck-spark,#FFC93C);
+  clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,
+                    50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+  animation:ckSpark calc(var(--ckT) * .72) cubic-bezier(.15,.7,.35,1)
+            calc(var(--ckT) * .27) both;}
+@keyframes ckPop{
+  0%  {transform:scale(1);}
+  11% {transform:scale(.966);}
+  50% {transform:scale(1.055);}
+  72% {transform:scale(.992);}
+  100%{transform:scale(1);}
+}
+@keyframes ckSpark{
+  0%  {transform:translate(var(--x0),var(--y0)) scale(.3) rotate(0deg);opacity:0;}
+  25% {opacity:1;}
+  100%{transform:translate(var(--sx),var(--sy)) scale(1) rotate(var(--sr));opacity:0;}
+}
+/* R5 — the decoration goes, the MARK stays */
+html.no-anim .ck-crown, html.no-anim .fx-confetti{display:none;}
+@media (prefers-reduced-motion: reduce){
+  .ck-crown,.fx-confetti{display:none;}
+}
+
 </style>
 </head>
 <body class="is-start">
@@ -2192,8 +2296,29 @@ function _tone(freqs, type, dur, vol){ const c = _ac(); if(!c) return; const t0 
     const t = t0 + i*(dur/freqs.length); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t+0.02);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur/freqs.length); o.connect(g).connect(c.destination); o.start(t); o.stop(t + dur/freqs.length); }); }
 const sfxTap       = ()=> _tone([520], "sine", 0.09, 0.09);
-const sfxCorrect   = ()=> _tone([660, 880, 1180], "sine", 0.42, 0.13);   // rising major arpeggio
-const sfxWrongSoft = ()=> _tone([300, 235], "triangle", 0.20, 0.08);      // gentle, never harsh
+/* [S01r4q · fln-animation-toolkit recipe 22] REAL RECORDINGS, not synthesized tones.
+   sfxCorrect/sfxWrongSoft were two-and-three-note WebAudio arpeggios, and this bundle's EAR-CHECK
+   has carried them as a known weakness since round 4 ("synthesized tones, inherited"). The kit ships
+   measured, licensed recordings — correct rises 10.7 semitones, wrong falls 5.1, both peak-normalised
+   to 0.89 and fade-trimmed (see _assets_round4/anim_kit/SFX_LICENCE.txt; Kenney CC0 + a Pixabay clip
+   supplied by the team). They are chosen on pitch contour, not filename: a rising cue reads as "yes",
+   a falling one as "not that".
+   The tone stays as the fallback, so a missing/blocked file degrades to exactly today's behaviour
+   rather than to silence — and the WebAudio path is still what unlocks on first gesture. */
+function _sfxFile(id, fallback){
+  try{
+    const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
+    a.volume = 0.7;
+    /* decode/404/autoplay all land here; the synthesized cue then covers for it */
+    a.onerror = ()=>{ try{ fallback(); }catch(e){} };
+    const p = a.play();
+    if(p && p.catch) p.catch(()=>{ try{ fallback(); }catch(e){} });
+  }catch(e){ try{ fallback(); }catch(_){} }
+}
+const _toneCorrect = ()=> _tone([660, 880, 1180], "sine", 0.42, 0.13);   // rising major arpeggio
+const _toneWrong   = ()=> _tone([300, 235], "triangle", 0.20, 0.08);      // gentle, never harsh
+const sfxCorrect   = ()=> _sfxFile("sfx_correct", _toneCorrect);
+const sfxWrongSoft = ()=> _sfxFile("sfx_wrong",   _toneWrong);
 /* a joyful star/confetti pop, centred on the play stage (upper-middle) */
 function burstStars(){ const stage = document.querySelector(".slide-stage") || document.body;
   const cx = stage.offsetWidth/2, cy = stage.offsetHeight*0.38, emo = ["⭐","✨","🌟","💫","🎉"];
@@ -2239,21 +2364,104 @@ function setSwMood(m){ swMood = m;
    keyframes still drive it — only the origin and the vectors moved. Note `.confetti i{top:-24px;
    animation:confettiFall}` in style.css remains DEAD CSS from the pre-r4 implementation: nothing
    creates those <i> elements. Left alone deliberately rather than deleted in the same bump. */
-function confettiCannon(){
-  const VW = window.innerWidth || 1200, VH = window.innerHeight || 800;
+/* [S01r4q · fln-animation-toolkit recipe 7] PAPER PHYSICS, not falling rectangles.
+   The old cannon dropped 48 single elements down a fixed diagonal at one speed: they read as
+   coloured tickets, because a real piece of paper does four things at once and one element cannot
+   animate three transforms. Each piece is now three nested elements — .p falls at CONSTANT speed
+   (paper hits terminal velocity almost immediately, so `linear`, never ease-out), .w swings, .f
+   tumbles about two axes and shows a darkened BACK face. ~22% go end-over-end and drift steadily;
+   the rest flutter and barely drift, which is how the two regimes actually differ.
+   Same call signature and the same ~2.6s lifetime, so every existing caller is unchanged. */
+const CONF_PAIRS = [
+  ["#8B2FC9","#5E1C8C"], ["#3F51B5","#27358A"], ["#1E88E5","#135FA6"], ["#22B24C","#157A34"],
+  ["#FFD21E","#D9A800"], ["#FF8A1E","#C75F00"], ["#E5322D","#A81F1B"]
+];
+/* weighted: star 40%, rectangle 20%, line 20%, square 20% — the sizes are deliberately far
+   apart, because at 7-11px a square and a rectangle are indistinguishable while spinning */
+const CONF_SHAPES = ["st","st","st","st","rc","rc","ln","ln","sq","sq"];
+function confettiCannon(n){
   const host = document.body;
-  const cols = ["#F9695E","#FDC23C","#4EBE6A","#4EA3F0","#9B7BE8","#FF8FB1"];
-  for(let i=0;i<48;i++){ const c = document.createElement("i"); c.className = "conf-shot";
-    c.style.background = cols[i % cols.length];
-    c.style.position = "fixed";
-    c.style.left = ((i + 0.5) * (VW / 48) + (Math.random()*16 - 8)).toFixed(0) + "px";
-    c.style.top = "-14px";                                        /* just above the page's top edge */
-    c.style.bottom = "auto";
-    c.style.zIndex = "100001";                                    /* above the end-screen overlay */
-    c.style.setProperty("--tx", ((Math.random()*140 - 70)).toFixed(0) + "px");   /* gentle drift */
-    c.style.setProperty("--ty", (VH + 40).toFixed(0) + "px");      /* fall the WHOLE page height */
-    c.style.animationDelay = (Math.random()*420).toFixed(0) + "ms";
-    host.appendChild(c); setTimeout(()=> c.remove(), 2600); } }
+  if(document.documentElement.classList.contains("no-anim")) return;   // R5
+  const R = (a, b)=> a + Math.random() * (b - a);
+  const count = n || 56;
+  host.querySelectorAll(".fx-confetti").forEach(x => x.remove());
+  const dist = (window.innerHeight || 800) + 60;
+  let maxLife = 0;
+  const wrap = document.createElement("div"); wrap.className = "fx-confetti";
+  for(let i = 0; i < count; i++){
+    const z = R(0.75, 1.15);               /* depth: nearer pieces are bigger... */
+    const fall = R(1.1, 1.8) / z;          /* ...and fall faster (parallax)       */
+    const delay = R(0, 0.35);
+    if(fall + delay > maxLife) maxLife = fall + delay;
+    const pair = CONF_PAIRS[i % CONF_PAIRS.length];
+    /* a fluttering plate zigzags but barely drifts; an autorotating one drifts but hardly zigzags */
+    const flutter = Math.random() > 0.22;
+    const rockT = flutter ? R(0.6, 1.2) : R(0.75, 1.5);
+    const sway  = flutter ? R(10, 34)   : R(2, 8);
+    const drift = flutter ? R(-12, 12)  : R(-45, 45);
+    const bob   = flutter ? R(3, 7)     : R(2, 4);
+    const p = document.createElement("i"); p.className = "p";
+    p.style.cssText =
+      "--x:" + R(-2, 98).toFixed(1) + "%;--dist:" + dist + "px;" +
+      "--fall:" + fall.toFixed(2) + "s;--delay:" + delay.toFixed(2) + "s;" +
+      "--drift:" + drift.toFixed(0) + "px;--sway:" + sway.toFixed(0) + "px;" +
+      "--bob:" + bob.toFixed(1) + "px;--rockT:" + rockT.toFixed(2) + "s;" +
+      "--amp:" + Math.round(R(28, 52)) + "deg;" +     /* capped short of edge-on so the face reads */
+      "--yaw:" + Math.round(R(-30, 30)) + "deg;--tilt:" + Math.round(R(-25, 25)) + "deg;" +
+      "--z:" + z.toFixed(2) + ";--dim:" + (0.72 + (z - 0.75) / 0.4 * 0.28).toFixed(2) + ";" +
+      "--c:" + pair[0] + ";--c2:" + pair[1] + ";";
+    const w = document.createElement("i"); w.className = "w";
+    const f = document.createElement("i");
+    f.className = "f " + CONF_SHAPES[Math.floor(Math.random() * CONF_SHAPES.length)] +
+                  (flutter ? "" : " tum");
+    w.appendChild(f); p.appendChild(w); wrap.appendChild(p);
+  }
+  host.appendChild(wrap);
+  setTimeout(()=> wrap.remove(), (maxLife + 0.3) * 1000);
+}
+/* [S01r4q · fln-animation-toolkit recipe 19] TILE-LEVEL CONFIRM, alongside the confetti.
+   The tile presses IN (scale .966 at 11%) before it pops — that anticipation dip is small enough
+   to be below conscious threshold and is what makes the pop read as caused by the child's finger
+   rather than as the screen celebrating at them. Then a few sparks lift off the TOP ARC only: a
+   full 360° ring competes with the screen-wide confetti and crosses the letter being read.
+   Additive — the existing `.correct` class (green border, ✓ badge) is untouched and still carries
+   the mark; this only adds motion on top. */
+function ckCorrect(el, crown){
+  if(!el) return;
+  if(document.documentElement.classList.contains("no-anim")) return;   // R5: mark stays, motion goes
+  try{
+    el.querySelectorAll(":scope > .ck-crown").forEach(x => x.remove());
+    el.classList.remove("ck-correct");
+    void el.offsetWidth;                                  /* forced reflow — restarts the pop */
+    el.classList.add("ck-correct");
+    const n = (crown == null) ? 5 : crown;
+    if(!n) return;
+    /* clientWidth is layout px INSIDE the transform-scaled stage, i.e. design px already.
+       getBoundingClientRect() here would come back multiplied by --scale. */
+    const w = el.clientWidth || 96, h = el.clientHeight || 96;
+    const rx = w * 0.46, ry = h * 0.46;                    /* the tile's own edge */
+    const R = (a, b)=> a + Math.random() * (b - a);
+    const cr = document.createElement("span"); cr.className = "ck-crown";
+    cr.setAttribute("aria-hidden", "true");
+    for(let i = 0; i < n; i++){
+      const t = (n === 1) ? 0.5 : i / (n - 1);
+      const a = (-158 + t * 136 + R(-7, 7)) * Math.PI / 180;   /* TOP arc only */
+      const x0 = Math.cos(a) * rx, y0 = Math.sin(a) * ry;      /* start ON the edge */
+      const out = R(0.20, 0.34);
+      const s = document.createElement("i");
+      s.style.cssText =
+        "--ss:" + R(7, 12).toFixed(1) + "px;" +
+        "--x0:" + x0.toFixed(1) + "px;--y0:" + y0.toFixed(1) + "px;" +
+        "--sx:" + (x0 + Math.cos(a) * w * out).toFixed(1) + "px;" +
+        "--sy:" + (y0 + Math.sin(a) * h * out).toFixed(1) + "px;" +
+        "--sr:" + Math.round(R(-140, 140)) + "deg;";
+      cr.appendChild(s);
+    }
+    el.appendChild(cr);
+    /* sweep only the TRANSIENT layer; .ck-correct and the tile's own mark stay put */
+    setTimeout(()=>{ try{ cr.remove(); }catch(e){} }, 900);
+  }catch(e){}
+}
 /* ---------- Block Town helpers (flagship) ---------- */
 const BT_COLORS = ["#F9695E","#FDC23C","#4EBE6A","#4EA3F0","#9B7BE8"];
 function btBlock(i){ const b = document.createElement("div"); b.className = "blk"; b.style.background = BT_COLORS[i % BT_COLORS.length]; return b; }
@@ -2782,7 +2990,7 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
       const _afterWord = (cb)=>{ const done = ()=>{ clearTimeout(_vb); _busy = false; cell.classList.remove("opt-speaking"); cb(); };
         if(_word){ cell.classList.add("opt-speaking"); play(_word, done); } else done(); };
       if(isCorrect(opt, i)){
-        state.locked = true; cell.classList.add("correct"); sfxCorrect(); confettiCannon(); setSwMood("happy");
+        state.locked = true; cell.classList.add("correct"); ckCorrect(cell); sfxCorrect(); confettiCannon(); setSwMood("happy");
         if(mastery){ state.masteryAttempts++; if(state.attempts === 0) state.masteryHits++; }
         SwiftPAL.emit(signalName, { slide_id: slide.id, phase: slide.phase, value: true,
           first_try: state.attempts === 0, attempts: state.attempts + 1,

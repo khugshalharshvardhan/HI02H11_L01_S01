@@ -73,6 +73,38 @@
 ### six obj_* orphans from slides this round deleted (achar, chanda, chinta, moti, patila, pital).
 ### dist/ prunes all of them; only build/ carries the weight. Left in place — they are the SME's
 ### originals and deleting them is the owner's call.
+### S01r4q — **fln-animation-toolkit** (github.com/ananya-goswami/fln-animation-toolkit) — the
+### applicable subset installed, not the whole kit. The kit documents 22 recipes; this game already
+### ships the older fleet set (buzzShake, revealPulse, correctPop, sgFloat, pgPeek, blkDrop …), so
+### most recipes describe what is here rather than adding to it. THREE were genuinely missing:
+###  · recipe 22 — REAL SOUND. sfxCorrect/sfxWrongSoft were WebAudio arpeggios and have sat on this
+###    bundle's EAR-CHECK as a known weakness since round 4. Now sfx_correct.ogg (rises 10.7
+###    semitones) and sfx_wrong.ogg (falls 5.1) — measured on pitch contour, not filename. The tone
+###    stays as fallback via _sfxFile(), so a blocked/missing file degrades to today's behaviour,
+###    never to silence. Licence: _assets_round4/anim_kit/SFX_LICENCE.txt (Kenney CC0 + a Pixabay
+###    clip supplied by the team). sfx_pop.ogg installed for future use, not yet wired.
+###  · recipe 7 — CONFETTI. The old cannon dropped 48 single elements down one diagonal at one
+###    speed. Now three nested elements per piece (fall / sway / two-axis tumble with a darkened
+###    back face), ~22% going end-over-end. Verified: 56 pieces, four shapes, 25% tumbling.
+###  · recipe 19 + answer-tempo — CORRECT SELECT. ckPop's anticipation dip (scale .966 at 11%) makes
+###    the pop read as caused by the child's finger; 5 sparks lift off the TOP ARC only so they
+###    never cross the letter. Verified gold #FFC93C, star clip-path, on the correct tile.
+### DELIBERATELY NOT INSTALLED, each for a reason:
+###  · recipes 1+2 (start-screen sky / tap burst) — BLOCKED: the kit requires swapping .start-bg to
+###    startnew_bg_plain.webp first or the stars double (one frozen in the bitmap, one moving).
+###    Neither this game nor the kit ships that asset.
+###  · recipe 20 (wrong select) — this engine's wrong feedback was tuned by the SME across three
+###    rounds ([28p]/[28r]/[28u]: red flash on BOTH wrongs, grey lock only from the 2nd). Its tempo
+###    anchor --fx-beat is already this engine's buzzShake .4s, so the pair is in step without it.
+###  · recipe 21 (object outline) — N/A: no look-and-find mechanic in this card's six slide types.
+###  · recipes 3+4 (nudge hand press / tap ripple) — not taken: the kit warns the ripple geometry is
+###    anchored to an 86×108 hand and that later `#nudgeHand{width:56px}` fork rules silently
+###    override the offsets (its own R11). Worth doing, but it needs a measured pass of its own.
+### ⚠ ONE HOUSE-RULE CONFLICT LEFT OPEN. The kit's recipe 9/19 state the green outline IS the
+### correct-mark — no tick — and .ck-correct::after{content:none} enforces it. This engine hangs a
+### ✓ badge on .opt-cell.correct. That line is NOT included: dropping the tick is a pedagogy change
+### across every answerable slide and no SME here has asked for it. The tick and the crown sparks
+### now coexist; if the SME wants the kit's rule, it is one line.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.
