@@ -217,6 +217,17 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .sort-bin.fem .bin-title{color:#5B3FB0;}
 .sort-bin.hover{box-shadow:0 0 0 7px rgba(56,106,246,.15);}
 .sort-bin .bin-items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-content:flex-start;}
+/* [S01r4t] THE BASKET CARRIES BOTH .sort-bin AND .dd-zone - dd-zone is the drop-detection hook the
+   module adds - and `.dd-zone{width:150px;height:150px}` is declared LATER at equal specificity, so
+   it silently won. Measured: a 150px basket against a 116px tile. That is why the label wrapped to
+   three lines and overflowed its fixed 56px title box (scrollHeight 100 vs clientHeight 56), and why
+   two pictures could never sit side by side in one basket. Sized on the COMBINED selector so it
+   beats .dd-zone without touching the drop hook. .bin-items had collapsed to 0x0 and now reserves a
+   real row: 2 x 116px tile + 8px gap fits inside the padding with room to spare. */
+.sort-bin.dd-zone{ width:320px; height:auto; min-height:252px; justify-content:flex-start; }
+.sort-bin.dd-zone .bin-title{ height:auto; min-height:56px; width:100%; box-sizing:border-box;
+                              padding:6px 10px; line-height:1.18; }
+.sort-bin.dd-zone .bin-items{ width:100%; min-height:128px; }
 .sort-tray{display:flex;gap:18px;justify-content:center;flex-wrap:nowrap;}
 /* [24a A5] tray ghost-slot: a placed sort card leaves a faint same-size dashed placeholder at its
    exact tray origin (holds the flex slot so remaining cards don't shift; vachan/gender parity) */
@@ -226,6 +237,31 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .sort-item img{width:72px;height:72px;object-fit:contain;} .sort-item img.fallback{display:none;}
 .sort-item .emoji{font-size:58px;line-height:1;} .sort-item .lbl{font-size:16px;font-weight:700;color:var(--navy);}
 .sort-item.snapped{box-shadow:none;cursor:default;}
+/* [S01r4s] page 10 drop feedback. Correct: "settle into the box with a small positive animation" -
+   .snapped only removed the shadow before, so a tile arrived in the bin with no beat of its own.
+   Wrong: the tile now shakes; makeDraggable already springs it home, and buzzShake is the same
+   shake the wrong-tap chips use, so the two mechanics read alike. */
+.sort-item.snapped{ animation:sortSettle .4s cubic-bezier(.2,.9,.25,1.3); }
+.sort-item.sort-shake{ animation:buzzShake .4s; }
+/* [S01r4u] SME: "too small - make it feel draggable for kids". The tray tile was 116px carrying a
+   72px picture and a 16px label, i.e. SMALLER than the 150px drop zone it is dragged into, which is
+   backwards for a six-year-old's finger. The TRAY tile grows; the SNAPPED tile deliberately does
+   NOT, because two of them have to keep fitting side by side in the 290px basket row
+   (2 x 124 + 8px gap = 256, inside 290). cursor:grab and the chunky bottom edge already existed -
+   the edge is deepened so the tile reads as a physical thing to pick up.
+   Shape sorts are untouched: `.shape-sort .sort-item` is (0,2,0) and beats these (0,1,0)/(0,2,0). */
+.sort-item{ width:164px; height:164px; border-radius:20px; gap:6px;
+            box-shadow:0 7px 0 rgba(11,61,140,.16); }
+.sort-item img{ width:104px; height:104px; }
+.sort-item .emoji{ font-size:84px; }
+.sort-item .lbl{ font-size:22px; }
+.sort-item.snapped{ width:124px; height:124px; border-radius:16px; gap:2px; }
+.sort-item.snapped img{ width:76px; height:76px; }
+.sort-item.snapped .emoji{ font-size:60px; }
+.sort-item.snapped .lbl{ font-size:16px; }
+@keyframes sortSettle{ 0%{transform:scale(.74);opacity:.55;}
+                       55%{transform:scale(1.08);opacity:1;}
+                       100%{transform:scale(1);opacity:1;} }
  .sort-item.snapped .emoji{font-size:44px;} .sort-item.snapped .lbl{font-size:13px;}
 .sort-item.snapped .shape-svg{width:52px;height:52px;}
 
