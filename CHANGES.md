@@ -60,6 +60,19 @@
 ### vo_snd_n were NOT trimmed: the instruction named page 9 only. Trimming them reaches pages
 ### 3,4,5,6,7,8,10,11,12,13. Say the word and it is one run.
 ### EAR-CHECK: all three cuts were chosen from energy envelopes, not by ear.
+### ART-3 — **page 11 (P1)**: मामा, चींटी and लाल replaced with the SME-supplied mama / aunt /
+### tamatar files. ("aunt" is an ANT — चींटी — checked against the image, not the filename.)
+### Installed AS-IS, unlike the mouse and the papaya: their faint alpha is black antialiasing hugging
+### the subject (ink box at threshold 0 vs 24 differs by ~2px), not the pure-red background-removal
+### matte those two carried, and their ink:canvas fractions (65-91%) are in normal range rather than
+### cropped edge-to-edge. Nothing to strip or re-pad.
+### ⚠ REACHES PAGE 14 TOO: obj_chinti and obj_laal are shared with P7, which now shows the new ant
+### and tomato. Checked on render — both suit that page; flagged because it was not asked for.
+### ⚠ 12 UNREFERENCED FILES in build/assets/Images, 3.36 MB: the six SME source uploads
+### (aunt 1 / mama 1 / mouse / papita / radish / tamatar 1) once copied onto their obj_* keys, plus
+### six obj_* orphans from slides this round deleted (achar, chanda, chinta, moti, patila, pital).
+### dist/ prunes all of them; only build/ carries the weight. Left in place — they are the SME's
+### originals and deleting them is the owner's call.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.
