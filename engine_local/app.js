@@ -179,6 +179,27 @@ function playSfx(id){
     a.play().catch(()=>{});
   }catch(e){}
 }
+/* [S01r4t] SPEAK A WORD WITHOUT TAKING THE VO LOCK.
+   play() calls setPlaying(true), which puts body.vo-lock on, and the stylesheet locks `.sort-item`,
+   `.sort-bin` AND `.dd-zone` to pointer-events:none for as long as a clip sounds. On a tap mechanic
+   that is exactly right. On a DRAG mechanic it is fatal, and r4s walked straight into it: pressing a
+   tile to hear its name muted that tile's own pointer events before makeDraggable's mousedown could
+   fire, so nothing could be picked up at all. Even had the grab survived, onMove/onUp find the
+   basket with elementFromPoint, which skips pointer-events:none, so no drop would have registered
+   either - the lock covers the bins too.
+   So the word rides its own element the way playSfx does, but honours mute and cancels the previous
+   word so two quick presses cannot talk over each other. The instruction line stays protected:
+   installDragVoGate swallows the entire press while a prior VO is still sounding. */
+let _wordVoice = null;
+function speakNoLock(id){
+  if(!id || isMuted) return;
+  try{
+    if(_wordVoice){ _wordVoice.pause(); _wordVoice = null; }
+    const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
+    _wordVoice = a;
+    a.play().catch(()=>{});
+  }catch(e){}
+}
 /* ---------- game-feel: procedural SFX (no audio files) + success particle burst ----------
    WebAudio resumes on the first user tap (autoplay policy), so taps/answers always sound. */
 let _juiceAC = null;
@@ -4141,6 +4162,18 @@ const SlideModules = {
       const _sgWrong = new Map();
       if(slide.data.reveal_seq) sortSeqReveal(tray, slide);   // [20a SORT-01] opt-in
       [...tray.children].forEach(tile => {
+        /* [S01r4s] SPEAK ON PICK-UP - "when the child taps or picks up an image, play its name",
+           so the child can decide which basket BEFORE dragging. makeDraggable exposes opts.onTap for
+           a tap but nothing for a grab, and this mechanic passed no opts at all: the only places the
+           word was ever spoken were the one-by-one tray reveal and the correct-drop echo below.
+           A pointerdown listener is the idiom MATCH_DRAG_N already uses and that installDragVoGate
+           is written around - the gate runs in the CAPTURE phase and swallows the press while a
+           prior VO is still sounding, so this can never cut the instruction line. */
+        tile.addEventListener("pointerdown", ()=>{
+          if(state.locked || state.revealing) return;
+          if(tile.classList.contains("snapped")) return;
+          speakNoLock(tile.dataset.audio);   /* [S01r4t] NOT play() - see speakNoLock */
+        });
         makeDraggable(tile, (zone, t) => {
           const bin = zone.closest(".sort-bin"); if(!bin) return;
           state.attempts++;
@@ -4173,7 +4206,8 @@ const SlideModules = {
               clearHold(tray); clearHold(binsRow);
               state.helpShown = false; state.scaffoldLevel = 0;
             }
-            if(t.dataset.audio && placed < need) play("assets/Audio/" + t.dataset.audio + "." + AUDIO_EXT, ()=>{});   // [20a SORT-01] speak-on-match
+            /* [S01r4s] speak-on-match dropped: the name is spoken on PICK-UP now, so saying it
+               again a second later on the drop is an echo, not information. */
             SwiftPAL.emit("gender_sort_item", { slide_id: slide.id, gender: t.dataset.gender, attempts: state.attempts });
             if(placed === need){
               state.locked = true;
@@ -4186,6 +4220,10 @@ const SlideModules = {
           } else {
             bin.classList.add("hover"); bin.style.borderColor = "var(--wrong)";
             setTimeout(()=>{ bin.classList.remove("hover"); bin.style.borderColor = ""; }, 500);
+            /* [S01r4s] "gently shake and return to its original position". Only the BIN flashed red;
+               the tile itself had no feedback at all. makeDraggable already clears the transform on a
+               rejected drop, so the return home was free - this adds the shake it was missing. */
+            t.classList.add("sort-shake"); setTimeout(()=> t.classList.remove("sort-shake"), 430);
             dragWrong(slide);   // buzz + Swiftie + spoken try_again (pre-readers need the spoken recovery)
             SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
             /* [28p] terminal rung, via the SAME contract every other mechanic uses (28l/28o): glow the
