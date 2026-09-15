@@ -286,6 +286,7 @@ tracker row still resolves; only the **sequence** changed.
 | # | Change | Status | Proof |
 |---|---|---|---|
 | 94–98 | Keep the instruction, the two bins, the 4 options, the drag behaviour and the hint logic | N/C | **card-diff reports this slide byte-identical.** Every ask on this page was "keep" |
+| 117 | **SME r5a** — new चंपा and सपना art | ✅ | cut from the SME’s champa/sapna sheet, trimmed to alpha and scaled to a 349px long edge to match the other objects: `obj_champa` 349×266, `obj_sapna` 349×235. Source parked in `_assets_round4/` rather than `assets/Images/`, so it is not shipped. पानी and पायल on this page already carried the r4s art, so all four options now share one illustration style |
 
 > ⚠️ This page has **no slide in the deck** — its entries come from `01_CHANGE_LIST.md` only. All of
 > them are "keep", and nothing changed. See **OPEN-2**.
