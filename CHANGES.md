@@ -126,13 +126,21 @@ tracker row still resolves; only the **sequence** changed.
 | # | Change (verbatim) | Status | Proof |
 |---|---|---|---|
 | 43 | Word-by-word highlight during VO 1, then cleared | ✅ | `teach_seq` sentence → clear_words |
-| 44 | "Highlight only 'प' in पीतल, पतीले, पपीता, पीला." | ✅ | capture 06 — 6 lit aksharas across those 4 words; **"के" and "में" plain** |
-| 45 | "Play only the 'प' sound. Show the letter 'प' at the same time." | ✅ | `letter` step; capture 06 shows one card, प |
-| 46 | VO 2 = "पीतल, पतीले, पपीता, पीला।" — **new clip** | ⏳ | `vo_t1_words` authored; generation pending |
-| 47 | VO 3 = "इन सब शब्दों में 'प' की आवाज़ बार-बार आई।" | ⏳ | `vo_t1_explain` re-scripted (the old single clip split in two); regen pending |
+| 44 | "Highlight only 'प' in पीतल, पतीले, पपीता, पीला." | ✅ | **[r4j] now the BARE consonant**, as pages 2 and 4 do — `mark_bare`: 6 lit प across those 4 words with every ी matra left navy; **"के" and "में" plain**. The «फिर सुनो» pill is gone too (`hide_replay`), matching those pages |
+| 45 | "Play only the 'प' sound. Show the letter 'प' at the same time." | ⛑ | **[r4n] OVERRULED BY REVIEW** — "we don't need प se Patang VO". `vo_snd_p` speaks the phrase "प से पतंग।", so the letter beat is now `silent` — exactly as page 2's is (row 21). The card still arrives on its own beat |
+| 46 | VO 2 = "पीतल, पतीले, पपीता, पीला।" — **new clip** | ⛑ | **NOT IN THE FLOW.** `assets/Audio/vo_t1_words.ogg` has never been generated, so this beat played nothing: the four प lit in silence and only then did VO 3 speak — the SME's "first it highlights all the letters then it plays the VO". **[r4o]** the mark beat now rides `vo_t1_explain` instead (row 47), the one clip this page actually has, so the marking is spoken over. Generate this clip and the SME can decide whether to restore the two-beat script |
+| 47 | VO 3 = "इन सब शब्दों में 'प' की आवाज़ बार-बार आई।" | ✅ | `vo_t1_explain` re-scripted (the old single clip split in two); the .ogg EXISTS. **[r4o] it now carries the mark beat too** — the four प light across "इन सब शब्दों में" (0% → 29% of the clip), i.e. exactly while the voice says "in all these words", and stay lit through "प की आवाज़ बार-बार आई।". Same one-clip shape as pages 2 and 4 |
 
-> This page's step order differs from C/E on purpose — the deck asks for **VO 2 with प lit first, then
-> the letter, then VO 3**, so the sequence is `sentence → clear → mark → letter → say`.
+> **[r4l] The step order now MATCHES pages 2 and 4**: `sentence → clear → pause(900) → letter → mark → say`.
+> It previously ran `mark → letter`, which is what this page's deck asked for verbatim ("VO 2 plays with
+> प highlighted in each target word → letter प appears → VO 3", row 45). The reviewer has since asked for
+> all three teach sentences to read alike — "page 5 is similar to page 1 and 3, fix it the same way" —
+> and consistency across the three won out over this one page's ordering.
+>
+> **Nothing was dropped.** All three clips still play and keep their order relative to each other
+> (`vo_snd_p` → `vo_t1_words` → `vo_t1_explain`); only the letter card now arrives BEFORE the marking,
+> so the child sees प on screen while the words light up — exactly as pages 2 and 4 behave.
+> **SME: overrule here if the deck's mark-then-letter order was load-bearing for this page.**
 
 ## H · New page 7 (was page 3 · T2) · MEET_LETTER — प — `capture 07`
 

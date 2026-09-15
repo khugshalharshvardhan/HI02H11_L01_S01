@@ -335,9 +335,15 @@ def build_card():
     # new page 5 (was page 7) — म
     slides.append(meet_letter("T6", "म", "मूली", "obj_muli",
                               "vo_t6_prompt", "vo_w_muli", "vo_snd_m", cue_word="मूली"))
-    # new page 6 (was page 2) — प. Note the order differs from the two pages above: this page's
-    # flow marks the words FIRST and brings the letter in after, which is what deck page 2 asks
-    # for ("VO 2 plays with प highlighted in each target word -> letter प appears -> VO 3").
+    # new page 6 (was page 2) — प.
+    # [r4l] ORDER NOW MATCHES PAGES 2 AND 4 (SME: "page 5 is similar to page 1 and 3, fix it the
+    # same way"). This page used to mark the words FIRST and bring the letter in after, which is
+    # what deck page 2 asked for verbatim ("VO 2 plays with प highlighted in each target word ->
+    # letter प appears -> VO 3"). The reviewer has since asked for all three teach sentences to
+    # read alike, and consistency across the three won out. NOTHING IS DROPPED: all three clips
+    # still play, and in the same relative order to each other - only the letter card now arrives
+    # before the marking instead of after, so the child sees प while the words light up.
+    # Flagged in CHANGES.md against row 45 so the SME can overrule if the deck order was load-bearing.
     slides.append(teach_sentence(
         "T1", ["पीतल", "के", "पतीले", "में", "पपीता", "पीला-पीला।"], "vo_line_l1", "प", "vo_snd_p",
         # [r4j] Row 44 asks to "highlight only प" in the same words rows 20/33 ask "only च" /
@@ -349,11 +355,20 @@ def build_card():
         seq=[
             {"step": "sentence"},
             {"step": "clear_words"},
-            {"step": "pause", "ms": 600},
-            {"step": "mark", "audio": "vo_t1_words",
+            {"step": "pause", "ms": 900},
+            # [r4n] SME: "we don't need प se Patang VO" - vo_snd_p is the phrase
+            # "प से पतंग।". The card still ARRIVES on its own beat, exactly as page 2 does.
+            {"step": "letter", "silent": True},
+            # [r4o] ONE CLIP FOR THE MARK BEAT, so the marking is SPOKEN OVER instead of
+            # running silent and being narrated afterwards. vo_t1_words.ogg has never been
+            # generated (row 46), so this beat had NO audio at all: the four प lit in silence on
+            # the engine fallback timeline and only THEN did vo_t1_explain speak - the SME's
+            # "first it highlights all the letters then it plays the VO". Pages 2 and 4 have no
+            # such seam because their ONE clip names the words and explains, with the marking
+            # paced across it. Same shape here, using the clip that exists.
+            # When vo_t1_words.ogg is finally produced the SME may want the two-beat script back.
+            {"step": "mark", "audio": "vo_t1_explain",
              "words": ["पीतल", "पतीले", "पपीता", "पीला-पीला।"]},
-            {"step": "letter", "audio": "vo_snd_p"},
-            {"step": "say", "audio": "vo_t1_explain"},
         ]))
     # new page 7 (was page 3) — प
     slides.append(meet_letter("T2", "प", "पपीता", "obj_papita",

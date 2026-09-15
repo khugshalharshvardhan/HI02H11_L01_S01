@@ -317,25 +317,21 @@
           },
           {
             "step": "pause",
-            "ms": 600
+            "ms": 900
+          },
+          {
+            "step": "letter",
+            "silent": true
           },
           {
             "step": "mark",
-            "audio": "vo_t1_words",
+            "audio": "vo_t1_explain",
             "words": [
               "पीतल",
               "पतीले",
               "पपीता",
               "पीला-पीला।"
             ]
-          },
-          {
-            "step": "letter",
-            "audio": "vo_snd_p"
-          },
-          {
-            "step": "say",
-            "audio": "vo_t1_explain"
           }
         ],
         "mark_bare": true,
