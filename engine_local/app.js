@@ -2203,7 +2203,27 @@ const SlideModules = {
           /* "highlight 'म' in 'मूली' again to reinforce the sound-letter connection" */
           mark:   ()=>{ lit(); if(lblEl) lblEl.classList.add("ml-marked"); }
         };
-        if(lblEl) lblEl.innerHTML = aksharaHTML(slide.data.word_hi || "", slide.data.letter);
+        /* [S01r4k] THE LABEL MARKS THE BARE CONSONANT, NOT THE WHOLE AKSHARA. aksharaHTML wraps the
+           cluster — च AND its ू — so चूहा came up with the matra coloured too; the ask is the letter
+           and nothing else. aksharaHTML's own `bare` flag is NOT the answer: it splits the span
+           between the consonant and its matra, and Chrome shapes a Devanagari cluster ACROSS inline
+           boundaries and paints the whole thing in the opening element's colour, which is the bug
+           this page started from. Use the same layered form the cover and the sentence chips use —
+           the word once as .sw-base, the letter again on top as .sw-lit — where the overlay's text is
+           the consonant ALONE, so no matra can be caught by it. refreshSoundWords re-cuts any
+           [data-sw-word] from its live font size, so the label is picked up with the rest. */
+        if(lblEl){
+          const _w = slide.data.word_hi || "", _t = slide.data.letter || "";
+          if(_w && _t && wordHasSound(_w, _t)){
+            lblEl.classList.add("sound-layered");
+            lblEl.dataset.swWord = _w;
+            lblEl.dataset.swTarget = _t;
+            lblEl.innerHTML = soundWordHTML(_w, _t,
+                                parseFloat(getComputedStyle(lblEl).fontSize) || 36);
+          } else {
+            lblEl.innerHTML = aksharaHTML(_w, _t);   // conjunct/absent: leave the old path alone
+          }
+        }
 
         const line = (CARD.assets && CARD.assets.audio_text &&
                       CARD.assets.audio_text[(slide.audio || {}).prompt]) || "";
