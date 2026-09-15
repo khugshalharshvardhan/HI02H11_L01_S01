@@ -5593,8 +5593,14 @@ const SlideModules = {
            (documented failure, HI01H02_L01_S01 shipped 4 blank match slides that way). */
         b.className = "balloon bcol-" + (i % 6) + " seq-hidden";
         b.style.setProperty("--bi", String(i));
-        b.innerHTML = '<div class="bal-body">' + imgOrEmoji(it.img, it.emoji, "bal-img", "bal-emoji") +
-                      '<span class="bal-shine"></span></div><span class="bal-tie"></span>';
+        /* [S01r5c] .bal-lift wraps the balloon so the IDLE FLOAT and the ENTRANCE can live on
+           different elements. They were both on .balloon, and an animation beats a transition on the
+           same property - so `.seq-hidden{transform:translateY(46px)}` never actually ran and the
+           balloons only faded in. Float moves to the wrapper, .balloon keeps the transform for the
+           rise, and .popped / .bal-shake stop fighting balFloat as a side effect. */
+        b.innerHTML = '<div class="bal-lift"><div class="bal-body">' +
+                      imgOrEmoji(it.img, it.emoji, "bal-img", "bal-emoji") +
+                      '<span class="bal-shine"></span></div><span class="bal-tie"></span></div>';
         field.appendChild(b); cells.push({ b, it });
       });
       host.appendChild(field);

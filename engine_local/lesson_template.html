@@ -1885,6 +1885,47 @@ body.is-start .phase-gate{
 @keyframes balShake{ 0%,100%{ transform:translateX(0) rotate(0); }
   20%{ transform:translateX(-9px) rotate(-3deg); } 40%{ transform:translateX(9px) rotate(3deg); }
   60%{ transform:translateX(-6px) rotate(-2deg); } 80%{ transform:translateX(6px) rotate(2deg); } }
+/* ============================ [S01r5c] BALLOONS: REAL ART, RISING ============================
+   1. THE SKIN. The balloon was drawn in CSS (a border-radius blob + a triangle knot + a blurred
+      shine). The SME supplied real balloon art, so .bal-body now carries it. The art goes on a
+      ::before rather than on .bal-body itself, because the per-balloon colour is a hue-rotate and a
+      filter on .bal-body would tint the OBJECT PICTURE sitting on it too. ::before is the first
+      child in paint order, so .bal-img still lands on top without needing a z-index.
+      The PNG brings its own knot and highlight, so the old ::after triangle and .bal-shine go.
+   2. THE COLOUR. One yellow asset, measured at hue 49.3deg, rotated to the six palette hues this
+      mechanic already used (none of them red or green - those are reserved for answers here).
+      Deltas are computed from 49.3, so bcol-0 barely moves and the rest land on their old colours.
+   3. THE RISE. "All the balloons should come from the bottom of the screen": the entrance now
+      starts 520px below rest, which is past the bottom of a ~494px stage, and the reveal already
+      staggers them 170ms apart so they arrive as a wave. This only works because the float moved
+      to .bal-lift - see the note in the module. */
+.balloon{ animation:none; transition:opacity .5s ease, transform 1s cubic-bezier(.17,.78,.32,1); }
+.bal-lift{ display:block; animation:balFloat 3.4s ease-in-out infinite;
+           animation-delay:calc(var(--bi,0) * -0.47s); }
+/* 680px clears the stage: a balloon rests ~20px from the top and stands ~206px tall, and
+   .slide-stage is overflow:hidden, so at +680 the whole thing sits below the clip and the
+   child sees it enter from off-screen rather than fade up from inside the card. */
+.balloon.seq-hidden{ opacity:0; transform:translateY(680px) scale(.9); pointer-events:none; }
+
+.balloon .bal-body{ box-shadow:none; border-radius:0; }
+/* the six bcol rules set a background at (0,3,0); match that weight to clear it - a plain
+   .balloon .bal-body is (0,2,0) and lost, which left a coloured RECTANGLE behind every balloon */
+.balloon[class*="bcol-"] .bal-body{ background:none; }
+.balloon .bal-body::before{ content:""; position:absolute; inset:0;
+  background:url("assets/UI/balloon.png") center/contain no-repeat;
+  filter:drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon .bal-body::after{ display:none; }
+.balloon .bal-shine{ display:none; }
+/* the art's bulge centres above the box centre, because the lower fifth is the knot */
+.balloon .bal-img{ position:relative; transform:translateY(-12px); }
+.balloon .bal-emoji{ position:relative; transform:translateY(-12px); }
+
+.balloon.bcol-0 .bal-body::before{ filter:hue-rotate(-8deg)   drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-1 .bal-body::before{ filter:hue-rotate(156deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-2 .bal-body::before{ filter:hue-rotate(207deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-3 .bal-body::before{ filter:hue-rotate(292deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-4 .bal-body::before{ filter:hue-rotate(118deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-5 .bal-body::before{ filter:hue-rotate(-25deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
 .bal-sparkle{ position:absolute; inset:0; pointer-events:none; z-index:3; }
 .bal-sparkle i{ position:absolute; top:46%; left:48%; width:9px; height:9px; border-radius:50%;
   background:#FFD86B; box-shadow:0 0 8px #FFC93C;
@@ -8381,8 +8422,14 @@ const SlideModules = {
            (documented failure, HI01H02_L01_S01 shipped 4 blank match slides that way). */
         b.className = "balloon bcol-" + (i % 6) + " seq-hidden";
         b.style.setProperty("--bi", String(i));
-        b.innerHTML = '<div class="bal-body">' + imgOrEmoji(it.img, it.emoji, "bal-img", "bal-emoji") +
-                      '<span class="bal-shine"></span></div><span class="bal-tie"></span>';
+        /* [S01r5c] .bal-lift wraps the balloon so the IDLE FLOAT and the ENTRANCE can live on
+           different elements. They were both on .balloon, and an animation beats a transition on the
+           same property - so `.seq-hidden{transform:translateY(46px)}` never actually ran and the
+           balloons only faded in. Float moves to the wrapper, .balloon keeps the transform for the
+           rise, and .popped / .bal-shake stop fighting balFloat as a side effect. */
+        b.innerHTML = '<div class="bal-lift"><div class="bal-body">' +
+                      imgOrEmoji(it.img, it.emoji, "bal-img", "bal-emoji") +
+                      '<span class="bal-shine"></span></div><span class="bal-tie"></span></div>';
         field.appendChild(b); cells.push({ b, it });
       });
       host.appendChild(field);

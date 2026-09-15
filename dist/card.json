@@ -378,81 +378,6 @@
       }
     },
     {
-      "id": "G1",
-      "phase": "guided",
-      "eis": "iconic",
-      "type": "TAP_BALLOON_SOUND",
-      "prompt_hi": "",
-      "audio": {
-        "prompt": "vo_g1_prompt",
-        "target": "vo_snd_p",
-        "correct": "vo_g1_correct",
-        "hint": "vo_g1_hint"
-      },
-      "data": {
-        "target_sound": "प",
-        "items": [
-          {
-            "word_hi": "पतंग",
-            "img": "obj_patang",
-            "emoji": "🪁",
-            "audio": "vo_w_patang",
-            "has": true
-          },
-          {
-            "word_hi": "आम",
-            "img": "obj_aam",
-            "emoji": "🥭",
-            "audio": "vo_w_aam",
-            "has": false
-          },
-          {
-            "word_hi": "पपीता",
-            "img": "obj_papita",
-            "emoji": "🍈",
-            "audio": "vo_w_papita",
-            "has": true
-          },
-          {
-            "word_hi": "केला",
-            "img": "obj_kela",
-            "emoji": "🍌",
-            "audio": "vo_w_kela",
-            "has": false
-          },
-          {
-            "word_hi": "पत्ता",
-            "img": "obj_patta",
-            "emoji": "🍃",
-            "audio": "vo_w_patta",
-            "has": true
-          },
-          {
-            "word_hi": "घर",
-            "img": "obj_ghar",
-            "emoji": "🏠",
-            "audio": "vo_w_ghar",
-            "has": false
-          },
-          {
-            "word_hi": "पानी",
-            "img": "obj_pani",
-            "emoji": "💧",
-            "audio": "vo_w_pani",
-            "has": true
-          },
-          {
-            "word_hi": "मछली",
-            "img": "obj_machhli",
-            "emoji": "🐟",
-            "audio": "vo_w_machhli",
-            "has": false
-          }
-        ],
-        "signal_name": "balloon_sound_first_try"
-      }
-    },
-    {
       "id": "G2",
       "phase": "guided",
       "eis": "iconic",
@@ -826,6 +751,81 @@
       }
     },
     {
+      "id": "G1",
+      "phase": "practice",
+      "eis": "iconic",
+      "type": "TAP_BALLOON_SOUND",
+      "prompt_hi": "",
+      "audio": {
+        "prompt": "vo_g1_prompt",
+        "target": "vo_snd_p",
+        "correct": "vo_g1_correct",
+        "hint": "vo_g1_hint"
+      },
+      "data": {
+        "target_sound": "प",
+        "items": [
+          {
+            "word_hi": "पतंग",
+            "img": "obj_patang",
+            "emoji": "🪁",
+            "audio": "vo_w_patang",
+            "has": true
+          },
+          {
+            "word_hi": "आम",
+            "img": "obj_aam",
+            "emoji": "🥭",
+            "audio": "vo_w_aam",
+            "has": false
+          },
+          {
+            "word_hi": "पपीता",
+            "img": "obj_papita",
+            "emoji": "🍈",
+            "audio": "vo_w_papita",
+            "has": true
+          },
+          {
+            "word_hi": "केला",
+            "img": "obj_kela",
+            "emoji": "🍌",
+            "audio": "vo_w_kela",
+            "has": false
+          },
+          {
+            "word_hi": "पत्ता",
+            "img": "obj_patta",
+            "emoji": "🍃",
+            "audio": "vo_w_patta",
+            "has": true
+          },
+          {
+            "word_hi": "घर",
+            "img": "obj_ghar",
+            "emoji": "🏠",
+            "audio": "vo_w_ghar",
+            "has": false
+          },
+          {
+            "word_hi": "पानी",
+            "img": "obj_pani",
+            "emoji": "💧",
+            "audio": "vo_w_pani",
+            "has": true
+          },
+          {
+            "word_hi": "मछली",
+            "img": "obj_machhli",
+            "emoji": "🐟",
+            "audio": "vo_w_machhli",
+            "has": false
+          }
+        ],
+        "signal_name": "balloon_sound_first_try"
+      }
+    },
+    {
       "id": "P8",
       "phase": "practice",
       "eis": "iconic",
@@ -839,8 +839,8 @@
   ],
   "phase_distribution": {
     "tutorial": 6,
-    "guided": 4,
-    "practice": 5
+    "guided": 3,
+    "practice": 6
   },
   "signals_expected": [
     "slide_entered",
