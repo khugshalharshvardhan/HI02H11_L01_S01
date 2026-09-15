@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/build/HI02H11_L01_S01.html" },
+    { "source": "/assets/:path*", "destination": "/build/assets/:path*" }
+  ]
+}

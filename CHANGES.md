@@ -1,6 +1,8 @@
 # CHANGES.md — HI02H11_L01_S01 · SME round-4 revise · 2026-09-14
-### r4b/r4c/r4d (page-by-page pass) — **page 1 / cover**: only क marked (nothing else), VO-synced
-### flow, SME crow art + SME crow recording trimmed to one call. Rows 10-14; OPEN-5 closed.
+### r4b-r4d — **page 1 / cover**: only क marked, VO-synced flow, SME crow art + SME crow recording
+### trimmed to one call. Rows 10-14; OPEN-5 closed.
+### r4e-r4g — **page 2 (T3)**: only च marked (no matra, no overhang, no fringe); फिर सुनो removed;
+### ✓ badge removed; exactly two clips; the highlight no longer bounces. Rows 20, 21, 23.
 
 **Deck:** `HI02H11_L01_S01_SME_Review_Final_WITH_RECOMMENDATIONS.pptx` — 31 slides, 15 pages carrying asks.
 **Baseline reviewed:** `build/HI02H11_L01_S01.html`, engine `2026.08.04b-r4-unified` — **matches** the
@@ -57,10 +59,10 @@ tracker row still resolves; only the **sequence** changed.
 | 17 | "Remove 'र' and 'ल' … focus only on 'च'." | ✅ | card-diff `options[]` 3→1; capture 02 shows one card, च |
 | 18 | Word-by-word highlight synced with the VO: चूहे → ने → चार → चने → चबाए | ✅ | `teach_seq` step `sentence`; karaoke driven off the clip's real duration |
 | 19 | "After the sentence is completed, remove the word-level highlighting." | ✅ | `clear_words` step; capture 02 shows no word fills, only lit aksharas |
-| 20 | "Highlight only the letter 'च' in चूहे, चार, चने, चबाए." | ✅ | capture 02 — चू · चा · च · च lit; **"ने" correctly unlit** |
-| 21 | "Play only the 'च' sound … show the letter 'च' clearly on screen." | ✅ | `letter` step plays `vo_snd_ch` as the card lands; capture 02 |
+| 20 | "Highlight only the letter 'च' in चूहे, चार, चने, चबाए." | ✅ | **r4g: highlights, does not move.** Three separate causes were reported as "overlapping" and fixed in turn — (a) the overlay drew its headline across its full ADVANCE, so the bar reached over the following ा/ू → clipped to the letter's INK; (b) it was positioned from `offsetTop` *and* re-applied the glyph's centring transform, double-counting it and sitting **1.09 px low** → a navy fringe along the top; now aligned to the painted box (**0.02 px**); (c) it pulsed to `scale(1.16)` on its beat, momentarily larger than the base beneath → that scale, the chip lift and the card's green glow are all gone. Sampled 59× across the beat: width, height and position each a single constant. ा · ू · े navy; **ने** unmarked |
+| 21 | "Play only the 'च' sound … show the letter 'च' clearly on screen." | ⚑ | **OVERRULED BY REVIEW (r4f) — the letter still appears on its own beat, but SILENTLY.** The page was told to play exactly two clips and no others, so the bare-च sound was dropped from it. See OPEN-10. (`vo_snd_ch` itself was trimmed to a real bare च in r4e and still serves page 10.) |
 | 22 | VO 2 = "चूहे, चार, चने, चबाए—इन सब शब्दों में 'च' की आवाज़ बार-बार आई।" | ⏳ | text in card; `vo_t3_explain` re-record pending |
-| 23 | "Keep a brief pause between VO 1 and VO 2." | ✅ | `{"step":"pause","ms":700}` between them |
+| 23 | "Keep a brief pause between VO 1 and VO 2." | ✅ | 900 ms authored pause plus the step gap — traced at **~1.7 s** between the sentence ending and the explanation starting |
 
 ## D · New page 3 (was page 5 · T4) · MEET_LETTER — च — `capture 03`
 
@@ -361,9 +363,36 @@ Not fixed, because they are not this run's: everything under Observations.
   Close, not frame-exact — and it will shift slightly when the re-recorded clips land.
 - **OPEN-7 · Deck slide order vs `02_PAGE_ORDER.md`.** The deck reviews page 8 **last**; the handover
   doc places it at **position 8**. Followed the handover doc, as agreed.
-- **OPEN-8 · `vo_snd_*` are still carrier words** ("च से चम्मच।") where the deck asks for the **bare
-  sound**. A known TTS limit recorded in `04_VO_RECORDING_LIST_current.md`; `vo_snd_n` follows the same
-  convention. These need a human reader.
+- **OPEN-10 · Page 2 now contradicts the deck on one point, by later instruction.**
+  Deck row 21 asks: *"When introducing the target sound, play only the 'च' sound. At the same time,
+  show the letter 'च' clearly on screen."* The page-by-page review then asked for **exactly two clips
+  on this page — the sentence and the explanation — and no others**. Those cannot both hold, so the
+  later instruction was taken: the letter card still arrives on its own beat, but says nothing.
+  One word restores it (`{"step":"letter","silent":True}` → drop `silent`). Flagging because the SME
+  wrote row 21 and will not see this decision unless it is written down.
+
+- **OPEN-12 · The no-bounce treatment is scoped to page 2 only.**
+  Pages 4 and 6 still lift the word chip and pulse the mark on their beat, because they mark the whole
+  akshara and were not in scope. The CSS keys off `[data-sw-word]`, which only a bare-marking chip
+  carries, so switching those pages to bare marking will bring the calm treatment with it — no extra
+  work needed at that point.
+
+- **OPEN-11 · The ✓ badge removal reaches all three teach pages, not just page 2.**
+  The green tick came from `.opt-cell.correct`, whose `::after` renders "✓" — the engine's
+  "you answered correctly" badge. The teach slides were adding that class purely to emphasise the
+  letter card, on pages where the child answers nothing. It is now a neutral warm ring (`.ss-lit`).
+  The letter beat is one shared code path, so pages 4 and 6 lost the tick too. Kept global
+  deliberately — a correctness badge on a slide with no question is wrong on all three — but it is a
+  change beyond the page-2 scope, so: say the word and pages 4 and 6 get it back.
+
+- **OPEN-8 · `vo_snd_ch` is now a BARE SOUND (r4e); the other `vo_snd_*` are still carrier words.**
+  The TTS model refuses an isolated akshara, which is why these were recorded as «च से चम्मच।» etc.
+  Rather than leave page 2 playing a whole sentence where the deck asks for one sound, the existing
+  clip was **trimmed to its first syllable** — no new generation needed, and it is what
+  `04_VO_RECORDING_LIST_current.md` says the clip should have been. `vo_snd_ch` is shared with page 10,
+  which also improves. **The same one-minute trim will do `vo_snd_p`, `vo_snd_m`, `vo_snd_l`,
+  `vo_snd_r` and `vo_snd_n`** when their pages come up. Worth one listen: the cut point came from the
+  energy envelope, not an ear.
 - **OPEN-9 · Page 12 asks for the same hand nudge as page 9, but the engine bans the hand in
   PRACTICE** (the round-3 "no visual hint in round 3" ruling, enforced centrally in `pointNudgeAt`).
   Page 9 is guided and gets the hand; page 12 is practice and does not. Since the same page also says
@@ -409,6 +438,7 @@ The game was left exactly as the deck specified on all of these.
 | Asset | State |
 |---|---|
 | 30 VO clips (20 re-records, 10 new) | **placeholder / stale** — text authored, audio pending |
+| `vo_snd_ch` | **trimmed to a bare च** (r4e) from the existing carrier clip; EAR-CHECK |
 | 8 object pictures (5 new, 3 replacements) | **pending** — emoji fallback renders today |
 | crow `obj_kauaa` | **final** — supplied by the SME, installed r4c |
 | `sfx_kanv` crow call | **final** — SME recording, trimmed to one 0.57 s call (r4d) |

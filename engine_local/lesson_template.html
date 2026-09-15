@@ -1734,6 +1734,10 @@ body.is-start .phase-gate{
 .opt-grid.ss-letter-card{ display:flex; justify-content:center; align-items:center;
   margin-top:14px; pointer-events:none; }
 .opt-grid.ss-letter-card .opt-cell{ min-height:0; width:138px; height:138px; padding:6px; flex:0 0 auto; }
+/* [S01r4f] the teach card's emphasis: a warm ring, NO green and NO checkmark. `.correct` carries a
+   ✓ badge meaning "you answered correctly", which is a lie on a slide with nothing to answer. */
+.opt-cell.ss-lit{ border-color:var(--tgt-ink); background:#FFF7EC;
+  box-shadow:0 5px 12px rgba(194,89,10,.16); }
 
 /* ---- MEET_LETTER VO-synced reveal -------------------------------------------------------------- */
 .meet-pic-box.seq-hidden{ opacity:0; transform:translateY(14px) scale(.94); }
@@ -1818,20 +1822,41 @@ body.is-start .phase-gate{
 .lh-strip.lh-dim .tgt-akshara{ color:var(--navy); }
 .lh-strip.lh-dim .sw-lit{ opacity:0; }
 
-/* [S01r4c] LAYERED WORD - the base copy, plus one absolutely-registered copy per marked consonant,
-   each clipped to that consonant's own advance. Both layers hold the SAME text, so they shape
-   identically and sit exactly on top of one another; clipping the paint is the only way to colour
-   part of a Devanagari cluster, because splitting the text splits the cluster. */
-.lh-word.lh-layered{ position:relative; display:inline-block; white-space:pre; }
-.lh-word.lh-layered .sw-base{ color:var(--navy); }
+/* [S01r4d] LAYERED WORD - the word, plus a copy of JUST THE TARGET LETTER laid over each occurrence
+   of it. This is how "only क / only च, no matra, no headline overhang" is achieved: the matra is not
+   in the overlay's text at all, so no geometry can include it. Splitting the word's own text is not
+   an option - Devanagari shapes across inline boundaries, so a span around the consonant still
+   paints its whole cluster. Generic on purpose: the landing and the teach sentences share it. */
+.sound-layered{ position:relative; display:inline-block; white-space:pre; }
+.sound-layered .sw-base{ color:inherit; }
 /* `left` is written inline, per occurrence; top:0 puts the overlay on the same line box as the base,
    so the two share a baseline and the glyphs register exactly. */
-.lh-word.lh-layered .sw-lit{
+.sound-layered .sw-lit{
   position:absolute; top:0; white-space:pre; pointer-events:none;
   color:var(--tgt-ink); transition:opacity .22s ease;
   /* it duplicates a letter, so keep it out of selections; aria-hidden keeps it out of the
      accessibility tree too, so the sentence is read once */
   -webkit-user-select:none; user-select:none; }
+.lh-word.sound-layered .sw-base{ color:var(--navy); }
+
+/* ---- the teach sentences (page 2 onward) --------------------------------------------------------
+   The target stays in the ink colour while the line is being READ, and lights up only on the
+   explanation beat - "During the explanation, highlight only the letter च in …". Lighting it from
+   the start would give the answer away before the child has heard the point being made. */
+.sentence-word{ position:relative; }            /* the overlay's positioning context */
+.sentence-word > .sw-lit{ position:absolute; white-space:pre; pointer-events:none;
+  color:var(--tgt-ink); opacity:0; transition:opacity .22s ease;
+  -webkit-user-select:none; user-select:none; }
+.sentence-word.marked > .sw-lit{ opacity:1; }
+/* [S01r4g] HIGHLIGHT, DO NOT BOUNCE — match the cover, where the क simply changes colour.
+   The overlay used to pulse to scale(1.16) on its beat, which made the orange letter momentarily
+   BIGGER than the navy one underneath it, so the base showed around the edges: that is the
+   "overlapping" in the report, and the bounce, from one rule. There is deliberately no scale, no
+   lift and no glow here now — the letter turns amber and stays put.
+   Scoped by [data-sw-word], which only a bare-marking chip carries, so the akshara pages are
+   untouched. */
+.sentence-word[data-sw-word].mark-now{ transform:none; }
+.sentence-word[data-sw-word].mark-now > .sw-lit{ animation:none; }
 .lh-pic{ transition:opacity .42s ease, transform .42s ease; }
 .lh-pic.lh-in{ opacity:1; transform:none; }
 
@@ -4458,6 +4483,21 @@ function _soundOffsets(word, target, fontPx){
   return hits;
 }
 
+/* How far the target letter's INK actually reaches, in CSS px from its own origin.
+   The overlay holds only the letter, but a standalone Devanagari letter draws its shirorekha across
+   its whole ADVANCE - right side bearing included - so an unclipped overlay lays an orange bar over
+   the neighbour. In चार that bar reached across the ा and read, correctly, as "you are highlighting
+   the AA matra". Clipping the overlay to its own ink stops the bar where the letter stops. Safe in a
+   way the earlier whole-word clip was not: there is nothing in this element BUT the letter, so a clip
+   here cannot catch a matra or a floating mark. */
+function _soundInkW(target, fontPx){
+  _sndCx = _sndCx || (_sndCv = document.createElement("canvas")).getContext("2d");
+  _sndCx.font = '800 ' + fontPx + 'px "Baloo 2","Noto Sans Devanagari",sans-serif';
+  const m = _sndCx.measureText(target);
+  const r = m.actualBoundingBoxRight;
+  return (isFinite(r) && r > 0) ? r : m.width;
+}
+
 /* One word, layered: the word itself, plus a copy of JUST THE LETTER laid over each occurrence.
 
    Two earlier attempts painted more than the letter, and the reason is the same both times — they
@@ -4473,18 +4513,70 @@ function _soundOffsets(word, target, fontPx){
 function soundWordHTML(word, target, fontPx){
   const esc = (s)=> String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   const hits = _soundOffsets(word, target, fontPx);
+  const inkW = _soundInkW(target, fontPx);
   return '<span class="sw-base">' + esc(word) + '</span>'
     + hits.map(x => '<span class="sw-lit" data-ch="' + esc(target) + '" aria-hidden="true" style="left:'
-        + x.toFixed(2) + 'px">' + esc(target) + '</span>').join("");
+        + x.toFixed(2) + 'px;clip-path:inset(-0.5em calc(100% - ' + inkW.toFixed(2) + 'px) -0.5em 0)">'
+        + esc(target) + '</span>').join("");
 }
 
-/* Canvas metrics before the web font lands are the FALLBACK font's, so every clip would be cut in
-   the wrong place on a cold load. Recompute once Baloo 2 is actually available - same guard the
-   matra SVGs carry (refreshMatraWords), for the same reason. */
+/* Lay the letter-overlay over a sentence chip whose .sw-text has ALREADY been fitted and centred.
+   Reads the fitted font and the centring transform off the glyph span and copies both, so the
+   overlay tracks whatever centerInkGlyph decided — including its per-word shrink. */
+function layerSoundOnChip(chip){
+  const word = chip.dataset.swWord, target = chip.dataset.swTarget;
+  const t = chip.querySelector(".sw-text");
+  if(!t || !word || !target) return;
+  chip.querySelectorAll(":scope > .sw-lit").forEach(e => e.remove());
+  const cs = getComputedStyle(t);
+  const fs = parseFloat(cs.fontSize);
+  if(!fs) return;
+  const offs = _soundOffsets(word, target, fs);
+  if(!offs.length) return;
+  /* Align to where the base text is ACTUALLY PAINTED, not to its layout offset.
+     offsetTop on an inline element is the top of its line box, and centerInkGlyph then shifts the
+     glyph with a translateY on top of that — so positioning at offsetTop AND re-applying the same
+     transform double-counted the shift and left the overlay ~1px low. At 48px bold that is a visible
+     navy fringe along the top of the orange letter: reported as the highlight "overlapping".
+     getBoundingClientRect already includes the transform, so read the painted box and copy NO
+     transform. Divide by --scale because the stage is transform-scaled; subtract the chip's border
+     because an absolutely-positioned child is placed against the PADDING box. */
+  const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+  const tr = t.getBoundingClientRect(), cr = chip.getBoundingClientRect();
+  if(tr.height < 2) return;                       // not laid out yet — a later refresh will catch it
+  const L = (tr.left - cr.left) / scale - chip.clientLeft;
+  const T = (tr.top  - cr.top ) / scale - chip.clientTop;
+  const inkW = _soundInkW(target, fs);
+  offs.forEach(x => {
+    const o = document.createElement("span");
+    o.className = "sw-lit"; o.dataset.ch = target;
+    o.setAttribute("aria-hidden", "true");
+    o.textContent = target;
+    o.style.left = (L + x) + "px";
+    o.style.top = T + "px";
+    o.style.fontFamily = cs.fontFamily; o.style.fontSize = cs.fontSize;
+    o.style.fontWeight = cs.fontWeight; o.style.lineHeight = cs.lineHeight;
+    o.style.clipPath = "inset(-0.5em calc(100% - " + inkW.toFixed(2) + "px) -0.5em 0)";
+    chip.appendChild(o);
+  });
+}
+function refreshSoundChips(root){
+  (root || document).querySelectorAll(".sentence-word[data-sw-word]").forEach(layerSoundOnChip);
+}
+
+/* Re-lay every layered word from the LIVE element, and never from an assumed size.
+   Two ways the offsets go wrong if this is skipped:
+     · the web font has not loaded yet, so canvas metrics are the fallback font's;
+     · the size in the card does not match the size on screen. Measured: the teach sentence's
+       .sw-text computes to 20px inside the tutorial card, not the 60px its base rule declares, so
+       hardcoding 60 put every overlay at 3x its true offset — invisible on a word whose target sits
+       at offset 0, and badly wrong on any other.
+   Reading getComputedStyle here makes both impossible: the size used to place the overlay is by
+   definition the size it is drawn at. */
 function refreshSoundWords(root){
   (root || document).querySelectorAll("[data-sw-word]").forEach(el=>{
-    el.innerHTML = soundWordHTML(el.dataset.swWord, el.dataset.swTarget,
-                                 parseFloat(el.dataset.swFs) || 52);
+    const fs = parseFloat(getComputedStyle(el).fontSize) || parseFloat(el.dataset.swFs) || 52;
+    el.innerHTML = soundWordHTML(el.dataset.swWord, el.dataset.swTarget, fs);
   });
 }
 try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=> refreshSoundWords()); }catch(e){}
@@ -7666,11 +7758,17 @@ const SlideModules = {
         strip.appendChild(chip);
       });
       const whole = d.whole_audio ? ("assets/Audio/" + d.whole_audio + "." + AUDIO_EXT) : null;
-      const spk = document.createElement("button"); spk.className = "read-whole-btn"; spk.innerHTML = "फिर सुनो";   /* [28m] no volume glyph */
-      spk.onclick = ()=>{ if(state.demoRunning || isPlaying) return;   // [24a N8] a mid-demo/mid-VO replay would gen-kill the reveal chain (आगे brick)
-        state.audioReplays++; strip.querySelectorAll(".sentence-word").forEach(c => c.classList.add("said"));
-        play(whole, ()=>{}); };
-      stim.appendChild(strip); stim.appendChild(spk);
+      stim.appendChild(strip);
+      /* [S01r4f] hide_replay: a self-driving teach page can drop the pill entirely. The Swiftie
+         shoulder chip still replays the line, so nothing is lost - this only removes the second,
+         redundant control sitting between the sentence and the letter card. */
+      if(!d.hide_replay){
+        const spk = document.createElement("button"); spk.className = "read-whole-btn"; spk.innerHTML = "फिर सुनो";   /* [28m] no volume glyph */
+        spk.onclick = ()=>{ if(state.demoRunning || isPlaying) return;   // [24a N8] a mid-demo/mid-VO replay would gen-kill the reveal chain (आगे brick)
+          state.audioReplays++; strip.querySelectorAll(".sentence-word").forEach(c => c.classList.add("said"));
+          play(whole, ()=>{}); };
+        stim.appendChild(spk);
+      }
       if(d.teach_seq){
         /* [S01r4] TEACH SEQUENCE - the SME's "Recommended Animation Flow", authored per page.
            Round 3 had to report the two highlight asks as NOT BUILT; this is them. The flow differs
@@ -7697,10 +7795,25 @@ const SlideModules = {
         const chips = [...strip.querySelectorAll(".sentence-word")];
         const texts = (d.words || []).map(w => (typeof w === "string") ? w : w.text);
         const clearWords = ()=> chips.forEach(c => c.classList.remove("said", "saying"));
-        /* Pre-render each word with its target aksharas wrapped, so "mark" can light just those. */
+        /* Pre-render each word so the "mark" beat can light just the target.
+           mark_bare => the letter-overlay (only च, never चू/चा — the matra is not in the overlay's
+           text, so it cannot be caught); otherwise the older whole-akshara span. The size passed here
+           must match the rendered size or every overlay lands in the wrong place: the chip's own
+           .sw-text is 60px, set in the stylesheet, NOT inherited from this module. */
         chips.forEach((c, i) => {
           const t = c.querySelector(".sw-text");
-          if(t) t.innerHTML = aksharaHTML(texts[i], d.target_sound);
+          if(!t) return;
+          if(d.mark_bare){
+            /* The overlay must NOT live inside .sw-text. That span is an .ink-glyph, and
+               centerInkGlyph() width-fits it from `span.textContent` — an overlay child makes that
+               read "चूहेच" instead of "चूहे", and the fitter duly shrank the word from 48px to 20px.
+               Measured, and it is why the sentence came out tiny. The overlay is a SIBLING, copying
+               the span's FITTED size and transform, so the fitter sees exactly what it always saw. */
+            c.dataset.swWord = texts[i];
+            c.dataset.swTarget = d.target_sound || "";
+          } else {
+            t.innerHTML = aksharaHTML(texts[i], d.target_sound);
+          }
         });
 
         const alive = ()=> CARD.slides[state.idx] === slide;
@@ -7727,9 +7840,21 @@ const SlideModules = {
           if(st.step === "letter"){
             cells.forEach(x => { x.c.classList.remove("seq-hidden"); x.c.classList.add("ss-show"); });
             const t = cells.find(x => x.opt.letter === d.target_sound) || cells[0];
-            if(t){ t.c.classList.add("correct", "reveal-pulse"); cells.forEach(x => { if(x !== t) x.c.classList.add("faded"); }); }
+            /* [S01r4f] NOT `.correct`. That class paints the card green AND hangs a checkmark badge
+               off it (.opt-cell.correct::after), which on a teach slide reads as "you answered right"
+               when the child has not answered anything - there is nothing to answer here. `ss-lit` is
+               neutral emphasis: the card is simply the letter, being shown. */
+            /* [S01r4g] `reveal-pulse` animates a GREEN box-shadow - a leftover from when this card
+               was `.correct`. On an amber card it is both the wrong colour and one more thing moving
+               on a page asked to simply highlight. Dropped wherever the letter is marked bare. */
+            if(t){ t.c.classList.add("ss-lit");
+                   if(!d.mark_bare) t.c.classList.add("reveal-pulse");
+                   cells.forEach(x => { if(x !== t) x.c.classList.add("faded"); }); }
             SwiftPAL.emit("sentence_sound_demo", { slide_id: slide.id, phase: slide.phase, sound: d.target_sound });
-            /* "play ONLY the <letter> sound ... at the same time show the letter clearly on screen" */
+            /* `silent` shows the letter without speaking it. The deck asked for the bare sound on this
+               beat; a later review asked for the sentence and the explanation ONLY, so the card can
+               arrive without a clip. Absent => unchanged (the target sound plays, as before). */
+            if(st.silent){ next(); return; }
             const a = st.audio ? ("assets/Audio/" + st.audio + "." + AUDIO_EXT) : (audioFor(slide, "target") || null);
             play(a, next);
             return;
@@ -8124,7 +8249,8 @@ function mountSlide(idx){
   // built its tiles synchronously at mount; rAF second pass re-fits after slide-in layout +
   // font-load settle. (16n: the lone rAF pass could skip drag-tile / stimulus glyphs — Yasir #6.)
   centerAllGlyphs($("slideHost"));
-  requestAnimationFrame(()=>{ centerAllGlyphs($("slideHost")); refreshMatraWords($("slideHost")); });
+  requestAnimationFrame(()=>{ centerAllGlyphs($("slideHost")); refreshMatraWords($("slideHost"));
+    refreshSoundChips($("slideHost")); });   /* AFTER the fit+centre, never before */
 
   // play the full VO chain automatically (prompt → phoneme/word_name → instruction).
   // If the slide gated its nav button on audio, enable it once the chain finishes
@@ -8318,7 +8444,7 @@ function boot(){
          layered form carries its own data-sw-* so refreshSoundWords can re-cut the clips once the
          real font has loaded. */
       const _lhWord = (w)=> hero.mark_bare
-        ? ('<span class="lh-word lh-layered seq-hidden" data-sw-word="' + w
+        ? ('<span class="lh-word sound-layered seq-hidden" data-sw-word="' + w
              + '" data-sw-target="' + (hero.target_sound || "") + '" data-sw-fs="52">'
              + soundWordHTML(w, hero.target_sound, 52) + '</span>')
         : ('<span class="lh-word seq-hidden">' + aksharaHTML(w, hero.target_sound) + '</span>');
@@ -8327,6 +8453,7 @@ function boot(){
             imgOrEmoji(hero.picture_img, hero.picture_emoji, "lh-img", "lh-emoji") + '</div>' : "");
       el.classList.add("show", "lh-hero");
       [...el.querySelectorAll(".lh-word")].forEach((w, i)=> w.dataset.i = i);
+      if(hero.mark_bare) refreshSoundWords(el);   // re-lay from the real rendered size
       /* "Remove the existing heading from this screen" - REMOVE, not hide. A display:none node still
          reports a 0x0 rect, which sweep_overlap scores as an element spilling outside the card.
          document.title is set from CARD.title.hi above, not from this node. */
@@ -8541,7 +8668,7 @@ function boot(){
     mountSlide(Math.max(0, Math.min(j, CARD.slides.length - 1)));
   })();
   // when the web font finishes loading, re-centre glyphs (metrics change vs fallback)
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>{ centerAllGlyphs(); refreshMatraWords(); }); }
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>{ centerAllGlyphs(); refreshMatraWords(); refreshSoundChips(); }); }
   // dev banner if ?dev=1 — show empty initially
   if(new URLSearchParams(location.search).has("dev") || new URLSearchParams(location.search).has("nav")){
     if($("devBanner")){ $("devBanner").textContent = "engine ready · slides=" + CARD.slides.length; $("devBanner").className = "dev-banner show"; }

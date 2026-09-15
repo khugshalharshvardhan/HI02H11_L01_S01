@@ -104,11 +104,11 @@
           },
           {
             "step": "pause",
-            "ms": 700
+            "ms": 900
           },
           {
             "step": "letter",
-            "audio": "vo_snd_ch"
+            "silent": true
           },
           {
             "step": "mark",
@@ -121,6 +121,8 @@
             ]
           }
         ],
+        "mark_bare": true,
+        "hide_replay": true,
         "signal_name": "sentence_sound_first_try"
       }
     },
@@ -224,6 +226,8 @@
             ]
           }
         ],
+        "mark_bare": false,
+        "hide_replay": false,
         "signal_name": "sentence_sound_first_try"
       }
     },
@@ -334,6 +338,8 @@
             "audio": "vo_t1_explain"
           }
         ],
+        "mark_bare": false,
+        "hide_replay": false,
         "signal_name": "sentence_sound_first_try"
       }
     },

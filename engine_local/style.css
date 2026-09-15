@@ -1723,6 +1723,10 @@ body.is-start .phase-gate{
 .opt-grid.ss-letter-card{ display:flex; justify-content:center; align-items:center;
   margin-top:14px; pointer-events:none; }
 .opt-grid.ss-letter-card .opt-cell{ min-height:0; width:138px; height:138px; padding:6px; flex:0 0 auto; }
+/* [S01r4f] the teach card's emphasis: a warm ring, NO green and NO checkmark. `.correct` carries a
+   ✓ badge meaning "you answered correctly", which is a lie on a slide with nothing to answer. */
+.opt-cell.ss-lit{ border-color:var(--tgt-ink); background:#FFF7EC;
+  box-shadow:0 5px 12px rgba(194,89,10,.16); }
 
 /* ---- MEET_LETTER VO-synced reveal -------------------------------------------------------------- */
 .meet-pic-box.seq-hidden{ opacity:0; transform:translateY(14px) scale(.94); }
@@ -1807,20 +1811,41 @@ body.is-start .phase-gate{
 .lh-strip.lh-dim .tgt-akshara{ color:var(--navy); }
 .lh-strip.lh-dim .sw-lit{ opacity:0; }
 
-/* [S01r4c] LAYERED WORD - the base copy, plus one absolutely-registered copy per marked consonant,
-   each clipped to that consonant's own advance. Both layers hold the SAME text, so they shape
-   identically and sit exactly on top of one another; clipping the paint is the only way to colour
-   part of a Devanagari cluster, because splitting the text splits the cluster. */
-.lh-word.lh-layered{ position:relative; display:inline-block; white-space:pre; }
-.lh-word.lh-layered .sw-base{ color:var(--navy); }
+/* [S01r4d] LAYERED WORD - the word, plus a copy of JUST THE TARGET LETTER laid over each occurrence
+   of it. This is how "only क / only च, no matra, no headline overhang" is achieved: the matra is not
+   in the overlay's text at all, so no geometry can include it. Splitting the word's own text is not
+   an option - Devanagari shapes across inline boundaries, so a span around the consonant still
+   paints its whole cluster. Generic on purpose: the landing and the teach sentences share it. */
+.sound-layered{ position:relative; display:inline-block; white-space:pre; }
+.sound-layered .sw-base{ color:inherit; }
 /* `left` is written inline, per occurrence; top:0 puts the overlay on the same line box as the base,
    so the two share a baseline and the glyphs register exactly. */
-.lh-word.lh-layered .sw-lit{
+.sound-layered .sw-lit{
   position:absolute; top:0; white-space:pre; pointer-events:none;
   color:var(--tgt-ink); transition:opacity .22s ease;
   /* it duplicates a letter, so keep it out of selections; aria-hidden keeps it out of the
      accessibility tree too, so the sentence is read once */
   -webkit-user-select:none; user-select:none; }
+.lh-word.sound-layered .sw-base{ color:var(--navy); }
+
+/* ---- the teach sentences (page 2 onward) --------------------------------------------------------
+   The target stays in the ink colour while the line is being READ, and lights up only on the
+   explanation beat - "During the explanation, highlight only the letter च in …". Lighting it from
+   the start would give the answer away before the child has heard the point being made. */
+.sentence-word{ position:relative; }            /* the overlay's positioning context */
+.sentence-word > .sw-lit{ position:absolute; white-space:pre; pointer-events:none;
+  color:var(--tgt-ink); opacity:0; transition:opacity .22s ease;
+  -webkit-user-select:none; user-select:none; }
+.sentence-word.marked > .sw-lit{ opacity:1; }
+/* [S01r4g] HIGHLIGHT, DO NOT BOUNCE — match the cover, where the क simply changes colour.
+   The overlay used to pulse to scale(1.16) on its beat, which made the orange letter momentarily
+   BIGGER than the navy one underneath it, so the base showed around the edges: that is the
+   "overlapping" in the report, and the bounce, from one rule. There is deliberately no scale, no
+   lift and no glow here now — the letter turns amber and stays put.
+   Scoped by [data-sw-word], which only a bare-marking chip carries, so the akshara pages are
+   untouched. */
+.sentence-word[data-sw-word].mark-now{ transform:none; }
+.sentence-word[data-sw-word].mark-now > .sw-lit{ animation:none; }
 .lh-pic{ transition:opacity .42s ease, transform .42s ease; }
 .lh-pic.lh-in{ opacity:1; transform:none; }
 

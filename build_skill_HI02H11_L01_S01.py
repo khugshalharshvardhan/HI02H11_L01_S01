@@ -187,7 +187,7 @@ def _item(word, img, audio, has=None, gender=None):
     return d
 
 
-def teach_sentence(sid, words, whole, sound, sound_clip, seq):
+def teach_sentence(sid, words, whole, sound, sound_clip, seq, mark_bare=False, hide_replay=False):
     """A tutorial SENTENCE_SOUND: the child watches and listens, there is nothing to pick.
     `seq` is the deck's own "Recommended Animation Flow" for that page, step by step."""
     return {
@@ -211,6 +211,10 @@ def teach_sentence(sid, words, whole, sound, sound_clip, seq):
             # "show the letter clearly on screen" rather than as a choice.
             "options": [{"letter": sound, "audio": sound_clip}],
             "teach_seq": seq,
+            # mark_bare: light the CONSONANT ONLY (च, never चू/चा). Page-by-page: page 2 has it.
+            "mark_bare": mark_bare,
+            # hide_replay: drop the «फिर सुनो» pill. The Swiftie shoulder chip still replays the line.
+            "hide_replay": hide_replay,
             "signal_name": "sentence_sound_first_try",
         },
     }
@@ -290,14 +294,20 @@ def build_card():
     # new page 2 (was page 4) — च
     slides.append(teach_sentence(
         "T3", ["चूहे", "ने", "चार", "चने", "चबाए।"], "vo_line_l2", "च", "vo_snd_ch",
+        mark_bare=True,      # [r4e] "highlight only च - no matra"
+        hide_replay=True,    # [r4f] "remove the फिर सुनो button"
+        # [r4f] EXACTLY TWO CLIPS ON THIS PAGE, per review: VO 1 the sentence, a brief pause, VO 2 the
+        # explanation. The letter card still arrives on its own beat but is now SILENT - which means
+        # this page no longer satisfies the deck's own "play only the च sound" for row 21. The later
+        # instruction wins; the conflict is written up in CHANGES.md so the SME can see it.
         seq=[
-            {"step": "sentence"},                 # word-by-word, in step with the line
+            {"step": "sentence"},                 # VO 1, word-by-word in step with the line
             {"step": "clear_words"},              # "After the sentence is completed, remove the
                                                   #  word-level highlighting."
-            {"step": "pause", "ms": 700},         # "Keep a brief pause between VO 1 and VO 2."
-            {"step": "letter", "audio": "vo_snd_ch"},   # "play only the च sound ... show the letter"
+            {"step": "pause", "ms": 900},         # "a brief pause ... a moment to notice"
+            {"step": "letter", "silent": True},   # the letter appears; nothing is spoken
             {"step": "mark", "audio": "vo_t3_explain",
-             "words": ["चूहे", "चार", "चने", "चबाए।"]},
+             "words": ["चूहे", "चार", "चने", "चबाए।"]},   # VO 2
         ]))
     # new page 3 (was page 5) — च; the ant is gone, the mouse the sentence is ABOUT takes its place
     slides.append(meet_letter("T4", "च", "चूहा", "obj_chuha",
