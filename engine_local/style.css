@@ -1844,8 +1844,13 @@ body.is-start .phase-gate{
    lift and no glow here now — the letter turns amber and stays put.
    Scoped by [data-sw-word], which only a bare-marking chip carries, so the akshara pages are
    untouched. */
-.sentence-word[data-sw-word].mark-now{ transform:none; }
-.sentence-word[data-sw-word].mark-now > .sw-lit{ animation:none; }
+.sentence-word.bare-mark.mark-now{ transform:none; }
+.sentence-word.bare-mark.mark-now .sw-lit{ animation:none; }
+/* [S01r4h] The overlay is nested inside .sw-text now (the cover's own structure), so it is no
+   longer a direct child of the chip and the `>` rules above cannot reach it. Same contract as
+   before — invisible while the line is being READ, amber on the explanation beat — new selector. */
+.sentence-word .sw-text.sound-layered .sw-lit{ opacity:0; transition:opacity .22s ease; }
+.sentence-word.marked .sw-text.sound-layered .sw-lit{ opacity:1; }
 .lh-pic{ transition:opacity .42s ease, transform .42s ease; }
 .lh-pic.lh-in{ opacity:1; transform:none; }
 
