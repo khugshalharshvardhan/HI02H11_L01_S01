@@ -511,7 +511,6 @@
       "audio": {
         "prompt": "vo_g3_prompt",
         "target": "vo_snd_ch",
-        "hint": "vo_g3_hint",
         "try_again": "vo_g3_try",
         "reveal": "vo_g3_reveal",
         "correct": "vo_g3_correct"
@@ -551,7 +550,10 @@
           }
         ],
         "signal_name": "sentence_sound_first_try",
-        "reveal_seq": true
+        "reveal_seq": true,
+        "hide_replay": true,
+        "seq_say_whole": true,
+        "fixed_order": true
       }
     },
     {
@@ -766,7 +768,10 @@
           }
         ],
         "signal_name": "sentence_sound_first_try",
-        "reveal_seq": true
+        "reveal_seq": true,
+        "hide_replay": false,
+        "seq_say_whole": false,
+        "fixed_order": false
       }
     },
     {
@@ -892,7 +897,6 @@
       "vo_g2_reveal": "assets/Audio/vo_g2_reveal.ogg",
       "vo_g2_try": "assets/Audio/vo_g2_try.ogg",
       "vo_g3_correct": "assets/Audio/vo_g3_correct.ogg",
-      "vo_g3_hint": "assets/Audio/vo_g3_hint.ogg",
       "vo_g3_prompt": "assets/Audio/vo_g3_prompt.ogg",
       "vo_g3_reveal": "assets/Audio/vo_g3_reveal.ogg",
       "vo_g3_try": "assets/Audio/vo_g3_try.ogg",
@@ -970,7 +974,6 @@
       "vo_g2_reveal": "सुनो — इसमें प की आवाज़ है।",
       "vo_g2_try": "इस शब्द की शुरुआत में प की आवाज़ नहीं है। एक बार फिर सुनो।",
       "vo_g3_correct": "चूहे, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।",
-      "vo_g3_hint": "हर शब्द की शुरू की आवाज़ पर ध्यान दो।",
       "vo_g3_prompt": "ध्यान से सुनो — इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
       "vo_g3_reveal": "ध्यान से देखो, सही जवाब च है।",
       "vo_g3_try": "यह च की आवाज़ नहीं है।",

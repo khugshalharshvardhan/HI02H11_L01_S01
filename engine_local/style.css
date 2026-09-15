@@ -1088,32 +1088,6 @@ body.tut-page{background:#FFFFFF;}
 .tap-all-item .lbl{font-size:24px;font-weight:800;color:var(--navy);}
 .tap-all-item.got{border-color:var(--correct);background:var(--correct-bg);box-shadow:0 6px 14px rgba(0,177,50,.18);}
 .tap-all-item.got::after{content:"\2713";position:absolute;top:6px;right:10px;font-size:40px;font-weight:900;color:var(--correct);}
-/* [S01r4p] OPTION ENTRY + the "small sparkle/tick" the deck asks for on a correct tap.
-   The chip hides on the class only (opacity + pointer-events), so revealing is just removing it and
-   the resting style is untouched. The base rule's transition has no `opacity` and runs transform at
-   .15s, which is a snap, not an entrance - restated here in full so the entry eases while hover and
-   the colour changes keep their old timing. .wrong-flash still wins with its transition:none. */
-.tap-all-item{ transition:opacity .34s ease, transform .3s cubic-bezier(.2,.9,.3,1.25),
-               border-color .15s, background .15s, box-shadow .15s; }
-.tap-all-item.tap-seq-hidden{ opacity:0; transform:translateY(16px) scale(.92); pointer-events:none; }
-/* the tick was static - it appeared, but nothing about it read as a reward */
-.tap-all-item.got{ animation:tapGotPop .44s ease-out; }
-/* [S01r4q] SME: "the current tick mark does not look good". It was a bare 40px green glyph
-   dropped at the card corner with no ground of its own, so it sat ON the picture and read as
-   stray text. Now a proper badge: filled green disc, white tick, white ring to lift it off
-   whatever it overlaps, and it hangs just outside the corner (.tap-all-item has no overflow
-   clip, so it may overhang). Every property the old rule set is restated here so none leaks. */
-.tap-all-item.got::after{ content:"\2713"; position:absolute; top:-13px; right:-13px;
-  width:46px; height:46px; border-radius:50%; box-sizing:border-box;
-  display:flex; align-items:center; justify-content:center;
-  font-size:25px; line-height:1; font-weight:900; color:#fff;
-  background:var(--correct); border:3px solid #fff;
-  box-shadow:0 4px 12px rgba(0,140,40,.38);
-  animation:tapTickIn .44s cubic-bezier(.2,.9,.25,1.5); }
-@keyframes tapGotPop{ 0%{transform:scale(1);} 38%{transform:scale(1.07);} 100%{transform:scale(1);} }
-@keyframes tapTickIn{ 0%{opacity:0;transform:scale(.3) rotate(-20deg);}
-                      60%{opacity:1;transform:scale(1.18) rotate(4deg);}
-                      100%{opacity:1;transform:scale(1) rotate(0);} }
 /* [27a] ✕ dropped (third and last ✕ site) — red ring only, same language as the pick cards. The
    ✓ on .got STAYS: the ruling removed the wrong-mark, not the right-mark, and TAP_ALL needs a
    persistent tick to show which items are already banked. Lock/dim kept, as with .sentence-word. */

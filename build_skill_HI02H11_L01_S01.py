@@ -265,7 +265,8 @@ def sort_two(sid, phase, prompt, bins, items, clips, signal):
     }
 
 
-def pick_sound(sid, phase, prompt, words, whole, sound, options, clips):
+def pick_sound(sid, phase, prompt, words, whole, sound, options, clips,
+               hide_replay=False, seq_say_whole=False, fixed_order=False):
     """SENTENCE_SOUND as a real question: hear the line, pick the sound that repeats.
     reveal_seq makes the letters arrive one at a time, each speaking itself — the deck asks for
     exactly that on both of these pages ("Letters should appear one by one... play its
@@ -279,6 +280,8 @@ def pick_sound(sid, phase, prompt, words, whole, sound, options, clips):
             "whole_audio": whole, "target_sound": sound,
             "options": options,
             "signal_name": "sentence_sound_first_try", "reveal_seq": True,
+            "hide_replay": hide_replay, "seq_say_whole": seq_say_whole,
+            "fixed_order": fixed_order,
         },
     }
 
@@ -414,8 +417,17 @@ def build_card():
         [{"letter": "च", "audio": "vo_snd_ch"},
          {"letter": "ल", "audio": "vo_snd_l"},
          {"letter": "र", "audio": "vo_snd_r"}],
-        {"prompt": "vo_g3_prompt", "target": "vo_snd_ch", "hint": "vo_g3_hint",
-         "try_again": "vo_g3_try", "reveal": "vo_g3_reveal", "correct": "vo_g3_correct"}))
+        # [r4p] NO `hint` KEY ON PURPOSE. revealAnswer() speaks
+        #   audioFor("hint") || audioFor("reveal") || ...
+        # so while a generic `hint` was authored, the 2nd-wrong rung spoke
+        # "हर शब्द की शुरू की आवाज़ पर ध्यान दो।" instead of the Hint 2 line the deck asks for.
+        # Dropping it lets `reveal` through, which IS that line. The deck specifies exactly two
+        # rungs on this page, so the generic third one has nothing to attach to anyway.
+        {"prompt": "vo_g3_prompt", "target": "vo_snd_ch",
+         "try_again": "vo_g3_try", "reveal": "vo_g3_reveal", "correct": "vo_g3_correct"},
+        hide_replay=True,      # [r4p] "remove the फिर से सुनो button"
+        seq_say_whole=True,    # [r4p] ...so the sentence must play itself, before the letters
+        fixed_order=True))     # [r4p] entry order is named in the flow: च -> ल -> र
     # new page 11 (was page 12) — the bins become प vs च, and every option now clearly carries
     # one of the two ("मोती" had neither, so it could not belong in either basket)
     slides.append(sort_two(

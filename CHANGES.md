@@ -27,6 +27,27 @@
 ### lit, and the scale-pulse is gone — pulsing the overlay alone would scale it off the base and show
 ### the navy letter through. Matches the flow the module documents and the no-bounce ask.
 
+### S01r4p + r4p — **page 9 (G3)**, the pick-the-sound question. Most of the deck's flow was already
+### implemented (reveal_seq letters one-by-one each speaking itself; red flash + buzzShake on a wrong
+### tap; terminal help at max_attempts=2 that puts the HAND on the correct card without selecting it;
+### the three VO lines authored verbatim). Four things were not:
+###  1. «फिर से सुनो» removed — hide_replay was only honoured on the teach path.
+###  2. THE SENTENCE NEVER PLAYED ITSELF. The reveal chain was prompt -> letters; the sentence was
+###     reachable ONLY through that pill, so removing the pill would have asked "which sound
+###     repeats?" about a line the child never heard. New data.seq_say_whole inserts it between the
+###     prompt and the letters, marking the chips .said as it goes. Opt-in; every other reveal_seq
+###     slide is unchanged.
+###  3. The 2nd-wrong rung spoke the WRONG CLIP. revealAnswer() prefers audioFor("hint") over
+###     ("reveal"), and a generic `hint` was authored, so it said "हर शब्द की शुरू की आवाज़
+###     पर ध्यान दो।" instead of the Hint 2 line. The `hint` key is dropped from this slide only.
+###  4. Option order was SHUFFLED (observed च, र, ल) against the flow's named च -> ल -> र. New
+###     data.fixed_order pins the authored order for this slide only.
+### ⚠ TRADEOFF ON 4: the engine shuffles options everywhere precisely so the answer is never pinned
+### to one position, and the named order puts the CORRECT letter first. Implemented as asked; worth
+### the SME confirming, since a child can pass this page by always tapping the first card.
+### Walked on behaviour: prompt -> वाक्य -> च/ल/र one at a time -> wrong ल (red+buzzShake, vo_g3_try,
+### no hand) -> wrong र (hand on च, च .reveal-hold NOT .correct, vo_g3_reveal) -> tap च (vo_g3_correct).
+### P4, the other pick-the-sound page, keeps its pill, its shuffle and its `hint` — flags default off.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.
