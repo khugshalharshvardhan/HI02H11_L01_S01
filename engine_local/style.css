@@ -1736,6 +1736,14 @@ body.is-start .phase-gate{
 .meet-letter-box.ml-lit{ animation:mlLit 1.15s ease-in-out 2; }
 @keyframes mlLit{ 0%,100%{ transform:scale(1); box-shadow:none; }
   50%{ transform:scale(1.07); box-shadow:0 0 0 8px rgba(255,230,184,.85); } }
+/* [S01r4k] The label is layered now (.sw-base + .sw-lit), so there is no .tgt-akshara to pulse,
+   and pulsing the OVERLAY alone would scale it off the base underneath and show the navy letter
+   through — the doubled-glyph artifact this page has already been through twice. Give the cue beat
+   as a colour reveal instead: the word appears navy, and the consonant lights amber exactly when the
+   VO names it. Same contract as the sentence chips, and it matches the flow this module documents
+   ("label appears -> the target lights up") rather than arriving already lit. */
+.pic-label.sound-layered .sw-lit{ opacity:0; transition:opacity .22s ease; }
+.pic-label.sound-layered.ml-marked .sw-lit{ opacity:1; }
 .pic-label.ml-marked .tgt-akshara{ animation:tgtPulse .62s ease-in-out 3; }
 
 /* ---- a stage the deck asked to strip bare (page 8) ---------------------------------------------

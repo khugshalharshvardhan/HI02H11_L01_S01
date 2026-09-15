@@ -3,6 +3,29 @@
 ### trimmed to one call. Rows 10-14; OPEN-5 closed.
 ### r4e-r4g — **page 2 (T3)**: only च marked (no matra, no overhang, no fringe); फिर सुनो removed;
 ### ✓ badge removed; exactly two clips; the highlight no longer bounces. Rows 20, 21, 23.
+### r4h — **page 2 (T3)**, by Piyush (69519fc): the च overlay is now NESTED inside .sw-text using
+### the cover's own .sound-layered structure, instead of being a sibling positioned by measured
+### geometry. Root cause named there: an inline span's rect is its FONT box, an absolutely-positioned
+### box is blockified and sits in a LINE box, and the two differ by the half-leading — ~9 px at 48 px.
+### Nested, base and overlay share one line box and one baseline, so they register by construction.
+### (A parallel fix here measured both baselines instead; it is superseded and layerSoundOnChip is
+### now dead code. Piyush's removes the reason the boxes disagree rather than compensating for it.)
+### r4i — karaoke paces against the whole spoken line, not just the marked words (Piyush, 69519fc).
+### r4j — the nested form still clipped the overlay from the text origin, but च's ink starts 2 px
+### LEFT of it (negative side bearing), so the navy base showed as a nub on the headline's left end:
+### 132 navy px in a 4 px band left of the orange, on चार at 8x. soundWordHTML now covers the bearing.
+### Final: left band 132 → 0, inside the letter 6 px (the following ा stem, correctly navy), 0 above,
+### 0 below. **page 3 (T4) + page 11 (G5)**: mouse art replaced with the SME-supplied file. Row 26.
+### r4k — **page 3 (T4)**, and with it pages 5 (T6) and 7 (T2): the picture LABEL marked the whole
+### akshara — चूहा came up with the ू coloured too — because it rendered through aksharaHTML, which
+### wraps the cluster. aksharaHTML's own `bare` flag is not the fix: it splits the span between the
+### consonant and its matra, and Chrome shapes a Devanagari cluster ACROSS inline boundaries and
+### paints it in the opening element's colour. The label now uses the same layered form as the cover
+### and the sentence chips, whose overlay text is the consonant ALONE. Verified on pixels at 6x:
+### चूहा, मूली and पपीता (two प) all mark the bare consonant and leave every matra navy.
+### One behaviour change: the consonant now lights amber ON THE VO CUE rather than arriving already
+### lit, and the scale-pulse is gone — pulsing the overlay alone would scale it off the base and show
+### the navy letter through. Matches the flow the module documents and the no-bounce ask.
 
 **Deck:** `HI02H11_L01_S01_SME_Review_Final_WITH_RECOMMENDATIONS.pptx` — 31 slides, 15 pages carrying asks.
 **Baseline reviewed:** `build/HI02H11_L01_S01.html`, engine `2026.08.04b-r4-unified` — **matches** the
@@ -70,7 +93,7 @@ tracker row still resolves; only the **sequence** changed.
 |---|---|---|---|
 | 24 | Remove the explanatory sentence from the screen; keep as VO only | ✅ | card-diff `prompt_hi` → `""`; capture 03 has no prompt band; `sweep` prompt=None |
 | 25 | Letter 'च' stays left; highlights **in sync with "चूहा"** in the VO | ✅ | `cues` on a 6 s clip: lit @0.9 s ("सुनी"), re-lit @4.6 s (the word "चूहा") |
-| 26 | "Remove the current ant image. Add a … rat/mouse image instead." | ✅ | capture 03 — mouse; card-diff `obj_chinta` → `obj_chuha` |
+| 26 | "Remove the current ant image. Add a … rat/mouse image instead." | ✅ | capture 03 — mouse; card-diff `obj_chinta` → `obj_chuha`. **r4h: art swapped to the SME-supplied mouse.** Normalised first — the file carried 9,440 px of pure-red background-removal matte at alpha≤1 reaching the canvas edge, which would have inflated the fitted box and rendered the mouse ~10% small and off-centre; matte stripped and re-padded to the previous asset's ink:canvas ratio (80.5%W/92.2%H vs 80.4/92.3), so it drops in at the same size. Renders on T4 (220×220) and G5 (72×72) |
 | 27 | Add the label "चूहा" below the image | ✅ | capture 03 |
 | 28 | Final VO "हमने 'च' की आवाज़ सुनी… जैसे—च से चूहा।" | ⏳ | text in card; `vo_t4_prompt` re-record pending |
 | 29 | Flow: 'च' → VO → highlight → image → label | ✅ | `cues`: lit 0.9 s → pic 2.6 s → label 3.6 s → akshara mark 4.6 s → आगे live |
@@ -441,5 +464,6 @@ The game was left exactly as the deck specified on all of these.
 | `vo_snd_ch` | **trimmed to a bare च** (r4e) from the existing carrier clip; EAR-CHECK |
 | 8 object pictures (5 new, 3 replacements) | **pending** — emoji fallback renders today |
 | crow `obj_kauaa` | **final** — supplied by the SME, installed r4c |
+| mouse `obj_chuha` | **final** — supplied by the SME, matte-stripped and re-framed, installed r4h |
 | `sfx_kanv` crow call | **final** — SME recording, trimmed to one 0.57 s call (r4d) |
 | Everything else (73 clips, 14 pictures, all UI) | final, unchanged, untouched by this round |

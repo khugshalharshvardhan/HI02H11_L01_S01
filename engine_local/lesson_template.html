@@ -1747,6 +1747,14 @@ body.is-start .phase-gate{
 .meet-letter-box.ml-lit{ animation:mlLit 1.15s ease-in-out 2; }
 @keyframes mlLit{ 0%,100%{ transform:scale(1); box-shadow:none; }
   50%{ transform:scale(1.07); box-shadow:0 0 0 8px rgba(255,230,184,.85); } }
+/* [S01r4k] The label is layered now (.sw-base + .sw-lit), so there is no .tgt-akshara to pulse,
+   and pulsing the OVERLAY alone would scale it off the base underneath and show the navy letter
+   through — the doubled-glyph artifact this page has already been through twice. Give the cue beat
+   as a colour reveal instead: the word appears navy, and the consonant lights amber exactly when the
+   VO names it. Same contract as the sentence chips, and it matches the flow this module documents
+   ("label appears -> the target lights up") rather than arriving already lit. */
+.pic-label.sound-layered .sw-lit{ opacity:0; transition:opacity .22s ease; }
+.pic-label.sound-layered.ml-marked .sw-lit{ opacity:1; }
 .pic-label.ml-marked .tgt-akshara{ animation:tgtPulse .62s ease-in-out 3; }
 
 /* ---- a stage the deck asked to strip bare (page 8) ---------------------------------------------
@@ -4501,11 +4509,42 @@ function _soundOffsets(word, target, fontPx){
    way the earlier whole-word clip was not: there is nothing in this element BUT the letter, so a clip
    here cannot catch a matra or a floating mark. */
 function _soundInkW(target, fontPx){
-  _sndCx = _sndCx || (_sndCv = document.createElement("canvas")).getContext("2d");
-  _sndCx.font = '800 ' + fontPx + 'px "Baloo 2","Noto Sans Devanagari",sans-serif';
-  const m = _sndCx.measureText(target);
-  const r = m.actualBoundingBoxRight;
-  return (isFinite(r) && r > 0) ? r : m.width;
+  return _soundInkBox(target, fontPx).right;
+}
+/* The target letter's INK BOX in CSS px, relative to its own origin and baseline — measured by
+   RASTERISING the letter and scanning the alpha channel, not by trusting TextMetrics.
+   Why: measureText("च") reports actualBoundingBoxDescent = 1 at 48px, and the glyph plainly hangs
+   further than that. A patch sized from those numbers cut the letter across the middle — orange on
+   top, the navy original showing below. The same scan-the-pixels technique the engine already uses
+   in _matraClipCols, for the same reason: the metrics lie, the raster does not. */
+const _sndBoxCache = Object.create(null);
+function _soundInkBox(target, fontPx){
+  const key = target + "|" + Math.round(fontPx * 100);
+  if(_sndBoxCache[key]) return _sndBoxCache[key];
+  const font = '800 ' + fontPx + 'px "Baloo 2","Noto Sans Devanagari",sans-serif';
+  const pad = Math.ceil(fontPx * 0.6), base = Math.ceil(fontPx * 1.5);
+  const cv = document.createElement("canvas");
+  cv.width = Math.ceil(fontPx * 3); cv.height = Math.ceil(fontPx * 2.6);
+  const cx = cv.getContext("2d");
+  cx.font = font; cx.textBaseline = "alphabetic"; cx.fillStyle = "#000";
+  cx.clearRect(0, 0, cv.width, cv.height);
+  cx.fillText(target, pad, base);
+  const d = cx.getImageData(0, 0, cv.width, cv.height).data;
+  let x0 = cv.width, x1 = -1, y0 = cv.height, y1 = -1;
+  for(let y = 0; y < cv.height; y++){
+    for(let x = 0; x < cv.width; x++){
+      if(d[(y * cv.width + x) * 4 + 3] > 24){
+        if(x < x0) x0 = x; if(x > x1) x1 = x;
+        if(y < y0) y0 = y; if(y > y1) y1 = y;
+      }
+    }
+  }
+  cx.font = font;
+  const box = (x1 < 0)
+    ? { left: 0, right: cx.measureText(target).width, asc: fontPx * 0.8, desc: 0 }
+    : { left: x0 - pad, right: x1 - pad + 1, asc: base - y0, desc: y1 - base + 1 };
+  _sndBoxCache[key] = box;
+  return box;
 }
 
 /* One word, layered: the word itself, plus a copy of JUST THE LETTER laid over each occurrence.
@@ -4523,10 +4562,21 @@ function _soundInkW(target, fontPx){
 function soundWordHTML(word, target, fontPx){
   const esc = (s)=> String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   const hits = _soundOffsets(word, target, fontPx);
-  const inkW = _soundInkW(target, fontPx);
+  const box  = _soundInkBox(target, fontPx);
+  /* [S01r4j] COVER THE LEFT SIDE BEARING. The glyph's ink starts at box.left, which is NEGATIVE for
+     च (-2px at 48px) — the stroke reaches back past the text origin. Clipping from 0 therefore shaved
+     that sliver off the overlay and left the navy base showing through as a nub on the left end of
+     the headline bar: measured 132 navy px in a 4px band left of the orange, on चार at 8x.
+     Shift the box left by the bearing plus a hairline for the base's antialiasing, pad it back by the
+     same amount so the glyph still sits on its own origin, and widen the clip to match. Extending
+     LEFT is safe: the overlay's text is the target letter alone, so the only ink that can be revealed
+     out there is the target's own — never the preceding glyph's. */
+  const lead = Math.max(0, -box.left) + Math.max(0.5, fontPx * 0.02);
+  const w = lead + box.right;
   return '<span class="sw-base">' + esc(word) + '</span>'
     + hits.map(x => '<span class="sw-lit" data-ch="' + esc(target) + '" aria-hidden="true" style="left:'
-        + x.toFixed(2) + 'px;clip-path:inset(-0.5em calc(100% - ' + inkW.toFixed(2) + 'px) -0.5em 0)">'
+        + (x - lead).toFixed(2) + 'px;padding-left:' + lead.toFixed(2)
+        + 'px;clip-path:inset(-0.5em calc(100% - ' + w.toFixed(2) + 'px) -0.5em 0)">'
         + esc(target) + '</span>').join("");
 }
 
@@ -4559,19 +4609,66 @@ function layerSoundOnChip(chip){
   const tr = t.getBoundingClientRect(), cr = chip.getBoundingClientRect();
   if(tr.height < 2) return;                       // not laid out yet — a later refresh will catch it
   const L = (tr.left - cr.left) / scale - chip.clientLeft;
-  const T = (tr.top  - cr.top ) / scale - chip.clientTop;
-  const inkW = _soundInkW(target, fs);
+  /* ALIGN BASELINES, NOT TOPS. The base .sw-text and the overlay are different heights — the base's
+     box runs to the font's full line metrics (76.8px at fs 48) while the overlay is sized by its
+     line-height (52.8px). Matching their TOP edges therefore misaligns their BASELINES by the
+     difference, putting the overlay ~12px high: measured at 8x on चार, the base glyph's ink occupies
+     rows 198-440 while the orange only reached 102-343 — the bottom of the च left navy. THAT is the
+     "highlight is cut / still overlapping" report; it was never the clip height (च's real descent is
+     1px, and the rasteriser and TextMetrics agree on that).
+     So measure the base's baseline directly with a throwaway zero-size probe — an empty span adds
+     nothing to textContent, so centerInkGlyph's measurement is untouched, and it is removed at once —
+     then place each overlay by its OWN measured baseline below. */
+  const bprobe = document.createElement("span");
+  bprobe.style.cssText = "display:inline-block;width:0;height:0;vertical-align:baseline;";
+  t.appendChild(bprobe);
+  const bpR = bprobe.getBoundingClientRect();
+  t.removeChild(bprobe);
+  const baseY = (bpR.top - cr.top) / scale - chip.clientTop;   // base text's baseline, chip coords
+  /* STOP RELYING ON REGISTRATION. Two copies of the same glyph, positioned by different mechanisms
+     (the base flows inline, the overlay is absolutely placed), do not land on the same sub-pixel -
+     and a bold 48px letter offset by ~1px shows the one underneath as a full navy outline. Measured
+     at 8x on चार: 8483 navy pixels INSIDE the orange letter. No amount of arithmetic makes two
+     independently-rasterised glyphs identical.
+     So hide the one underneath: the overlay carries the chip's OWN background colour, clipped to the
+     target letter's ink box (plus a hairline bleed for the base's antialiasing). Nothing navy is left
+     to peek out, and a sub-pixel offset stops mattering entirely.
+     The patch is the LETTER'S ink box - not a tall band - so a matra above or below it is never
+     covered: चूहे's ू sits under the baseline, outside the च's box, and stays navy. */
+  const box = _soundInkBox(target, fs);
+  const bg = getComputedStyle(chip).backgroundColor;
+  const BLEED = Math.max(1, fs * 0.03);
   offs.forEach(x => {
     const o = document.createElement("span");
     o.className = "sw-lit"; o.dataset.ch = target;
     o.setAttribute("aria-hidden", "true");
     o.textContent = target;
-    o.style.left = (L + x) + "px";
-    o.style.top = T + "px";
+    o.style.left = (L + x - BLEED) + "px";
+    o.style.top = "0px";                          // provisional — corrected to the baseline below
     o.style.fontFamily = cs.fontFamily; o.style.fontSize = cs.fontSize;
     o.style.fontWeight = cs.fontWeight; o.style.lineHeight = cs.lineHeight;
-    o.style.clipPath = "inset(-0.5em calc(100% - " + inkW.toFixed(2) + "px) -0.5em 0)";
+    if(bg && bg !== "transparent" && bg.replace(/\s/g, "") !== "rgba(0,0,0,0)") o.style.backgroundColor = bg;
+    /* Pad the box on the LEFT and shift it back by the same amount: the glyph still lands on its own
+       origin, but the patch now extends past the base letter's left side-bearing and antialiasing.
+       Without this the base's left edge survived as a hairline (measured: 174 px at 8x). */
+    o.style.paddingLeft = BLEED.toFixed(2) + "px";
     chip.appendChild(o);
+    /* the baseline inside the overlay, measured the same way centerInkGlyph does it */
+    const probe = document.createElement("span");
+    probe.style.cssText = "display:inline-block;width:0;height:0;vertical-align:baseline;";
+    o.appendChild(probe);
+    const oR = o.getBoundingClientRect(), pR = probe.getBoundingClientRect();
+    o.removeChild(probe);
+    const scl = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+    const baseFromTop = (pR.top - oR.top) / scl;
+    /* drop the overlay so ITS baseline sits on the base text's baseline */
+    o.style.top = (baseY - baseFromTop).toFixed(2) + "px";
+    const top = Math.max(0, baseFromTop - box.asc - BLEED);
+    const bottom = baseFromTop + box.desc + BLEED;
+    /* the glyph origin now sits BLEED in from the box's left edge, so the ink's right edge is at
+       BLEED + box.right; add one more BLEED to clear the base's antialiasing on that side too */
+    o.style.clipPath = "inset(" + top.toFixed(2) + "px calc(100% - "
+      + (BLEED * 2 + box.right).toFixed(2) + "px) calc(100% - " + bottom.toFixed(2) + "px) 0)";
   });
 }
 function refreshSoundChips(root){
@@ -4815,7 +4912,27 @@ const SlideModules = {
           /* "highlight 'म' in 'मूली' again to reinforce the sound-letter connection" */
           mark:   ()=>{ lit(); if(lblEl) lblEl.classList.add("ml-marked"); }
         };
-        if(lblEl) lblEl.innerHTML = aksharaHTML(slide.data.word_hi || "", slide.data.letter);
+        /* [S01r4k] THE LABEL MARKS THE BARE CONSONANT, NOT THE WHOLE AKSHARA. aksharaHTML wraps the
+           cluster — च AND its ू — so चूहा came up with the matra coloured too; the ask is the letter
+           and nothing else. aksharaHTML's own `bare` flag is NOT the answer: it splits the span
+           between the consonant and its matra, and Chrome shapes a Devanagari cluster ACROSS inline
+           boundaries and paints the whole thing in the opening element's colour, which is the bug
+           this page started from. Use the same layered form the cover and the sentence chips use —
+           the word once as .sw-base, the letter again on top as .sw-lit — where the overlay's text is
+           the consonant ALONE, so no matra can be caught by it. refreshSoundWords re-cuts any
+           [data-sw-word] from its live font size, so the label is picked up with the rest. */
+        if(lblEl){
+          const _w = slide.data.word_hi || "", _t = slide.data.letter || "";
+          if(_w && _t && wordHasSound(_w, _t)){
+            lblEl.classList.add("sound-layered");
+            lblEl.dataset.swWord = _w;
+            lblEl.dataset.swTarget = _t;
+            lblEl.innerHTML = soundWordHTML(_w, _t,
+                                parseFloat(getComputedStyle(lblEl).fontSize) || 36);
+          } else {
+            lblEl.innerHTML = aksharaHTML(_w, _t);   // conjunct/absent: leave the old path alone
+          }
+        }
 
         const line = (CARD.assets && CARD.assets.audio_text &&
                       CARD.assets.audio_text[(slide.audio || {}).prompt]) || "";
