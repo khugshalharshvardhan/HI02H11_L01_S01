@@ -518,18 +518,24 @@ Not fixed, because they are not this run's: everything under Observations.
   One word restores it (`{"step":"letter","silent":True}` → drop `silent`). Flagging because the SME
   wrote row 21 and will not see this decision unless it is written down.
 
-- **OPEN-13 · A FACTORY REBUILD SILENTLY REVERTS ENGINE WORK DONE IN THE REPO.** Commit `9934644`
-  ("Page 9 (G3)…") re-added `tap-all-count`/`setCount` and deleted every `[S01r4q]` block, i.e. it
-  undid the whole of page 8: the 0/2 removal, the tick badge, hint-VO-only, and the one-by-one option
-  entry. Nothing was force-pushed and no merge conflicted — `engine_local/app.js` and `style.css` were
-  simply **regenerated from the factory copy at `D:\Dev_Kit\factories\FLN_Content_Factory\`**, which
-  had never received them, and the regenerated files were committed. `_HOW_TO_REBUILD.md` names this
-  trade explicitly: the repo's `engine_local/` is a COPY and the factory is the source of truth.
-  The same rebuild also dropped `dist/assets/Images/obj_kela.png` and `obj_patang.png`.
-  **Restored in r4w.** The fix is procedural, not code: engine edits made in the repo must be landed
-  in the factory tree before the next rebuild, or the rebuild must start from the repo. Until that is
-  agreed, every repo-side engine change is one rebuild away from disappearing — and it disappears
-  quietly, because the build still succeeds.
+- **OPEN-13 · A FACTORY REBUILD SILENTLY REVERTS ENGINE WORK DONE IN THE REPO. HAPPENED TWICE.**
+  `engine_local/app.js` and `style.css` in this repo are COPIES; `_HOW_TO_REBUILD.md` names the
+  factory at `D:\Dev_Kit\factories\FLN_Content_Factory\` as the source of truth. Any engine edit
+  made in the repo is one rebuild away from vanishing, and it vanishes QUIETLY because the build
+  still succeeds and the card data survives — only the behaviour disappears.
+    - **1st: `9934644`** ("Page 9 (G3)…") re-added `tap-all-count`/`setCount` and deleted every
+      `[S01r4q]` block — the whole of page 8. Restored in r4w.
+    - **2nd: `3bd7209`** ("Install the applicable subset of fln-animation-toolkit") removed
+      `speakNoLock`, `sort-shake`, `tap-seq-hidden` and 79 lines of CSS across three blocks — the
+      whole of page 10 (`r4s r4t r4u r4v r4x r4y r4z`) plus page 8 again. Both commits also deleted
+      `dist/assets/Images/obj_kela.png` and `obj_patang.png`. Restored in r5e.
+  Neither was a force-push and neither merge conflicted: the regenerated files simply replaced the
+  edited ones, so git saw an ordinary change.
+  **The fix is procedural and belongs to whoever runs the rebuild.** Pick one:
+  (a) land repo-side engine edits into the factory tree BEFORE rebuilding; (b) rebuild FROM the repo
+  copy; or (c) stop committing regenerated `engine_local/*` unless the engine itself changed.
+  A cheap detector: grep the built monolith for the `[S01r4*]`/`[S01r5*]` markers before pushing —
+  every engine change this round carries one, and a missing marker means a silent revert.
 - **OPEN-14 · The page-10 drag demo now shows one correct pairing.** The SME asked twice for a
   how-to-drag demo ("it feels confusing", then "show the hand going towards the box"). Pointing at
   the gap BETWEEN the baskets satisfied the no-reveal rule but did not read as a drop, so the hand

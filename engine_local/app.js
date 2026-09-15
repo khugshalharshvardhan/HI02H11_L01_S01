@@ -179,6 +179,27 @@ function playSfx(id){
     a.play().catch(()=>{});
   }catch(e){}
 }
+/* [S01r4t] SPEAK A WORD WITHOUT TAKING THE VO LOCK.
+   play() calls setPlaying(true), which puts body.vo-lock on, and the stylesheet locks `.sort-item`,
+   `.sort-bin` AND `.dd-zone` to pointer-events:none for as long as a clip sounds. On a tap mechanic
+   that is exactly right. On a DRAG mechanic it is fatal, and r4s walked straight into it: pressing a
+   tile to hear its name muted that tile's own pointer events before makeDraggable's mousedown could
+   fire, so nothing could be picked up at all. Even had the grab survived, onMove/onUp find the
+   basket with elementFromPoint, which skips pointer-events:none, so no drop would have registered
+   either - the lock covers the bins too.
+   So the word rides its own element the way playSfx does, but honours mute and cancels the previous
+   word so two quick presses cannot talk over each other. The instruction line stays protected:
+   installDragVoGate swallows the entire press while a prior VO is still sounding. */
+let _wordVoice = null;
+function speakNoLock(id){
+  if(!id || isMuted) return;
+  try{
+    if(_wordVoice){ _wordVoice.pause(); _wordVoice = null; }
+    const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
+    _wordVoice = a;
+    a.play().catch(()=>{});
+  }catch(e){}
+}
 /* ---------- game-feel: procedural SFX (no audio files) + success particle burst ----------
    WebAudio resumes on the first user tap (autoplay policy), so taps/answers always sound. */
 let _juiceAC = null;
@@ -533,7 +554,7 @@ function stopNudge(){
    --scale. Kept as ONE WAAPI animation stored on state so stopNudge can cancel it — an infinite
    animation left running would follow the child into the next slide. Falls back to a static point if
    either element is missing or the browser has no .animate(). */
-function travelNudge(fromEl, toEl, slide){
+function travelNudge(fromEl, toEl, slide, loops){
   if(!fromEl) return;
   if(!toEl || typeof $("nudgeHand").animate !== "function"){ handOnAnswer(fromEl, slide); return; }
   if(!slide || !HAND_PHASES.has(slide.phase)) return;      // same phase rule as handOnAnswer
@@ -544,15 +565,36 @@ function travelNudge(fromEl, toEl, slide){
   const at = (el)=>{ const r = el.getBoundingClientRect();
     return { left: (r.left - sw.left)/scale + r.width/scale/2 - 48,
              top:  (r.top  - sw.top )/scale + r.height/scale + 4 }; };
-  const a = at(fromEl), b = at(toEl);
+  /* [S01r4y] THE DESTINATION SITS IN THE MIDDLE OF THE BOX, NOT PARKED UNDER IT.
+     at() places the hand just BELOW an element, which is the correct pose for POINTING AT a tile -
+     the fingertip is at the TOP of the hand image, so the hand hangs under the thing it indicates.
+     But the destination of a drag is a box the picture goes INTO, and both ends were using at(), so
+     the hand finished under the basket's bottom edge: it read as "drag PAST the box" rather than
+     "drop it in here". The SME asked for the centre of the box in BOTH cases, so the fix lives in
+     this shared helper and therefore reaches the terminal hint (terminalHold, and the tile -> zone
+     travel on the match mechanics) as well as page 10's first-time demo.
+     Only the DESTINATION moves. The start still points at the tile from below, because that end IS
+     an "this one" gesture. -8 lifts the fingertip a touch above dead centre so the hand's body hangs
+     inside the box rather than straddling its lower edge. */
+  const into = (el)=>{ const r = el.getBoundingClientRect();
+    return { left: (r.left - sw.left)/scale + r.width/scale/2 - 48,
+             top:  (r.top  - sw.top )/scale + r.height/scale/2 - 8 }; };
+  const a = at(fromEl), b = into(toEl);
   nh.style.left = a.left + "px"; nh.style.top = a.top + "px";
   nh.classList.add("show","hint-glow");
-  state._handTravel = nh.animate(
+  /* [S01r4x] `loops` is OPTIONAL and defaults to the infinite loop this has always had, so
+     terminalHold - which passes nothing - is byte-for-byte unchanged: a child who has already failed
+     twice should keep being shown the move until they make it. The page-10 drag DEMO passes a count,
+     because a demo that never stops becomes wallpaper; when it finishes the hand puts itself away
+     instead of freezing over the basket. */
+  const _anim = nh.animate(
     [ { left: a.left+"px", top: a.top+"px", offset: 0 },
       { left: a.left+"px", top: a.top+"px", offset: .18 },
       { left: b.left+"px", top: b.top+"px", offset: .72 },
       { left: b.left+"px", top: b.top+"px", offset: 1 } ],
-    { duration: 1800, iterations: Infinity, easing: "ease-in-out" });
+    { duration: 1800, iterations: (loops > 0 ? loops : Infinity), easing: "ease-in-out" });
+  state._handTravel = _anim;
+  if(loops > 0) _anim.onfinish = ()=>{ if(state._handTravel === _anim) stopNudge(); };
 }
 /* [28i] THE GRADED WRONG-ANSWER CLIP, for mechanics that grade their own feedback.
    Yasir's 2026-07-25 ruling is "two hints everywhere, every game, every interaction type". The tap path
@@ -1850,7 +1892,9 @@ function karaokePlay(src, tokens, apply, onDone){
   const tot = w.reduce((a, b) => a + b, 0) || 1;
   const FALLBACK_MS = 420 * tot;          /* ~one akshara-beat per 420ms when we cannot measure */
   const t0 = performance.now();
-  let raf = 0, cur = -2;
+  let raf = 0, cur = -2, ended = false, finished = false;
+  const stop = ()=>{ if(raf) cancelAnimationFrame(raf); raf = 0; };
+  const finish = ()=>{ if(finished) return; finished = true; stop(); if(onDone) onDone(); };
   const tick = ()=>{
     const a = currentAudio;
     const dur = (a && isFinite(a.duration) && a.duration > 0) ? a.duration * 1000 : FALLBACK_MS;
@@ -1859,10 +1903,22 @@ function karaokePlay(src, tokens, apply, onDone){
     let acc = 0, k = 0;
     for(; k < w.length - 1; k++){ acc += w[k] / tot; if(frac < acc) break; }
     if(k !== cur){ cur = k; apply(k); }
+    /* [S01r4m] A CLIP THAT NEVER PLAYED MUST NOT TRUNCATE THE WALK.
+       play() reports "ended" 1.2s after an onerror, so a MISSING file ended this ticker while it was
+       still on token 0 - and the caller's onDone ran, moving the flow on. Measured on the pi page:
+       vo_t1_words.ogg does not exist yet (CHANGES row 46 is still generation-pending), so the mark
+       beat lit ONLY the first word and left the other three navy. Same trap for an autoplay refusal,
+       which also ends instantly and on every page's first beat.
+       So "the clip ended" is no longer sufficient to stop: the walk also has to have REACHED the last
+       token. With no audio, currentAudio is null and the tick already falls back to the synthetic
+       420ms-per-akshara timeline, so the marking still reads - silently, but complete. When the clip
+       DOES play, frac is ~1 by the time it ends, cur is already the last token, and this finishes
+       exactly as before. */
+    if(ended && cur >= w.length - 1){ finish(); return; }
     raf = requestAnimationFrame(tick);
   };
-  const stop = ()=>{ if(raf) cancelAnimationFrame(raf); raf = 0; };
-  play(src || null, ()=>{ stop(); if(onDone) onDone(); });
+  play(src || null, ()=>{ ended = true;
+    if(!tokens || !tokens.length || cur >= w.length - 1) finish(); });
   if(tokens && tokens.length) raf = requestAnimationFrame(tick);
   return stop;
 }
@@ -4259,7 +4315,51 @@ const SlideModules = {
          streak that any correct drop resets lets one hard item ride on the others' successes. */
       const _sgWrong = new Map();
       if(slide.data.reveal_seq) sortSeqReveal(tray, slide);   // [20a SORT-01] opt-in
+      /* [S01r4v] DRAG DEMO - SME: "show how to drag the element into the box, currently it feels
+         confusing". travelNudge already animates the hand from one element to another, and its own
+         gate is HAND_PHASES (tutorial + guided), so this page qualifies; it has simply never been
+         called from anywhere but terminalHold, i.e. only as help EARNED by two wrong drops.
+         Two deliberate choices:
+           - it travels to the BINS ROW, not to the correct basket. travelNudge centres on whatever
+             element it is handed, so the row's centre is the midpoint BETWEEN the two baskets: the
+             child is shown the GESTURE without being shown the ANSWER.
+           - opt-in on data.drag_demo, so no other sort slide changes behaviour.
+         FOR REVIEW: [28f] says guided earns a hand only after 2 failed attempts. That ruling is about
+         hints carrying the ANSWER; this one carries the MECHANIC and deliberately points nowhere
+         useful. Flagged in CHANGES.md so the SME can overrule. It waits out the one-by-one reveal and
+         the prompt VO, then stops on the very first press and never comes back. */
+      if(slide.data.drag_demo){
+        const _demoOff = ()=>{ stopNudge(); document.removeEventListener("pointerdown", _demoOff, true); };
+        const _armDemo = ()=>{
+          if(CARD.slides[state.idx] !== slide) return;                            // navigated away
+          if(state.revealing || isPlaying){ setTimeout(_armDemo, 300); return; }   // reveal/prompt still running
+          if(state.locked || placed > 0) return;                                   // solved or locked already
+          /* [S01r4x] aim at the BASKET the first tile belongs in, not at the bins ROW. r4v pointed
+             at the row so the demo could not reveal an answer - but the row's centre is the empty gap
+             BETWEEN the two boxes, so the gesture read as "drag upwards into nothing". The SME asked
+             to "show the hand going towards the box". This does reveal one of the four pairings; the
+             child still makes every drop themselves and the demo stops after 3 passes. In CHANGES so
+             it can be overruled. */
+          const _first = tray.children[0];
+          const _goal = [...binsRow.children].find(b => b.dataset.gender === _first.dataset.gender) || binsRow;
+          travelNudge(_first, _goal, slide, 3);
+          document.addEventListener("pointerdown", _demoOff, true);
+        };
+        setTimeout(_armDemo, 600);
+      }
       [...tray.children].forEach(tile => {
+        /* [S01r4s] SPEAK ON PICK-UP - "when the child taps or picks up an image, play its name",
+           so the child can decide which basket BEFORE dragging. makeDraggable exposes opts.onTap for
+           a tap but nothing for a grab, and this mechanic passed no opts at all: the only places the
+           word was ever spoken were the one-by-one tray reveal and the correct-drop echo below.
+           A pointerdown listener is the idiom MATCH_DRAG_N already uses and that installDragVoGate
+           is written around - the gate runs in the CAPTURE phase and swallows the press while a
+           prior VO is still sounding, so this can never cut the instruction line. */
+        tile.addEventListener("pointerdown", ()=>{
+          if(state.locked || state.revealing) return;
+          if(tile.classList.contains("snapped")) return;
+          speakNoLock(tile.dataset.audio);   /* [S01r4t] NOT play() - see speakNoLock */
+        });
         makeDraggable(tile, (zone, t) => {
           const bin = zone.closest(".sort-bin"); if(!bin) return;
           state.attempts++;
@@ -4292,7 +4392,8 @@ const SlideModules = {
               clearHold(tray); clearHold(binsRow);
               state.helpShown = false; state.scaffoldLevel = 0;
             }
-            if(t.dataset.audio && placed < need) play("assets/Audio/" + t.dataset.audio + "." + AUDIO_EXT, ()=>{});   // [20a SORT-01] speak-on-match
+            /* [S01r4s] speak-on-match dropped: the name is spoken on PICK-UP now, so saying it
+               again a second later on the drop is an echo, not information. */
             SwiftPAL.emit("gender_sort_item", { slide_id: slide.id, gender: t.dataset.gender, attempts: state.attempts });
             if(placed === need){
               state.locked = true;
@@ -4305,6 +4406,10 @@ const SlideModules = {
           } else {
             bin.classList.add("hover"); bin.style.borderColor = "var(--wrong)";
             setTimeout(()=>{ bin.classList.remove("hover"); bin.style.borderColor = ""; }, 500);
+            /* [S01r4s] "gently shake and return to its original position". Only the BIN flashed red;
+               the tile itself had no feedback at all. makeDraggable already clears the transform on a
+               rejected drop, so the return home was free - this adds the shake it was missing. */
+            t.classList.add("sort-shake"); setTimeout(()=> t.classList.remove("sort-shake"), 430);
             dragWrong(slide);   // buzz + Swiftie + spoken try_again (pre-readers need the spoken recovery)
             SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
             /* [28p] terminal rung, via the SAME contract every other mechanic uses (28l/28o): glow the
@@ -5225,9 +5330,9 @@ const SlideModules = {
       const badge = document.createElement("div"); badge.className = "tap-all-sound"; badge.style.cursor = "pointer";
       badge.innerHTML = `<span class="ink-glyph">${d.target_sound || ""}</span>`;
       badge.onclick = ()=>{ state.audioReplays++; play(audioFor(slide, "target") || null); };
-      const counter = document.createElement("div"); counter.className = "tap-all-count";
-      const setCount = ()=>{ counter.innerHTML = `<span class="c-found">${found}</span> / ${need}`; };
-      head.appendChild(badge); head.appendChild(counter);
+      /* [S01r4q] SME: "remove 0/2". The running tally is off the screen; `found` and `need` still
+         drive completion, they just no longer have a readout. The badge keeps the row. */
+      head.appendChild(badge);
       const strip = document.createElement("div"); strip.className = "tap-all-strip";
       const chips = [];
       items.forEach(it => {
@@ -5238,7 +5343,7 @@ const SlideModules = {
           if(state.locked || chip.classList.contains("got") || chip.classList.contains("nope")) return;
           const after = (cb)=>{ if(src) play(src, cb); else cb(); };
           if(it.has === true){
-            chip.classList.add("got"); sfxCorrect(); found++; setCount();
+            chip.classList.add("got"); sfxCorrect(); found++;
             SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, word: it.word_hi });
             after(()=>{
               if(found >= need){
@@ -5270,19 +5375,22 @@ const SlideModules = {
                that did not exist here. handOnAnswer self-gates to tutorial/guided, so this lands on
                page 9 (guided) and stays absent in practice, per the round-3 no-hand-in-practice rule.
                It only points: the chip's own onclick is untouched, so the child still taps it. */
-            after(()=> play(wrongClip(slide), ()=>{
+            /* [S01r4q] SME: "play only this Hint VO" - the slide's own `hint` clip (vo_g2_hint),
+               NOT the vo_g2_try rung the ladder used to open with, and not the tapped word's own
+               clip either: the deck's wrong-tap flow is shake -> red -> hint -> retry, with no word
+               in it. Reading it off the slide means P1/P7 get their own; wrongClip is the fallback. */
+            play(audioFor(slide, "hint") || wrongClip(slide), ()=>{
               if(state.attempts < 2 || state.locked) return;
               if(CARD.slides[state.idx] !== slide) return;
               const t = chips.find((c, ix) => items[ix] && items[ix].has === true && !c.classList.contains("got"));
               if(t){ handOnAnswer(t, slide); state.nudgeUsed = true;
                      state.scaffoldLevel = Math.max(state.scaffoldLevel, 3);
                      SwiftPAL.emit("nudge_invoked", { slide_id: slide.id, phase: slide.phase }); }
-            }));   /* [28i] graded ladder */
+            });
           }
         };
         strip.appendChild(chip); chips.push(chip);
       });
-      setCount();
       wrap.appendChild(head); wrap.appendChild(strip);
       host.appendChild(wrap);
       $("hintBtn").onclick = ()=>{ if(state.locked) return; state.hintUsed = true;
@@ -5290,6 +5398,42 @@ const SlideModules = {
         play(audioFor(slide, "hint") || audioFor(slide, "try_again") || null, ()=>{}); };
       $("navBtn").style.display = "none"; setNavActive(false);
       state.replayAudio = ()=> play(audioFor(slide, "prompt") || null, ()=>{});
+
+      /* [S01r4p] OPTION ENTRY - "after the instruction VO finishes, show the options one by one".
+         The card has carried `reveal_seq` since round 4 and CHANGES row 67 recorded it as already
+         satisfied, but ONLY mountTapOptions and sortSeqReveal ever read that flag: this mechanic
+         never did, so all four chips were on screen from mount, underneath the instruction VO.
+         Deliberately the SAME shape as mountTapOptions' reveal rather than a second one - the prompt
+         plays to COMPLETION, then each chip fades in speaking its own word, then taps open. Every
+         step carries a per-clip fallback and there is a global net, so a missing or blocked clip can
+         never soft-lock the page; this deck still has ungenerated clips, so that matters.
+         ownsAudio is read by mountSlide AFTER mount returns, so setting it here is what stops
+         autoPlayChain starting a second, overlapping copy of the prompt. */
+      if(d.reveal_seq){
+        chips.forEach(c => c.classList.add("tap-seq-hidden"));
+        state.locked = true; state.ownsAudio = true; state.revealing = true;
+        let revDone = false;
+        const enableAll = ()=>{ if(revDone) return; revDone = true;
+          state.locked = false; state.revealing = false; state.ownsAudio = false;
+          chips.forEach(c => c.classList.remove("tap-seq-hidden")); };
+        const sayThen = (src, next)=>{
+          if(revDone || CARD.slides[state.idx] !== slide) return;
+          let advanced = false, fb = null;
+          const go = ()=>{ if(advanced || revDone) return; advanced = true; if(fb) clearTimeout(fb); next(); };
+          play(src || null, go);
+          fb = setTimeout(go, 4500);
+        };
+        const revStep = (i)=>{
+          if(revDone || CARD.slides[state.idx] !== slide) return;
+          if(i >= chips.length){ enableAll(); return; }
+          chips[i].classList.remove("tap-seq-hidden");
+          const aid = items[i] && items[i].audio;
+          sayThen(aid ? ("assets/Audio/" + aid + "." + AUDIO_EXT) : null,
+                  ()=> setTimeout(()=> revStep(i + 1), 180));
+        };
+        sayThen(audioFor(slide, "prompt") || null, ()=> revStep(0));
+        setTimeout(()=>{ if(CARD.slides[state.idx] === slide) enableAll(); }, 16000);
+      }
     }
   },
 
