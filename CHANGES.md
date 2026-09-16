@@ -105,6 +105,34 @@
 ### ✓ badge on .opt-cell.correct. That line is NOT included: dropping the tick is a pedagogy change
 ### across every answerable slide and no SME here has asked for it. The tick and the crown sparks
 ### now coexist; if the SME wants the kit's rule, it is one line.
+### S01r4r — **fln-animation-toolkit, second pass**: the three effects asked for by name.
+###  · recipe 7 (correct-answer confetti) was already installed in S01r4q — unchanged.
+###  · recipe 1 (START-SCREEN SKY) — previously declined as BLOCKED, now UNBLOCKED. The block was
+###    real: startnew_bg.webp has stars, sparkles, rings and dots painted INTO the bitmap, and the
+###    kit's drift layer on top gives two sets, one frozen and one moving. Generated the missing
+###    plate instead: startnew_bg_plain.webp, made by detecting everything lighter than a hard blur
+###    of itself (the shapes are small and light; the rays and gradient are large-scale), dilating
+###    that mask and pasting the blur back. 13,167 shape pixels detected, 0 remaining — rays and
+###    gradient untouched. 87 stars now drift across 3 layers × 29 lanes, sized in vmax because the
+###    layer sits OUTSIDE the transform-scaled stage (kit R1). NO CSS mask is used to keep the start
+###    card clear: r0=22vmax means nothing ever spawns within 22vmax of centre, so the card sits in
+###    a hole the geometry already leaves. Built at runtime from app.js rather than as template
+###    markup, so nothing outside engine_local/ had to change.
+###    ⚠ dist_local.py's UI whitelist had to gain 'startnew_bg_plain.webp' — that list is the ONLY
+###    thing deciding what survives the prune, so without it the dist start screen loses its ground.
+###    Verified present in dist (UI 20 → 21).
+###  · recipe 8 (CELEBRATION STAR BURST) — RETUNE, not a new effect. starBurst() already WAS the
+###    kit's old burst parameter for parameter (ticks 100, decay 0.96, startV 22, 80 stars + 20
+###    circles, shots 0/150/300). 300 particles leaving centre at 22px/frame read as one bright
+###    flash that is over before the child looks up. Now the kit's retune: ticks 150, decay 0.975,
+###    startV 14, spin .18, 32 stars + 8 circles, shots 0/220/440, and the loop's floor derived from
+###    the LAST shot so retiming cannot end it early. Gravity stays 0 — these float and fade; the
+###    confetti is what falls. Measured 37,148 lit canvas px at peak.
+### ⚠ CAUGHT BY THE CARD-DIFF GATE: the first sync of this round would have reverted two pieces of
+### teammate work — G1 moved to second-to-last ("balloon wala page at last") and P4's new
+### fixed_order/hide_replay/seq_say_whole. Cause: the recipe was reconciled repo→factory AFTER the
+### rebuild, so the artifacts came from the stale one. Rebuilt; card now byte-identical to the
+### committed one. RECONCILE THE RECIPE BEFORE BUILDING, NOT AFTER.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.
