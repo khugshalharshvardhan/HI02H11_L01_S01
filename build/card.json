@@ -423,6 +423,7 @@
             "has": false
           }
         ],
+        "allow_hand": false,
         "reveal_seq": true,
         "signal_name": "tap_all_sound_first_try"
       }
@@ -586,67 +587,9 @@
             "has": false
           }
         ],
+        "allow_hand": true,
         "reveal_seq": true,
         "signal_name": "tap_all_sound_first_try"
-      }
-    },
-    {
-      "id": "P2",
-      "phase": "practice",
-      "eis": "enactive",
-      "type": "SORT_VACHAN",
-      "prompt_hi": "सुनो — प की आवाज़ शब्द में कहाँ है?",
-      "audio": {
-        "prompt": "vo_p2_prompt",
-        "target": "vo_snd_p",
-        "hint": "vo_p2_hint",
-        "try_again": "vo_p2_try",
-        "correct": "vo_p2_correct"
-      },
-      "data": {
-        "bins": [
-          {
-            "gender": "S",
-            "label": "शुरुआत में"
-          },
-          {
-            "gender": "P",
-            "label": "बीच में"
-          }
-        ],
-        "items": [
-          {
-            "word_hi": "पानी",
-            "img": "obj_pani",
-            "emoji": "💧",
-            "audio": "vo_w_pani",
-            "gender": "S"
-          },
-          {
-            "word_hi": "पायल",
-            "img": "obj_payal",
-            "emoji": "💍",
-            "audio": "vo_w_payal",
-            "gender": "S"
-          },
-          {
-            "word_hi": "सपना",
-            "img": "obj_sapna",
-            "emoji": "💭",
-            "audio": "vo_w_sapna",
-            "gender": "P"
-          },
-          {
-            "word_hi": "चंपा",
-            "img": "obj_champa",
-            "emoji": "🌼",
-            "audio": "vo_w_champa",
-            "gender": "P"
-          }
-        ],
-        "reveal_seq": true,
-        "signal_name": "sound_position_first_try",
-        "drag_demo": false
       }
     },
     {
@@ -746,6 +689,7 @@
             "has": false
           }
         ],
+        "allow_hand": true,
         "reveal_seq": true,
         "signal_name": "tap_all_sound_first_try"
       }
@@ -822,8 +766,8 @@
             "has": false
           }
         ],
-        "signal_name": "balloon_sound_first_try",
-        "allow_hand": true
+        "allow_hand": true,
+        "signal_name": "balloon_sound_first_try"
       }
     },
     {
@@ -841,7 +785,7 @@
   "phase_distribution": {
     "tutorial": 6,
     "guided": 3,
-    "practice": 6
+    "practice": 5
   },
   "signals_expected": [
     "slide_entered",
@@ -862,7 +806,6 @@
   ],
   "_emoji_fallback": {
     "obj_aam": "🥭",
-    "obj_champa": "🌼",
     "obj_chand": "🌙",
     "obj_chandi": "🪙",
     "obj_chinti": "🐜",
@@ -879,8 +822,7 @@
     "obj_papita": "🍈",
     "obj_patang": "🪁",
     "obj_patta": "🍃",
-    "obj_payal": "💍",
-    "obj_sapna": "💭"
+    "obj_payal": "💍"
   },
   "assets": {
     "audio": {
@@ -916,10 +858,6 @@
       "vo_p1_prompt": "assets/Audio/vo_p1_prompt.ogg",
       "vo_p1_reveal": "assets/Audio/vo_p1_reveal.ogg",
       "vo_p1_try": "assets/Audio/vo_p1_try.ogg",
-      "vo_p2_correct": "assets/Audio/vo_p2_correct.ogg",
-      "vo_p2_hint": "assets/Audio/vo_p2_hint.ogg",
-      "vo_p2_prompt": "assets/Audio/vo_p2_prompt.ogg",
-      "vo_p2_try": "assets/Audio/vo_p2_try.ogg",
       "vo_p4_correct": "assets/Audio/vo_p4_correct.ogg",
       "vo_p4_prompt": "assets/Audio/vo_p4_prompt.ogg",
       "vo_p4_reveal": "assets/Audio/vo_p4_reveal.ogg",
@@ -946,7 +884,6 @@
       "vo_t5_explain": "assets/Audio/vo_t5_explain.ogg",
       "vo_t6_prompt": "assets/Audio/vo_t6_prompt.ogg",
       "vo_w_aam": "assets/Audio/vo_w_aam.ogg",
-      "vo_w_champa": "assets/Audio/vo_w_champa.ogg",
       "vo_w_chand": "assets/Audio/vo_w_chand.ogg",
       "vo_w_chandi": "assets/Audio/vo_w_chandi.ogg",
       "vo_w_chinti": "assets/Audio/vo_w_chinti.ogg",
@@ -962,8 +899,7 @@
       "vo_w_papita": "assets/Audio/vo_w_papita.ogg",
       "vo_w_patang": "assets/Audio/vo_w_patang.ogg",
       "vo_w_patta": "assets/Audio/vo_w_patta.ogg",
-      "vo_w_payal": "assets/Audio/vo_w_payal.ogg",
-      "vo_w_sapna": "assets/Audio/vo_w_sapna.ogg"
+      "vo_w_payal": "assets/Audio/vo_w_payal.ogg"
     },
     "audio_text": {
       "vo_g1_correct": "शाबाश! इसमें प की आवाज़ है।",
@@ -992,10 +928,6 @@
       "vo_p1_prompt": "जिन शब्दों में म की आवाज़ सुनाई दे, उन पर टैप करो।",
       "vo_p1_reveal": "सुनो — इसमें म की आवाज़ है।",
       "vo_p1_try": "इस शब्द की शुरुआत में म की आवाज़ नहीं है। एक बार फिर सुनो।",
-      "vo_p2_correct": "सही! आवाज़ शब्द के अलग-अलग हिस्सों में आ सकती है।",
-      "vo_p2_hint": "पानी — प शुरू में। सपना — प बीच में। पूरा शब्द सुनो।",
-      "vo_p2_prompt": "सुनो — प की आवाज़ शब्द में कहाँ है?",
-      "vo_p2_try": "पूरा शब्द फिर सुनो — आवाज़ शुरू में थी या बीच में?",
       "vo_p4_correct": "सही! शुरुआत में न की आवाज़ थी।",
       "vo_p4_prompt": "ध्यान से सुनो — कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
       "vo_p4_reveal": "शुरुआत में न की आवाज़ बार-बार आई।",
@@ -1019,7 +951,6 @@
       "vo_t5_explain": "मेरे, मामा, मीठी, मलाई—इन सब शब्दों में म की आवाज़ बार-बार आई।",
       "vo_t6_prompt": "हमने म की आवाज़ सुनी। यह आवाज़ म अक्षर से लिखी जाती है। जैसे—म से मूली।",
       "vo_w_aam": "आम",
-      "vo_w_champa": "चंपा",
       "vo_w_chand": "चाँद",
       "vo_w_chandi": "चाँदी",
       "vo_w_chinti": "चींटी",
@@ -1035,12 +966,10 @@
       "vo_w_papita": "पपीता",
       "vo_w_patang": "पतंग",
       "vo_w_patta": "पत्ता",
-      "vo_w_payal": "पायल",
-      "vo_w_sapna": "सपना"
+      "vo_w_payal": "पायल"
     },
     "image": {
       "obj_aam": "assets/Images/obj_aam.png",
-      "obj_champa": "assets/Images/obj_champa.png",
       "obj_chand": "assets/Images/obj_chand.png",
       "obj_chandi": "assets/Images/obj_chandi.png",
       "obj_chinti": "assets/Images/obj_chinti.png",
@@ -1057,8 +986,7 @@
       "obj_papita": "assets/Images/obj_papita.png",
       "obj_patang": "assets/Images/obj_patang.png",
       "obj_patta": "assets/Images/obj_patta.png",
-      "obj_payal": "assets/Images/obj_payal.png",
-      "obj_sapna": "assets/Images/obj_sapna.png"
+      "obj_payal": "assets/Images/obj_payal.png"
     },
     "audio_ext": "ogg",
     "img_ext": "png"

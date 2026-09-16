@@ -387,6 +387,50 @@ function ckCorrect(el, crown){
 const SKY = { lanes: 29, r0: 22, r1: 72,
               layers: [{rot:0, scale:1}, {rot:6.2, scale:0.62}, {rot:-6.2, scale:0.55}],
               size: [0.8, 2.6], dur: [18, 34], glow: [3.0, 4.8], opacity: [0.62, 0.92] };
+/* [S01r4s · fln-animation-toolkit recipe 4] Give the nudge hand its tap ripple: two wavefronts and
+   a spark pop breaking from the fingertip at the moment of contact. Built once, into the existing
+   #nudgeHand, and left there — the layers are opacity-0 for most of the cycle, so they cost nothing
+   while the hand is hidden. Inserted BEFORE the <img> so the ring passes behind the finger, which is
+   how the source artwork reads. */
+function buildHandFx(){
+  try{
+    const nh = document.getElementById("nudgeHand");
+    if(!nh || nh.querySelector(".nh-tapfx")) return;
+    if(document.documentElement.classList.contains("no-anim")) return;   // R5
+    const fx = document.createElement("span");
+    fx.className = "nh-tapfx"; fx.setAttribute("aria-hidden", "true");
+    fx.innerHTML = '<i class="fx-ro"></i><i class="fx-ri"></i><i class="fx-sp"></i>';
+    nh.insertBefore(fx, nh.firstChild);
+  }catch(e){}
+}
+/* [S01r4s · fln-animation-toolkit recipe 20] The outward spark ring on a wrong tap. The red flash,
+   the shake and the grey-lock-only-on-the-2nd are this engine's own and are NOT touched — three SME
+   rounds settled them. This adds the ring the kit contributes, on the shared --fx-beat, and it is
+   gone within that one beat because a wrong answer RELEASES: another attempt is coming. */
+function wgWrong(el, n){
+  try{
+    if(!el) return;
+    if(document.documentElement.classList.contains("no-anim")) return;
+    el.querySelectorAll(":scope > .wg-fx").forEach(x => x.remove());
+    const count = n || 8;
+    const w = el.clientWidth || 96, h = el.clientHeight || 96;
+    const fx = document.createElement("span");
+    fx.className = "wg-fx"; fx.setAttribute("aria-hidden", "true");
+    for(let i = 0; i < count; i++){
+      const a = (i / count) * Math.PI * 2 + Math.random() * 0.25;
+      const out = 0.42 + Math.random() * 0.16;
+      const s = document.createElement("i");
+      s.style.cssText =
+        "--ws:" + (5 + Math.random() * 4).toFixed(1) + "px;" +
+        "--wx:" + (Math.cos(a) * w * out).toFixed(1) + "px;" +
+        "--wy:" + (Math.sin(a) * h * out).toFixed(1) + "px;" +
+        "animation-delay:" + (Math.random() * 60).toFixed(0) + "ms;";
+      fx.appendChild(s);
+    }
+    el.appendChild(fx);
+    setTimeout(()=>{ try{ fx.remove(); }catch(e){} }, 700);   /* inside the flash's own lifetime */
+  }catch(e){}
+}
 function buildSky(){
   try{
     if(document.documentElement.classList.contains("no-anim")) return;   // R5
@@ -1032,6 +1076,7 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
            child lost the feedback exactly when they most needed it. Sequence now: red buzz -> (2nd
            only) settle to the grey disabled state. */
         cell.classList.add("wrong-flash");
+        wgWrong(cell);   // [S01r4s] the kit's outward spark ring; the red flash + shake above are this engine's own
         // [27a] RETRYABLE WRONG TAP (Yasir ruling 2026-07-27 — resolves the blocked behavioural
         // ruling (a) in _ENGINE_GAPS_CONFIRMED_2026-07-27.md, and matches the blessed strilling
         // fork): a wrong card must NOT lock on the first miss. It buzzes red, then UNBLOCKS so the
@@ -5457,7 +5502,12 @@ const SlideModules = {
               if(state.attempts < 2 || state.locked) return;
               if(CARD.slides[state.idx] !== slide) return;
               const t = chips.find((c, ix) => items[ix] && items[ix].has === true && !c.classList.contains("got"));
-              if(t){ handOnAnswer(t, slide); state.nudgeUsed = true;
+              /* [S01r4u] honour data.allow_hand here too. handOnAnswer self-gates to tutorial+guided
+                 (Yasir's round-3 rule), which is why page 7 shows the hand and pages 10 and 13 — the
+                 same mechanic in the practice phase — never did. allow_hand is the per-slide opt-in
+                 the balloon page already uses, so a practice slide can ask for the hand by name
+                 rather than the rule being loosened for the whole fleet. */
+              if(t){ handOnAnswer(t, slide, !!d.allow_hand); state.nudgeUsed = true;
                      state.scaffoldLevel = Math.max(state.scaffoldLevel, 3);
                      SwiftPAL.emit("nudge_invoked", { slide_id: slide.id, phase: slide.phase }); }
             });
@@ -5828,11 +5878,32 @@ const SlideModules = {
       const alive = ()=> CARD.slides[state.idx] === slide;
       const sparkle = (el)=>{
         if(document.documentElement.classList.contains("no-anim")) return;
+        /* [S01r4u] MORE SPARKLE ON THE POP. This was 8 particles on a fixed 45° cross, every one the
+           same size, colour, distance and duration — so the burst read as a single 8-pointed shape
+           flicking outward rather than as a balloon coming apart. Now two rings, 22 particles: a fast
+           outer throw and a slower, smaller inner spray, each particle carrying its own angle jitter,
+           distance, size, spin and warm hue. Two rings at different speeds is what reads as debris;
+           one ring at one speed reads as a diagram. */
         const s = document.createElement("div"); s.className = "bal-sparkle";
-        for(let i = 0; i < 8; i++){
-          const p = document.createElement("i"); p.style.setProperty("--a", (i * 45) + "deg"); s.appendChild(p);
-        }
-        el.appendChild(s); setTimeout(()=>{ try{ s.remove(); }catch(e){} }, 900);
+        const R = (a, b)=> a + Math.random() * (b - a);
+        const HUES = ["#FFD86B","#FFC93C","#FFE9A8","#FFB01F","#FFF4D0"];
+        [{n:13, d:[92,132], sz:[7,12], t:[.62,.86]},     /* outer: thrown far and fast   */
+         {n:9,  d:[44,76],  sz:[4,8],  t:[.48,.70]}      /* inner: closer, smaller, brief */
+        ].forEach((ring, ri)=>{
+          for(let i = 0; i < ring.n; i++){
+            const p = document.createElement("i");
+            p.style.cssText =
+              "--a:" + ((i * (360 / ring.n)) + R(-13, 13) + ri * 18).toFixed(1) + "deg;" +
+              "--d:" + R(ring.d[0], ring.d[1]).toFixed(0) + "px;" +
+              "--sz:" + R(ring.sz[0], ring.sz[1]).toFixed(1) + "px;" +
+              "--sp:" + Math.round(R(-160, 160)) + "deg;" +
+              "--t:" + R(ring.t[0], ring.t[1]).toFixed(2) + "s;" +
+              "--dl:" + Math.round(R(0, 90)) + "ms;" +
+              "background:" + HUES[(i + ri) % HUES.length] + ";";
+            s.appendChild(p);
+          }
+        });
+        el.appendChild(s); setTimeout(()=>{ try{ s.remove(); }catch(e){} }, 1200);
       };
       const remainingCorrect = ()=> cells.find(c => c.it.has === true && !c.b.classList.contains("popped"));
       /* [S01r5i] a shockwave ring, dropped in behind the balloon for the length of the pop */
@@ -5965,7 +6036,11 @@ function starBurst(){
   host.appendChild(cv);
   const ctx = cv.getContext("2d");
   const COLORS = ["#FFE400","#FFBD00","#E89400","#FFCA6C","#FDFFB8"];
-  const TICKS = 100, DECAY = 0.96, START_V = 22;
+  /* [S01r4r · fln-animation-toolkit recipe 8] RETUNED: fewer, slower, longer-lived. 300 particles
+     leaving centre at 22px/frame read as one bright flash that is over before the child looks up.
+     Gravity stays 0 by design - these float and fade; the confetti is what falls. */
+  const TICKS = 150, DECAY = 0.975, START_V = 14, SPIN = 0.18;
+  const SHOTS = [0, 220, 440];
   const parts = [];
   function starPath(r){
     ctx.beginPath();
@@ -5983,13 +6058,15 @@ function starBurst(){
         parts.push({ x:cv.width/2, y:cv.height/2, ax:Math.cos(a), ay:Math.sin(a),
           vel:START_V*(0.5 + Math.random()), tick:0, scalar, shape,
           color:COLORS[Math.floor(Math.random()*COLORS.length)],
-          rot:Math.random()*Math.PI*2, spin:(Math.random()-.5)*0.3 });
+          rot:Math.random()*Math.PI*2, spin:(Math.random()-.5)*SPIN });
       }
     };
-    add(80, 1.8, "star");
-    add(20, 1.0, "circle");
+    add(32, 1.8, "star");
+    add(8,  1.0, "circle");
   }
-  shoot(); setTimeout(shoot, 150); setTimeout(shoot, 300);
+  SHOTS.forEach(ms => ms ? setTimeout(shoot, ms) : shoot());
+  /* derived from the LAST shot, so retiming SHOTS can never end the loop before it fires */
+  const MIN_FRAMES = Math.max(...SHOTS) / 16 + 20;
   let frames = 0;
   (function frame(){
     ctx.clearRect(0, 0, cv.width, cv.height);
@@ -6006,7 +6083,7 @@ function starBurst(){
       ctx.restore();
     }
     frames++;
-    if(alive || frames < 30) requestAnimationFrame(frame);
+    if(alive || frames < MIN_FRAMES) requestAnimationFrame(frame);
     else setTimeout(()=> cv.remove(), 300);
   })();
 }
@@ -6292,6 +6369,7 @@ function conceptTileHTML(c){
 
 /* ---------- 15. BOOT ---------- */
 function boot(){
+  buildHandFx();   // [S01r4s] nudge-hand tap ripple — wrapped internally, cannot strand the loader
   buildSky();   // [S01r4r] start-screen sky — wrapped internally, can never strand #bootLoader (kit R4)
   // god-mode visual theme (opt-in via CARD.theme) — warms the whole stage; scoped CSS under .thm-*
   if(CARD.theme) $("stage").classList.add("thm-" + CARD.theme);

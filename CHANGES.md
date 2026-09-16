@@ -133,6 +133,32 @@
 ### fixed_order/hide_replay/seq_say_whole. Cause: the recipe was reconciled repo→factory AFTER the
 ### rebuild, so the artifacts came from the stale one. Rebuilt; card now byte-identical to the
 ### committed one. RECONCILE THE RECIPE BEFORE BUILDING, NOT AFTER.
+### S01r4u — three asks, all resolved to slide IDs BEFORE anything renumbered (a delete shifts
+### every page after it, and all three were written against the order that was live at the time):
+###  1. **page 11 = P2** (the शुरुआत में / बीच में sort) REMOVED. 15 slides → 14. The pages after it
+###     shift: P7 is now page 12 and the balloon page 13.
+###  2. **page 14 = G1, balloon pop** — the burst was 8 particles on a fixed 45° cross, every one the
+###     same size, colour, distance and duration, so it read as one 8-pointed shape flicking open
+###     rather than a balloon coming apart. Now 22 across TWO rings — a fast outer throw (13) and a
+###     slower, smaller inner spray (9) — each particle carrying its own angle jitter, distance,
+###     size, spin, delay and warm hue. Measured after the pop: 22 particles, 18 distinct sizes,
+###     5 colours, 17 distinct durations. Piyush's [S01r5i] shockwave ring is untouched and still
+###     fires behind it.
+###  3. **pages 10 (P1) and 13→now 12 (P7)** get the earned hand after two wrong taps, matching
+###     page 7 (G2). Done through data.allow_hand, NOT by widening the phase rule: handOnAnswer
+###     self-gates to tutorial+guided because of Yasir's round-3 ruling ("round 3 gets no hand by
+###     ANY route"), and allow_hand is the per-slide opt-in the balloon page already uses. The
+###     TAP_ALL_WITH_SOUND branch now forwards it, which is the one line that was missing.
+###     Walked: page 7 HAND=True (reference), pages 10 and 12 HAND=True after 2 wrong taps, ripple
+###     present on all three.
+###     ⚠ THIS OVERRIDES A RECORDED SME RULING. [28j] says practice gets no hand by any route; two
+###     pages now do, by name. Worth confirming with Yasir — one flag per page reverts it.
+### ⚠⚠ I HAD BEEN CLOBBERING PIYUSH'S ENGINE WORK. He pushed 6fb18ab "Restore page 5/8/10/14 engine
+### work lost in the animation-kit merge". Cause: I reconciled the RECIPE repo→factory every round
+### but never engine_local/, so each sync overwrote app.js and style.css with my stale factory copy.
+### His restore then dropped four of MY effects in turn (hand ripple, hand press, wrong ring,
+### celebration retune). Both sides are now re-applied on top of each other and verified present.
+### RECONCILE engine_local/ AND the recipe repo→factory BEFORE EVERY EDIT — not just the recipe.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.

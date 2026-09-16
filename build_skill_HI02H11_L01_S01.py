@@ -246,12 +246,15 @@ def meet_letter(sid, letter, word, img, prompt_clip, word_clip, sound_clip, cue_
     }
 
 
-def tap_all(sid, phase, sound, prompt, items, clips):
+def tap_all(sid, phase, sound, prompt, items, clips, allow_hand=False):
     return {
         "id": sid, "phase": phase, "eis": "iconic", "type": "TAP_ALL_WITH_SOUND",
         "prompt_hi": prompt,
         "audio": clips,
-        "data": {"target_sound": sound, "items": items,
+        # [r4u] allow_hand: the earned hand after two wrong taps. handOnAnswer self-gates to
+        # tutorial+guided (the round-3 rule), so a PRACTICE page asks for it by name instead of
+        # the rule being loosened fleet-wide. Same opt-in the balloon page already uses.
+        "data": {"target_sound": sound, "items": items, "allow_hand": allow_hand,
                  "reveal_seq": True, "signal_name": "tap_all_sound_first_try"},
     }
 
@@ -432,19 +435,11 @@ def build_card():
          _item("मूली",  "obj_muli",   "vo_w_muli",   has=True),
          _item("लाल",   "obj_laal",   "vo_w_laal",   has=False)],
         {"prompt": "vo_p1_prompt", "target": "vo_snd_m", "hint": "vo_p1_hint",
-         "try_again": "vo_p1_try", "reveal": "vo_p1_reveal", "done": "vo_p1_done"}))
-    # new page 13 (was page 14) — UNCHANGED: the deck asks only to keep this page as it is
-    slides.append(sort_two(
-        "P2", "practice", VO["vo_p2_prompt"],
-        [{"gender": "S", "label": "शुरुआत में"},
-         {"gender": "P", "label": "बीच में"}],
-        [_item("पानी",  "obj_pani",   "vo_w_pani",   gender="S"),
-         _item("पायल",  "obj_payal",  "vo_w_payal",  gender="S"),
-         _item("सपना",  "obj_sapna",  "vo_w_sapna",  gender="P"),
-         _item("चंपा",  "obj_champa", "vo_w_champa", gender="P")],
-        {"prompt": "vo_p2_prompt", "target": "vo_snd_p", "hint": "vo_p2_hint",
-         "try_again": "vo_p2_try", "correct": "vo_p2_correct"},
-        "sound_position_first_try"))
+         "try_again": "vo_p1_try", "reveal": "vo_p1_reveal", "done": "vo_p1_done"},
+        allow_hand=True))   # [r4u] hand after two wrong taps, as on page 7
+    # [r4u] PAGE 11 (P2 — the "शुरुआत में / बीच में" sort) REMOVED on request: "we don't want it
+    # anymore in our game". Resolved by slide ID before anything renumbered — the ask named page 11
+    # against the order live when it was written, and dropping a slide shifts every page after it.
     # new page 14 (was page 16) — new line, new target sound (न), new third option.
     # The deck explicitly does NOT want word-by-word highlighting here ("No word-by-word
     # highlighting is required"), so this page carries no teach_seq — it is a plain question.
@@ -473,7 +468,8 @@ def build_card():
          _item("चींटी", "obj_chinti", "vo_w_chinti", has=True),
          _item("लाल",   "obj_laal",   "vo_w_laal",   has=False)],
         {"prompt": "vo_p7_prompt", "target": "vo_snd_ch", "hint": "vo_p7_hint",
-         "try_again": "vo_p7_try", "reveal": "vo_p7_reveal", "done": "vo_p7_done"}))
+         "try_again": "vo_p7_try", "reveal": "vo_p7_reveal", "done": "vo_p7_done"},
+        allow_hand=True))   # [r4u] hand after two wrong taps, as on page 7
     # [r5d] MOVED TO THE END (SME: "the balloon page should be the last page"). It used to sit at
     # new page 8, between the teach block and the tap-all. Two things travel with it:
     #   - phase guided -> practice. The phase-transition gate fires on a phase BOUNDARY, so leaving

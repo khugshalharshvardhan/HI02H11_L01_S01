@@ -1981,11 +1981,20 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
 .balloon.bcol-4 .bal-body::before{ filter:hue-rotate(118deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
 .balloon.bcol-5 .bal-body::before{ filter:hue-rotate(-25deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
 .bal-sparkle{ position:absolute; inset:0; pointer-events:none; z-index:3; }
-.bal-sparkle i{ position:absolute; top:46%; left:48%; width:9px; height:9px; border-radius:50%;
+/* [S01r4u] every particle now carries its OWN size, throw distance, duration, delay and spin, so
+   the pop reads as debris rather than as one 8-pointed shape opening. --d/--sz/--sp/--t/--dl and the
+   background colour are set per-particle in sparkle(); the values below are only fallbacks for
+   anything that does not set them. */
+.bal-sparkle i{ position:absolute; top:46%; left:48%;
+  width:var(--sz,9px); height:var(--sz,9px); border-radius:50%;
   background:#FFD86B; box-shadow:0 0 8px #FFC93C;
-  animation:balSpark .78s ease-out forwards; transform:rotate(var(--a)) translateY(0); }
-@keyframes balSpark{ 0%{ opacity:1; transform:rotate(var(--a)) translateY(0) scale(1); }
-  100%{ opacity:0; transform:rotate(var(--a)) translateY(-86px) scale(.35); } }
+  animation:balSpark var(--t,.78s) cubic-bezier(.12,.72,.32,1) var(--dl,0ms) forwards;
+  transform:rotate(var(--a)) translateY(0); }
+@keyframes balSpark{
+  0%{ opacity:1; transform:rotate(var(--a)) translateY(0) scale(.65); }
+  18%{ opacity:1; transform:rotate(var(--a)) translateY(calc(var(--d,86px) * -.30)) scale(1.12); }
+  100%{ opacity:0;
+        transform:rotate(var(--a)) translateY(calc(var(--d,86px) * -1)) scale(.3) rotate(var(--sp,0deg)); } }
 
 /* ---- landing: one example sentence instead of a heading + three loose letters -------------------- */
 .sg-title.sg-hide{ display:none; }
@@ -2208,3 +2217,68 @@ body.is-start .sg-sky{display:block;}
 @keyframes sgGlowOpacity{from{opacity:0;}to{opacity:1;}}
 html.no-anim .sg-sky{display:none !important;}
 @media (prefers-reduced-motion: reduce){ .sg-sky{display:none !important;} }
+
+/* ═══ [S01r4s] fln-animation-toolkit — recipe 3 (nudge hand press, treatment C) + recipe 4
+   (tap ripple). GEOMETRY RE-MEASURED, NOT COPIED. The kit anchors its FX to an 86x108 hand with
+   the fingertip at (34.2, 15.8); this project's hand is 96x96 with object-fit:contain letterboxing
+   a 75x94 artwork inside it, so those offsets do not transfer — its own R11 warns about exactly
+   this. Rasterised the hand at 8x and read the tip off the pixels: artwork occupies x 15.8..80.4,
+   y 6.4..90.2, fingertip at (39.93, 6.38), ink width 64.6 -> FX box 71.1px (the kit's 1.1x of hand
+   width). The box is then CENTRED on the tip, which is what its published offsets resolve to.
+   All four layers run the SAME 1.3s and are staggered by keyframe percentage, never by delay —
+   that is what keeps the ring locked to the moment of contact. ═══ */
+:root{
+  --nh-ro:url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='27.80 -11.40 120 120' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M74.7024 71.6976C72.1605 70.4732 69.1006 67.3834 67.515 65.0857C55.2881 47.566 69.9936 24.0148 91.2529 26.915C113.731 29.9818 120.319 58.8257 101.46 71.5488C101.156 70.8843 101.195 69.4832 101.276 68.7471C105.837 65.039 109.446 59.6051 110.03 53.6641C110.684 47.5277 108.79 41.3918 104.789 36.6929C102.064 33.4302 98.5327 31.2267 94.541 30.0067C73.7653 23.6564 56.4914 47.8147 70.5341 65.0591C71.7933 66.6053 73.2493 67.723 74.7014 69.0015C74.8802 69.5144 74.9948 71.2449 74.7024 71.6976Z' fill='%23C1EFFE'/%3E %3C/svg%3E");
+  --nh-ri:url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='27.80 -11.40 120 120' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M74.7757 62.4271C71.7856 60.039 70.1885 54.3243 70.294 50.6368C70.6248 39.083 82.1195 31.4727 92.9943 34.5956C100.511 36.7542 105.619 44.2334 105.309 51.9674C105.173 55.2488 103.551 59.8473 101.132 62.1429L101.072 62.1205C100.83 61.7166 100.833 59.7674 100.949 59.2532C102.01 57.105 102.864 55.6541 103.164 53.1689C104.7 40.4571 90.8047 31.1791 79.8177 38.1044C77.0204 39.8676 75.1828 41.8935 73.7401 44.9505C71.6928 49.2887 72.1111 55.3851 74.7391 59.3739C74.9118 60.2866 74.9081 61.5047 74.7757 62.4271Z' fill='%23C1EFFE'/%3E %3C/svg%3E");
+  --nh-sp:url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='27.80 -11.40 120 120' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M63.3475 16.7437C64.0015 16.6806 64.6276 16.7506 65.2118 17.075C66.2249 17.6374 71.5594 24.1612 71.7893 25.1235C71.9323 25.7211 71.8523 26.3734 71.5233 26.8969C71.0671 27.6227 70.252 28.0559 69.434 28.2268C69.2741 28.1946 69.1132 28.155 68.9596 28.0988C67.8539 27.6941 61.5788 21.9733 61.0999 20.8847C60.8005 20.2042 60.7855 19.3489 61.081 18.6656C61.4937 17.7118 62.4136 17.1081 63.3475 16.7437Z' fill='%23FEFCFA'/%3E %3Cpath d='M63.5619 18.1761C63.923 18.1574 64.248 18.1652 64.5805 18.3259C65.1315 18.5921 70.269 25.0817 70.398 25.7194C70.4378 25.9162 70.3763 26.1928 70.256 26.3522C70.0212 26.6632 69.6535 26.6992 69.295 26.7252C69.2833 26.7196 69.2717 26.7137 69.2599 26.7085C68.4615 26.3552 63.8903 22.0136 63.0884 21.1629C62.8255 20.884 62.5168 20.5501 62.3738 20.1918C62.2405 19.8582 62.2598 19.4077 62.4166 19.0859C62.682 18.5413 63.0037 18.3662 63.5619 18.1761Z' fill='%23FFD359'/%3E %3Cpath d='M88.0354 8.50776C93.1319 7.86507 91.6802 12.9916 91.4408 16.0876C91.2981 17.9359 91.794 20.8418 89.7726 21.7666C87.8704 22.3965 86.6496 21.4362 86.4748 19.5175C86.3048 17.6521 86.2275 15.7528 86.0048 13.8929C85.7691 11.9245 85.3078 8.93132 88.0354 8.50776Z' fill='%23FEFCFA'/%3E %3Cpath d='M88.474 9.67668C89.4177 9.52501 90.4618 10.2338 90.4699 11.2715C90.4825 11.9589 90.4229 12.6537 90.347 13.3379C90.0978 15.5845 89.9982 17.8741 89.6122 20.0994C89.5802 20.284 89.3913 20.4755 89.2689 20.6046C88.7147 20.6135 88.525 20.6423 88.1164 20.2743C87.7941 19.5708 87.1551 12.1702 87.1763 10.8796C87.1836 10.4347 88.0638 9.91362 88.474 9.67668Z' fill='%23FFD359'/%3E %3Cpath d='M113.345 16.7228C113.573 16.7051 113.821 16.6864 114.048 16.7094C114.97 16.8077 115.812 17.2774 116.381 18.0101C117.046 18.8818 117.199 20.319 116.544 21.2358C115.669 22.4632 114.281 23.4986 113.169 24.5204C111.951 25.6407 110.722 26.8363 109.377 27.8031C106.974 29.0458 105.259 26.1215 106.065 24.9051C107.436 22.8334 111.241 17.6149 113.345 16.7228Z' fill='%23FEFCFA'/%3E %3Cpath d='M113.599 18.16C114.966 17.9476 116.204 19.4822 115.305 20.6015C114.626 21.4482 113.609 22.2643 112.791 22.9967L109.022 26.3982C108.002 27.1681 107.05 26.1967 107.4 25.5561C108.058 24.3516 109.501 22.7158 110.373 21.6295C111.226 20.566 112.505 18.7011 113.599 18.16Z' fill='%23FFD359'/%3E %3C/svg%3E");
+}
+/* the container must not animate: it is positioned by _placeNudge, and a container bob would fight
+   the press. The press moves the IMG. */
+.nudge-hand{animation:none;}
+.nudge-hand img{animation:nhTapNew 1.3s ease-in-out infinite;}
+/* FX sit BEHIND the hand, as in the source artwork where the ring passes behind the finger */
+.nudge-hand .nh-tapfx{position:absolute;width:71.10px;height:71.10px;
+  left:4.38px;top:-29.17px;pointer-events:none;z-index:-1;}
+.nudge-hand .nh-tapfx i{position:absolute;inset:0;display:block;background-repeat:no-repeat;
+  background-position:center;background-size:contain;transform-origin:50% 50%;opacity:0;}
+.nudge-hand .nh-tapfx .fx-ro{background-image:var(--nh-ro);animation:nhRippleOuter 1.3s ease-out infinite;}
+.nudge-hand .nh-tapfx .fx-ri{background-image:var(--nh-ri);animation:nhRippleInner 1.3s ease-out infinite;}
+.nudge-hand .nh-tapfx .fx-sp{background-image:var(--nh-sp);animation:nhSparkPop 1.3s ease-out infinite;}
+/* contact is HELD 45%->62% — the dwell is what reads as a press rather than a bounce */
+@keyframes nhTapNew{
+  0%,100%{transform:translateY(0) scale(1);}
+  45%{transform:translateY(6px) scale(.93);}
+  62%{transform:translateY(6px) scale(.93);}
+}
+/* inner wavefront leads, outer trails it — one ripple rolling out from the fingertip */
+@keyframes nhRippleInner{0%,38%{opacity:0;transform:scale(.30);}47%{opacity:1;transform:scale(.74);}
+  70%{opacity:.5;transform:scale(1.10);}90%,100%{opacity:0;transform:scale(1.34);}}
+@keyframes nhRippleOuter{0%,45%{opacity:0;transform:scale(.55);}56%{opacity:.95;transform:scale(.88);}
+  78%{opacity:.4;transform:scale(1.20);}96%,100%{opacity:0;transform:scale(1.46);}}
+@keyframes nhSparkPop{0%,42%{opacity:0;transform:scale(.55);}52%{opacity:1;transform:scale(1);}
+  68%{opacity:1;transform:scale(1.06);}86%,100%{opacity:0;transform:scale(1.18);}}
+html.no-anim .nudge-hand .nh-tapfx{display:none;}
+@media (prefers-reduced-motion: reduce){ .nudge-hand .nh-tapfx{display:none;} }
+
+/* ═══ [S01r4s] recipe 20 — wrong answer select. ADDITIVE ONLY.
+   This engine's wrong feedback was tuned by the SME across three rounds and those rulings stand:
+   [28r] BOTH wrong attempts flash red; [28p] the grey lock (.crossed) is earned only by the 2nd;
+   [28u] the flash must snap, not ease. So .wrong-flash keeps its own border, background and
+   buzzShake untouched — the kit contributes the outward spark RING it never had, on the same
+   tempo. --fx-beat is already this engine's .4s buzzShake, so the two are in step by construction
+   rather than by a number copied into two places. ═══ */
+.opt-cell.wrong-flash{overflow:visible;}
+.wg-fx{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2;overflow:visible;}
+.wg-fx i{position:absolute;left:50%;top:50%;width:var(--ws);height:var(--ws);
+  margin:calc(var(--ws) / -2) 0 0 calc(var(--ws) / -2);border-radius:50%;
+  background:var(--wrong,#F93544);opacity:0;
+  animation:wgSpark var(--fx-beat) cubic-bezier(.2,.7,.4,1) both;}
+/* OUTWARD and gone inside one beat: wrong RELEASES (there is another attempt), where correct
+   persists. Nothing here is allowed to outlive the red flash. */
+@keyframes wgSpark{
+  0%  {transform:translate(0,0) scale(.35);opacity:0;}
+  22% {opacity:.95;}
+  100%{transform:translate(var(--wx),var(--wy)) scale(1);opacity:0;}
+}
+html.no-anim .wg-fx{display:none;}
+@media (prefers-reduced-motion: reduce){ .wg-fx{display:none;} }

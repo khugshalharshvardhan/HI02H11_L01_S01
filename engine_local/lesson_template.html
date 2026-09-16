@@ -228,6 +228,39 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .sort-bin.fem .bin-title{color:#5B3FB0;}
 .sort-bin.hover{box-shadow:0 0 0 7px rgba(56,106,246,.15);}
 .sort-bin .bin-items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-content:flex-start;}
+/* [S01r4t] THE BASKET CARRIES BOTH .sort-bin AND .dd-zone - dd-zone is the drop-detection hook the
+   module adds - and `.dd-zone{width:150px;height:150px}` is declared LATER at equal specificity, so
+   it silently won. Measured: a 150px basket against a 116px tile. That is why the label wrapped to
+   three lines and overflowed its fixed 56px title box (scrollHeight 100 vs clientHeight 56), and why
+   two pictures could never sit side by side in one basket. Sized on the COMBINED selector so it
+   beats .dd-zone without touching the drop hook. .bin-items had collapsed to 0x0 and now reserves a
+   real row: 2 x 116px tile + 8px gap fits inside the padding with room to spare. */
+.sort-bin.dd-zone{ width:320px; height:auto; min-height:252px; justify-content:flex-start; }
+.sort-bin.dd-zone .bin-title{ height:auto; min-height:56px; width:100%; box-sizing:border-box;
+                              padding:6px 10px; line-height:1.18; }
+.sort-bin.dd-zone .bin-items{ width:100%; min-height:128px; }
+/* [S01r4x] BASKET LABEL AS A PILL ON THE TOP EDGE (SME sketch): the label straddles the dashed
+   border like a fieldset legend instead of sitting as a block inside the box. Taken out of the flex
+   flow and centred on the top border - .dd-zone already sets position:relative, so this needs no new
+   stacking context - which hands the whole inside of the basket to .bin-items. padding-top keeps a
+   dropped picture from sliding under the pill. */
+.sort-bin.dd-zone{ padding-top:30px; overflow:visible; }
+/* [S01r4z] A DROPPED PICTURE CENTRES ON BOTH AXES.
+   X was already centred - .bin-items has justify-content:center. Y was not: it carried
+   align-content:flex-start and no height of its own beyond min-height:128px, so inside a 252px
+   basket the row was pinned to the TOP with all the slack hanging below it. It now grows to fill
+   whatever height the basket has left and centres its line, and the basket's vertical padding is
+   made symmetric so "centre of the content box" is also the centre of the dashed box.
+   30px top/bottom still clears the label pill, which hangs about 20px down into the box: a 124px
+   tile centred in the resulting 186px content area starts ~61px below the box top. */
+.sort-bin.dd-zone{ padding:30px 12px; }
+.sort-bin.dd-zone .bin-items{ flex:1 1 auto; align-content:center; align-items:center; }
+.sort-bin.dd-zone .bin-title{
+  position:absolute; top:0; left:50%; transform:translate(-50%,-50%);
+  width:auto; max-width:calc(100% - 24px); height:auto; min-height:0;
+  padding:5px 20px; border-radius:16px; background:#fff;
+  font-size:26px; line-height:1.15; white-space:nowrap;
+  box-shadow:0 2px 10px rgba(11,61,140,.12); }
 .sort-tray{display:flex;gap:18px;justify-content:center;flex-wrap:nowrap;}
 /* [24a A5] tray ghost-slot: a placed sort card leaves a faint same-size dashed placeholder at its
    exact tray origin (holds the flex slot so remaining cards don't shift; vachan/gender parity) */
@@ -237,6 +270,31 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .sort-item img{width:72px;height:72px;object-fit:contain;} .sort-item img.fallback{display:none;}
 .sort-item .emoji{font-size:58px;line-height:1;} .sort-item .lbl{font-size:16px;font-weight:700;color:var(--navy);}
 .sort-item.snapped{box-shadow:none;cursor:default;}
+/* [S01r4s] page 10 drop feedback. Correct: "settle into the box with a small positive animation" -
+   .snapped only removed the shadow before, so a tile arrived in the bin with no beat of its own.
+   Wrong: the tile now shakes; makeDraggable already springs it home, and buzzShake is the same
+   shake the wrong-tap chips use, so the two mechanics read alike. */
+.sort-item.snapped{ animation:sortSettle .4s cubic-bezier(.2,.9,.25,1.3); }
+.sort-item.sort-shake{ animation:buzzShake .4s; }
+/* [S01r4u] SME: "too small - make it feel draggable for kids". The tray tile was 116px carrying a
+   72px picture and a 16px label, i.e. SMALLER than the 150px drop zone it is dragged into, which is
+   backwards for a six-year-old's finger. The TRAY tile grows; the SNAPPED tile deliberately does
+   NOT, because two of them have to keep fitting side by side in the 290px basket row
+   (2 x 124 + 8px gap = 256, inside 290). cursor:grab and the chunky bottom edge already existed -
+   the edge is deepened so the tile reads as a physical thing to pick up.
+   Shape sorts are untouched: `.shape-sort .sort-item` is (0,2,0) and beats these (0,1,0)/(0,2,0). */
+.sort-item{ width:164px; height:164px; border-radius:20px; gap:6px;
+            box-shadow:0 7px 0 rgba(11,61,140,.16); }
+.sort-item img{ width:104px; height:104px; }
+.sort-item .emoji{ font-size:84px; }
+.sort-item .lbl{ font-size:22px; }
+.sort-item.snapped{ width:124px; height:124px; border-radius:16px; gap:2px; }
+.sort-item.snapped img{ width:76px; height:76px; }
+.sort-item.snapped .emoji{ font-size:60px; }
+.sort-item.snapped .lbl{ font-size:16px; }
+@keyframes sortSettle{ 0%{transform:scale(.74);opacity:.55;}
+                       55%{transform:scale(1.08);opacity:1;}
+                       100%{transform:scale(1);opacity:1;} }
  .sort-item.snapped .emoji{font-size:44px;} .sort-item.snapped .lbl{font-size:13px;}
 .sort-item.snapped .shape-svg{width:52px;height:52px;}
 
@@ -1099,6 +1157,27 @@ body.tut-page{background:#FFFFFF;}
 .tap-all-item .lbl{font-size:24px;font-weight:800;color:var(--navy);}
 .tap-all-item.got{border-color:var(--correct);background:var(--correct-bg);box-shadow:0 6px 14px rgba(0,177,50,.18);}
 .tap-all-item.got::after{content:"\2713";position:absolute;top:6px;right:10px;font-size:40px;font-weight:900;color:var(--correct);}
+/* [S01r4p/r4q] OPTION ENTRY + the correct-tap reward. RESTORED: a factory rebuild (commit
+   9934644) regenerated app.js/style.css from a copy that never had these, wiping both.
+   The chip hides on the class only, so revealing is just removing it. The base transition has no
+   `opacity` and runs transform at .15s - a snap, not an entrance - so it is restated in full here;
+   .wrong-flash still wins with its transition:none. The tick was a bare 40px glyph on the corner
+   sitting ON the picture with no ground of its own; it is a filled badge now. */
+.tap-all-item{ transition:opacity .34s ease, transform .3s cubic-bezier(.2,.9,.3,1.25),
+               border-color .15s, background .15s, box-shadow .15s; }
+.tap-all-item.tap-seq-hidden{ opacity:0; transform:translateY(16px) scale(.92); pointer-events:none; }
+.tap-all-item.got{ animation:tapGotPop .44s ease-out; }
+.tap-all-item.got::after{ content:"\2713"; position:absolute; top:-13px; right:-13px;
+  width:46px; height:46px; border-radius:50%; box-sizing:border-box;
+  display:flex; align-items:center; justify-content:center;
+  font-size:25px; line-height:1; font-weight:900; color:#fff;
+  background:var(--correct); border:3px solid #fff;
+  box-shadow:0 4px 12px rgba(0,140,40,.38);
+  animation:tapTickIn .44s cubic-bezier(.2,.9,.25,1.5); }
+@keyframes tapGotPop{ 0%{transform:scale(1);} 38%{transform:scale(1.07);} 100%{transform:scale(1);} }
+@keyframes tapTickIn{ 0%{opacity:0;transform:scale(.3) rotate(-20deg);}
+                      60%{opacity:1;transform:scale(1.18) rotate(4deg);}
+                      100%{opacity:1;transform:scale(1) rotate(0);} }
 /* [27a] ✕ dropped (third and last ✕ site) — red ring only, same language as the pick cards. The
    ✓ on .got STAYS: the ruling removed the wrong-mark, not the right-mark, and TAP_ALL needs a
    persistent tick to show which items are already banked. Lock/dim kept, as with .sentence-word. */
@@ -1168,11 +1247,7 @@ body.gating .stage.gating .start-gate{filter:none;}
 
 /* [20a landing] fixed full-viewport ground so #47BCFD + art reach the true edges (kills the #7FC8F4 letterbox band);
    start-gate goes transparent (above) so this single image is seamless; in-lesson chrome hidden while landing shows. */
-/* [S01r4r] the PLAIN plate. startnew_bg.webp has stars, sparkles, rings and dots painted INTO
-   the bitmap; the drifting sky layer below puts its own on top, and the two together read as one
-   frozen set and one moving set. startnew_bg_plain.webp is that same sunburst with the baked
-   shapes inpainted out (rays and gradient untouched) — the kit calls this swap "must do first". */
-.start-bg{position:fixed;inset:0;background:#47BCFD url("assets/UI/startnew_bg_plain.webp") center/cover no-repeat;display:none;pointer-events:none;z-index:0;}
+.start-bg{position:fixed;inset:0;background:#47BCFD url("assets/UI/startnew_bg.webp") center/cover no-repeat;display:none;pointer-events:none;z-index:0;}
 body.is-start .start-bg{display:block;}
 body.is-start .stage-inner{visibility:hidden !important;}
 body.is-start .stage{background:transparent !important;}
@@ -1875,12 +1950,62 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
 @keyframes balShake{ 0%,100%{ transform:translateX(0) rotate(0); }
   20%{ transform:translateX(-9px) rotate(-3deg); } 40%{ transform:translateX(9px) rotate(3deg); }
   60%{ transform:translateX(-6px) rotate(-2deg); } 80%{ transform:translateX(6px) rotate(2deg); } }
+/* ============================ [S01r5c] BALLOONS: REAL ART, RISING ============================
+   1. THE SKIN. The balloon was drawn in CSS (a border-radius blob + a triangle knot + a blurred
+      shine). The SME supplied real balloon art, so .bal-body now carries it. The art goes on a
+      ::before rather than on .bal-body itself, because the per-balloon colour is a hue-rotate and a
+      filter on .bal-body would tint the OBJECT PICTURE sitting on it too. ::before is the first
+      child in paint order, so .bal-img still lands on top without needing a z-index.
+      The PNG brings its own knot and highlight, so the old ::after triangle and .bal-shine go.
+   2. THE COLOUR. One yellow asset, measured at hue 49.3deg, rotated to the six palette hues this
+      mechanic already used (none of them red or green - those are reserved for answers here).
+      Deltas are computed from 49.3, so bcol-0 barely moves and the rest land on their old colours.
+   3. THE RISE. "All the balloons should come from the bottom of the screen": the entrance now
+      starts 520px below rest, which is past the bottom of a ~494px stage, and the reveal already
+      staggers them 170ms apart so they arrive as a wave. This only works because the float moved
+      to .bal-lift - see the note in the module. */
+.balloon{ animation:none; transition:opacity .5s ease, transform 1s cubic-bezier(.17,.78,.32,1); }
+.bal-lift{ display:block; animation:balFloat 3.4s ease-in-out infinite;
+           animation-delay:calc(var(--bi,0) * -0.47s); }
+/* 680px clears the stage: a balloon rests ~20px from the top and stands ~206px tall, and
+   .slide-stage is overflow:hidden, so at +680 the whole thing sits below the clip and the
+   child sees it enter from off-screen rather than fade up from inside the card. */
+.balloon.seq-hidden{ opacity:0; transform:translateY(680px) scale(.9); pointer-events:none; }
+
+.balloon .bal-body{ box-shadow:none; border-radius:0; }
+/* the six bcol rules set a background at (0,3,0); match that weight to clear it - a plain
+   .balloon .bal-body is (0,2,0) and lost, which left a coloured RECTANGLE behind every balloon */
+.balloon[class*="bcol-"] .bal-body{ background:none; }
+.balloon .bal-body::before{ content:""; position:absolute; inset:0;
+  background:url("assets/UI/balloon.png") center/contain no-repeat;
+  filter:drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon .bal-body::after{ display:none; }
+.balloon .bal-shine{ display:none; }
+/* the art's bulge centres above the box centre, because the lower fifth is the knot */
+.balloon .bal-img{ position:relative; transform:translateY(-12px); }
+.balloon .bal-emoji{ position:relative; transform:translateY(-12px); }
+
+.balloon.bcol-0 .bal-body::before{ filter:hue-rotate(-8deg)   drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-1 .bal-body::before{ filter:hue-rotate(156deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-2 .bal-body::before{ filter:hue-rotate(207deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-3 .bal-body::before{ filter:hue-rotate(292deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-4 .bal-body::before{ filter:hue-rotate(118deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
+.balloon.bcol-5 .bal-body::before{ filter:hue-rotate(-25deg)  drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
 .bal-sparkle{ position:absolute; inset:0; pointer-events:none; z-index:3; }
-.bal-sparkle i{ position:absolute; top:46%; left:48%; width:9px; height:9px; border-radius:50%;
+/* [S01r4u] every particle now carries its OWN size, throw distance, duration, delay and spin, so
+   the pop reads as debris rather than as one 8-pointed shape opening. --d/--sz/--sp/--t/--dl and the
+   background colour are set per-particle in sparkle(); the values below are only fallbacks for
+   anything that does not set them. */
+.bal-sparkle i{ position:absolute; top:46%; left:48%;
+  width:var(--sz,9px); height:var(--sz,9px); border-radius:50%;
   background:#FFD86B; box-shadow:0 0 8px #FFC93C;
-  animation:balSpark .78s ease-out forwards; transform:rotate(var(--a)) translateY(0); }
-@keyframes balSpark{ 0%{ opacity:1; transform:rotate(var(--a)) translateY(0) scale(1); }
-  100%{ opacity:0; transform:rotate(var(--a)) translateY(-86px) scale(.35); } }
+  animation:balSpark var(--t,.78s) cubic-bezier(.12,.72,.32,1) var(--dl,0ms) forwards;
+  transform:rotate(var(--a)) translateY(0); }
+@keyframes balSpark{
+  0%{ opacity:1; transform:rotate(var(--a)) translateY(0) scale(.65); }
+  18%{ opacity:1; transform:rotate(var(--a)) translateY(calc(var(--d,86px) * -.30)) scale(1.12); }
+  100%{ opacity:0;
+        transform:rotate(var(--a)) translateY(calc(var(--d,86px) * -1)) scale(.3) rotate(var(--sp,0deg)); } }
 
 /* ---- landing: one example sentence instead of a heading + three loose letters -------------------- */
 .sg-title.sg-hide{ display:none; }
@@ -2065,6 +2190,13 @@ html.no-anim .ck-crown, html.no-anim .fx-confetti{display:none;}
   .ck-crown,.fx-confetti{display:none;}
 }
 
+/* ===== [S01r4r] restored from be5f5f7 (start-screen sky + plain plate) ===== */
+/* [S01r4r] the PLAIN plate. startnew_bg.webp has stars, sparkles, rings and dots painted INTO
+   the bitmap; the drifting sky layer below puts its own on top, and the two together read as one
+   frozen set and one moving set. startnew_bg_plain.webp is that same sunburst with the baked
+   shapes inpainted out (rays and gradient untouched) — the kit calls this swap "must do first". */
+.start-bg{position:fixed;inset:0;background:#47BCFD url("assets/UI/startnew_bg_plain.webp") center/cover no-repeat;display:none;pointer-events:none;z-index:0;}
+
 
 /* ═══ [S01r4r] fln-animation-toolkit — recipe 1: start-screen sky (drift) ═══
    A field of stars, twinkles, rings and dots drifting outward from the centre of the start screen.
@@ -2096,6 +2228,71 @@ body.is-start .sg-sky{display:block;}
 @keyframes sgGlowOpacity{from{opacity:0;}to{opacity:1;}}
 html.no-anim .sg-sky{display:none !important;}
 @media (prefers-reduced-motion: reduce){ .sg-sky{display:none !important;} }
+
+/* ═══ [S01r4s] fln-animation-toolkit — recipe 3 (nudge hand press, treatment C) + recipe 4
+   (tap ripple). GEOMETRY RE-MEASURED, NOT COPIED. The kit anchors its FX to an 86x108 hand with
+   the fingertip at (34.2, 15.8); this project's hand is 96x96 with object-fit:contain letterboxing
+   a 75x94 artwork inside it, so those offsets do not transfer — its own R11 warns about exactly
+   this. Rasterised the hand at 8x and read the tip off the pixels: artwork occupies x 15.8..80.4,
+   y 6.4..90.2, fingertip at (39.93, 6.38), ink width 64.6 -> FX box 71.1px (the kit's 1.1x of hand
+   width). The box is then CENTRED on the tip, which is what its published offsets resolve to.
+   All four layers run the SAME 1.3s and are staggered by keyframe percentage, never by delay —
+   that is what keeps the ring locked to the moment of contact. ═══ */
+:root{
+  --nh-ro:url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='27.80 -11.40 120 120' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M74.7024 71.6976C72.1605 70.4732 69.1006 67.3834 67.515 65.0857C55.2881 47.566 69.9936 24.0148 91.2529 26.915C113.731 29.9818 120.319 58.8257 101.46 71.5488C101.156 70.8843 101.195 69.4832 101.276 68.7471C105.837 65.039 109.446 59.6051 110.03 53.6641C110.684 47.5277 108.79 41.3918 104.789 36.6929C102.064 33.4302 98.5327 31.2267 94.541 30.0067C73.7653 23.6564 56.4914 47.8147 70.5341 65.0591C71.7933 66.6053 73.2493 67.723 74.7014 69.0015C74.8802 69.5144 74.9948 71.2449 74.7024 71.6976Z' fill='%23C1EFFE'/%3E %3C/svg%3E");
+  --nh-ri:url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='27.80 -11.40 120 120' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M74.7757 62.4271C71.7856 60.039 70.1885 54.3243 70.294 50.6368C70.6248 39.083 82.1195 31.4727 92.9943 34.5956C100.511 36.7542 105.619 44.2334 105.309 51.9674C105.173 55.2488 103.551 59.8473 101.132 62.1429L101.072 62.1205C100.83 61.7166 100.833 59.7674 100.949 59.2532C102.01 57.105 102.864 55.6541 103.164 53.1689C104.7 40.4571 90.8047 31.1791 79.8177 38.1044C77.0204 39.8676 75.1828 41.8935 73.7401 44.9505C71.6928 49.2887 72.1111 55.3851 74.7391 59.3739C74.9118 60.2866 74.9081 61.5047 74.7757 62.4271Z' fill='%23C1EFFE'/%3E %3C/svg%3E");
+  --nh-sp:url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='27.80 -11.40 120 120' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M63.3475 16.7437C64.0015 16.6806 64.6276 16.7506 65.2118 17.075C66.2249 17.6374 71.5594 24.1612 71.7893 25.1235C71.9323 25.7211 71.8523 26.3734 71.5233 26.8969C71.0671 27.6227 70.252 28.0559 69.434 28.2268C69.2741 28.1946 69.1132 28.155 68.9596 28.0988C67.8539 27.6941 61.5788 21.9733 61.0999 20.8847C60.8005 20.2042 60.7855 19.3489 61.081 18.6656C61.4937 17.7118 62.4136 17.1081 63.3475 16.7437Z' fill='%23FEFCFA'/%3E %3Cpath d='M63.5619 18.1761C63.923 18.1574 64.248 18.1652 64.5805 18.3259C65.1315 18.5921 70.269 25.0817 70.398 25.7194C70.4378 25.9162 70.3763 26.1928 70.256 26.3522C70.0212 26.6632 69.6535 26.6992 69.295 26.7252C69.2833 26.7196 69.2717 26.7137 69.2599 26.7085C68.4615 26.3552 63.8903 22.0136 63.0884 21.1629C62.8255 20.884 62.5168 20.5501 62.3738 20.1918C62.2405 19.8582 62.2598 19.4077 62.4166 19.0859C62.682 18.5413 63.0037 18.3662 63.5619 18.1761Z' fill='%23FFD359'/%3E %3Cpath d='M88.0354 8.50776C93.1319 7.86507 91.6802 12.9916 91.4408 16.0876C91.2981 17.9359 91.794 20.8418 89.7726 21.7666C87.8704 22.3965 86.6496 21.4362 86.4748 19.5175C86.3048 17.6521 86.2275 15.7528 86.0048 13.8929C85.7691 11.9245 85.3078 8.93132 88.0354 8.50776Z' fill='%23FEFCFA'/%3E %3Cpath d='M88.474 9.67668C89.4177 9.52501 90.4618 10.2338 90.4699 11.2715C90.4825 11.9589 90.4229 12.6537 90.347 13.3379C90.0978 15.5845 89.9982 17.8741 89.6122 20.0994C89.5802 20.284 89.3913 20.4755 89.2689 20.6046C88.7147 20.6135 88.525 20.6423 88.1164 20.2743C87.7941 19.5708 87.1551 12.1702 87.1763 10.8796C87.1836 10.4347 88.0638 9.91362 88.474 9.67668Z' fill='%23FFD359'/%3E %3Cpath d='M113.345 16.7228C113.573 16.7051 113.821 16.6864 114.048 16.7094C114.97 16.8077 115.812 17.2774 116.381 18.0101C117.046 18.8818 117.199 20.319 116.544 21.2358C115.669 22.4632 114.281 23.4986 113.169 24.5204C111.951 25.6407 110.722 26.8363 109.377 27.8031C106.974 29.0458 105.259 26.1215 106.065 24.9051C107.436 22.8334 111.241 17.6149 113.345 16.7228Z' fill='%23FEFCFA'/%3E %3Cpath d='M113.599 18.16C114.966 17.9476 116.204 19.4822 115.305 20.6015C114.626 21.4482 113.609 22.2643 112.791 22.9967L109.022 26.3982C108.002 27.1681 107.05 26.1967 107.4 25.5561C108.058 24.3516 109.501 22.7158 110.373 21.6295C111.226 20.566 112.505 18.7011 113.599 18.16Z' fill='%23FFD359'/%3E %3C/svg%3E");
+}
+/* the container must not animate: it is positioned by _placeNudge, and a container bob would fight
+   the press. The press moves the IMG. */
+.nudge-hand{animation:none;}
+.nudge-hand img{animation:nhTapNew 1.3s ease-in-out infinite;}
+/* FX sit BEHIND the hand, as in the source artwork where the ring passes behind the finger */
+.nudge-hand .nh-tapfx{position:absolute;width:71.10px;height:71.10px;
+  left:4.38px;top:-29.17px;pointer-events:none;z-index:-1;}
+.nudge-hand .nh-tapfx i{position:absolute;inset:0;display:block;background-repeat:no-repeat;
+  background-position:center;background-size:contain;transform-origin:50% 50%;opacity:0;}
+.nudge-hand .nh-tapfx .fx-ro{background-image:var(--nh-ro);animation:nhRippleOuter 1.3s ease-out infinite;}
+.nudge-hand .nh-tapfx .fx-ri{background-image:var(--nh-ri);animation:nhRippleInner 1.3s ease-out infinite;}
+.nudge-hand .nh-tapfx .fx-sp{background-image:var(--nh-sp);animation:nhSparkPop 1.3s ease-out infinite;}
+/* contact is HELD 45%->62% — the dwell is what reads as a press rather than a bounce */
+@keyframes nhTapNew{
+  0%,100%{transform:translateY(0) scale(1);}
+  45%{transform:translateY(6px) scale(.93);}
+  62%{transform:translateY(6px) scale(.93);}
+}
+/* inner wavefront leads, outer trails it — one ripple rolling out from the fingertip */
+@keyframes nhRippleInner{0%,38%{opacity:0;transform:scale(.30);}47%{opacity:1;transform:scale(.74);}
+  70%{opacity:.5;transform:scale(1.10);}90%,100%{opacity:0;transform:scale(1.34);}}
+@keyframes nhRippleOuter{0%,45%{opacity:0;transform:scale(.55);}56%{opacity:.95;transform:scale(.88);}
+  78%{opacity:.4;transform:scale(1.20);}96%,100%{opacity:0;transform:scale(1.46);}}
+@keyframes nhSparkPop{0%,42%{opacity:0;transform:scale(.55);}52%{opacity:1;transform:scale(1);}
+  68%{opacity:1;transform:scale(1.06);}86%,100%{opacity:0;transform:scale(1.18);}}
+html.no-anim .nudge-hand .nh-tapfx{display:none;}
+@media (prefers-reduced-motion: reduce){ .nudge-hand .nh-tapfx{display:none;} }
+
+/* ═══ [S01r4s] recipe 20 — wrong answer select. ADDITIVE ONLY.
+   This engine's wrong feedback was tuned by the SME across three rounds and those rulings stand:
+   [28r] BOTH wrong attempts flash red; [28p] the grey lock (.crossed) is earned only by the 2nd;
+   [28u] the flash must snap, not ease. So .wrong-flash keeps its own border, background and
+   buzzShake untouched — the kit contributes the outward spark RING it never had, on the same
+   tempo. --fx-beat is already this engine's .4s buzzShake, so the two are in step by construction
+   rather than by a number copied into two places. ═══ */
+.opt-cell.wrong-flash{overflow:visible;}
+.wg-fx{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2;overflow:visible;}
+.wg-fx i{position:absolute;left:50%;top:50%;width:var(--ws);height:var(--ws);
+  margin:calc(var(--ws) / -2) 0 0 calc(var(--ws) / -2);border-radius:50%;
+  background:var(--wrong,#F93544);opacity:0;
+  animation:wgSpark var(--fx-beat) cubic-bezier(.2,.7,.4,1) both;}
+/* OUTWARD and gone inside one beat: wrong RELEASES (there is another attempt), where correct
+   persists. Nothing here is allowed to outlive the red flash. */
+@keyframes wgSpark{
+  0%  {transform:translate(0,0) scale(.35);opacity:0;}
+  22% {opacity:.95;}
+  100%{transform:translate(var(--wx),var(--wy)) scale(1);opacity:0;}
+}
+html.no-anim .wg-fx{display:none;}
+@media (prefers-reduced-motion: reduce){ .wg-fx{display:none;} }
 
 </style>
 </head>
@@ -3093,6 +3290,27 @@ function playSfx(id){
     a.play().catch(()=>{});
   }catch(e){}
 }
+/* [S01r4t] SPEAK A WORD WITHOUT TAKING THE VO LOCK.
+   play() calls setPlaying(true), which puts body.vo-lock on, and the stylesheet locks `.sort-item`,
+   `.sort-bin` AND `.dd-zone` to pointer-events:none for as long as a clip sounds. On a tap mechanic
+   that is exactly right. On a DRAG mechanic it is fatal, and r4s walked straight into it: pressing a
+   tile to hear its name muted that tile's own pointer events before makeDraggable's mousedown could
+   fire, so nothing could be picked up at all. Even had the grab survived, onMove/onUp find the
+   basket with elementFromPoint, which skips pointer-events:none, so no drop would have registered
+   either - the lock covers the bins too.
+   So the word rides its own element the way playSfx does, but honours mute and cancels the previous
+   word so two quick presses cannot talk over each other. The instruction line stays protected:
+   installDragVoGate swallows the entire press while a prior VO is still sounding. */
+let _wordVoice = null;
+function speakNoLock(id){
+  if(!id || isMuted) return;
+  try{
+    if(_wordVoice){ _wordVoice.pause(); _wordVoice = null; }
+    const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
+    _wordVoice = a;
+    a.play().catch(()=>{});
+  }catch(e){}
+}
 /* ---------- game-feel: procedural SFX (no audio files) + success particle burst ----------
    WebAudio resumes on the first user tap (autoplay policy), so taps/answers always sound. */
 let _juiceAC = null;
@@ -3280,6 +3498,50 @@ function ckCorrect(el, crown){
 const SKY = { lanes: 29, r0: 22, r1: 72,
               layers: [{rot:0, scale:1}, {rot:6.2, scale:0.62}, {rot:-6.2, scale:0.55}],
               size: [0.8, 2.6], dur: [18, 34], glow: [3.0, 4.8], opacity: [0.62, 0.92] };
+/* [S01r4s · fln-animation-toolkit recipe 4] Give the nudge hand its tap ripple: two wavefronts and
+   a spark pop breaking from the fingertip at the moment of contact. Built once, into the existing
+   #nudgeHand, and left there — the layers are opacity-0 for most of the cycle, so they cost nothing
+   while the hand is hidden. Inserted BEFORE the <img> so the ring passes behind the finger, which is
+   how the source artwork reads. */
+function buildHandFx(){
+  try{
+    const nh = document.getElementById("nudgeHand");
+    if(!nh || nh.querySelector(".nh-tapfx")) return;
+    if(document.documentElement.classList.contains("no-anim")) return;   // R5
+    const fx = document.createElement("span");
+    fx.className = "nh-tapfx"; fx.setAttribute("aria-hidden", "true");
+    fx.innerHTML = '<i class="fx-ro"></i><i class="fx-ri"></i><i class="fx-sp"></i>';
+    nh.insertBefore(fx, nh.firstChild);
+  }catch(e){}
+}
+/* [S01r4s · fln-animation-toolkit recipe 20] The outward spark ring on a wrong tap. The red flash,
+   the shake and the grey-lock-only-on-the-2nd are this engine's own and are NOT touched — three SME
+   rounds settled them. This adds the ring the kit contributes, on the shared --fx-beat, and it is
+   gone within that one beat because a wrong answer RELEASES: another attempt is coming. */
+function wgWrong(el, n){
+  try{
+    if(!el) return;
+    if(document.documentElement.classList.contains("no-anim")) return;
+    el.querySelectorAll(":scope > .wg-fx").forEach(x => x.remove());
+    const count = n || 8;
+    const w = el.clientWidth || 96, h = el.clientHeight || 96;
+    const fx = document.createElement("span");
+    fx.className = "wg-fx"; fx.setAttribute("aria-hidden", "true");
+    for(let i = 0; i < count; i++){
+      const a = (i / count) * Math.PI * 2 + Math.random() * 0.25;
+      const out = 0.42 + Math.random() * 0.16;
+      const s = document.createElement("i");
+      s.style.cssText =
+        "--ws:" + (5 + Math.random() * 4).toFixed(1) + "px;" +
+        "--wx:" + (Math.cos(a) * w * out).toFixed(1) + "px;" +
+        "--wy:" + (Math.sin(a) * h * out).toFixed(1) + "px;" +
+        "animation-delay:" + (Math.random() * 60).toFixed(0) + "ms;";
+      fx.appendChild(s);
+    }
+    el.appendChild(fx);
+    setTimeout(()=>{ try{ fx.remove(); }catch(e){} }, 700);   /* inside the flash's own lifetime */
+  }catch(e){}
+}
 function buildSky(){
   try{
     if(document.documentElement.classList.contains("no-anim")) return;   // R5
@@ -3313,6 +3575,7 @@ function buildSky(){
     bg.parentNode.insertBefore(sky, bg.nextSibling);   // directly above the plate, below the gate
   }catch(e){}
 }
+
 /* ---------- Block Town helpers (flagship) ---------- */
 const BT_COLORS = ["#F9695E","#FDC23C","#4EBE6A","#4EA3F0","#9B7BE8"];
 function btBlock(i){ const b = document.createElement("div"); b.className = "blk"; b.style.background = BT_COLORS[i % BT_COLORS.length]; return b; }
@@ -3491,7 +3754,7 @@ function stopNudge(){
    --scale. Kept as ONE WAAPI animation stored on state so stopNudge can cancel it — an infinite
    animation left running would follow the child into the next slide. Falls back to a static point if
    either element is missing or the browser has no .animate(). */
-function travelNudge(fromEl, toEl, slide){
+function travelNudge(fromEl, toEl, slide, loops){
   if(!fromEl) return;
   if(!toEl || typeof $("nudgeHand").animate !== "function"){ handOnAnswer(fromEl, slide); return; }
   if(!slide || !HAND_PHASES.has(slide.phase)) return;      // same phase rule as handOnAnswer
@@ -3502,15 +3765,36 @@ function travelNudge(fromEl, toEl, slide){
   const at = (el)=>{ const r = el.getBoundingClientRect();
     return { left: (r.left - sw.left)/scale + r.width/scale/2 - 48,
              top:  (r.top  - sw.top )/scale + r.height/scale + 4 }; };
-  const a = at(fromEl), b = at(toEl);
+  /* [S01r4y] THE DESTINATION SITS IN THE MIDDLE OF THE BOX, NOT PARKED UNDER IT.
+     at() places the hand just BELOW an element, which is the correct pose for POINTING AT a tile -
+     the fingertip is at the TOP of the hand image, so the hand hangs under the thing it indicates.
+     But the destination of a drag is a box the picture goes INTO, and both ends were using at(), so
+     the hand finished under the basket's bottom edge: it read as "drag PAST the box" rather than
+     "drop it in here". The SME asked for the centre of the box in BOTH cases, so the fix lives in
+     this shared helper and therefore reaches the terminal hint (terminalHold, and the tile -> zone
+     travel on the match mechanics) as well as page 10's first-time demo.
+     Only the DESTINATION moves. The start still points at the tile from below, because that end IS
+     an "this one" gesture. -8 lifts the fingertip a touch above dead centre so the hand's body hangs
+     inside the box rather than straddling its lower edge. */
+  const into = (el)=>{ const r = el.getBoundingClientRect();
+    return { left: (r.left - sw.left)/scale + r.width/scale/2 - 48,
+             top:  (r.top  - sw.top )/scale + r.height/scale/2 - 8 }; };
+  const a = at(fromEl), b = into(toEl);
   nh.style.left = a.left + "px"; nh.style.top = a.top + "px";
   nh.classList.add("show","hint-glow");
-  state._handTravel = nh.animate(
+  /* [S01r4x] `loops` is OPTIONAL and defaults to the infinite loop this has always had, so
+     terminalHold - which passes nothing - is byte-for-byte unchanged: a child who has already failed
+     twice should keep being shown the move until they make it. The page-10 drag DEMO passes a count,
+     because a demo that never stops becomes wallpaper; when it finishes the hand puts itself away
+     instead of freezing over the basket. */
+  const _anim = nh.animate(
     [ { left: a.left+"px", top: a.top+"px", offset: 0 },
       { left: a.left+"px", top: a.top+"px", offset: .18 },
       { left: b.left+"px", top: b.top+"px", offset: .72 },
       { left: b.left+"px", top: b.top+"px", offset: 1 } ],
-    { duration: 1800, iterations: Infinity, easing: "ease-in-out" });
+    { duration: 1800, iterations: (loops > 0 ? loops : Infinity), easing: "ease-in-out" });
+  state._handTravel = _anim;
+  if(loops > 0) _anim.onfinish = ()=>{ if(state._handTravel === _anim) stopNudge(); };
 }
 /* [28i] THE GRADED WRONG-ANSWER CLIP, for mechanics that grade their own feedback.
    Yasir's 2026-07-25 ruling is "two hints everywhere, every game, every interaction type". The tap path
@@ -3903,6 +4187,7 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
            child lost the feedback exactly when they most needed it. Sequence now: red buzz -> (2nd
            only) settle to the grey disabled state. */
         cell.classList.add("wrong-flash");
+        wgWrong(cell);   // [S01r4s] the kit's outward spark ring; the red flash + shake above are this engine's own
         // [27a] RETRYABLE WRONG TAP (Yasir ruling 2026-07-27 — resolves the blocked behavioural
         // ruling (a) in _ENGINE_GAPS_CONFIRMED_2026-07-27.md, and matches the blessed strilling
         // fork): a wrong card must NOT lock on the first miss. It buzzes red, then UNBLOCKS so the
@@ -4837,7 +5122,9 @@ function karaokePlay(src, tokens, apply, onDone){
   const tot = w.reduce((a, b) => a + b, 0) || 1;
   const FALLBACK_MS = 420 * tot;          /* ~one akshara-beat per 420ms when we cannot measure */
   const t0 = performance.now();
-  let raf = 0, cur = -2;
+  let raf = 0, cur = -2, ended = false, finished = false;
+  const stop = ()=>{ if(raf) cancelAnimationFrame(raf); raf = 0; };
+  const finish = ()=>{ if(finished) return; finished = true; stop(); if(onDone) onDone(); };
   const tick = ()=>{
     const a = currentAudio;
     const dur = (a && isFinite(a.duration) && a.duration > 0) ? a.duration * 1000 : FALLBACK_MS;
@@ -4846,10 +5133,22 @@ function karaokePlay(src, tokens, apply, onDone){
     let acc = 0, k = 0;
     for(; k < w.length - 1; k++){ acc += w[k] / tot; if(frac < acc) break; }
     if(k !== cur){ cur = k; apply(k); }
+    /* [S01r4m] A CLIP THAT NEVER PLAYED MUST NOT TRUNCATE THE WALK.
+       play() reports "ended" 1.2s after an onerror, so a MISSING file ended this ticker while it was
+       still on token 0 - and the caller's onDone ran, moving the flow on. Measured on the pi page:
+       vo_t1_words.ogg does not exist yet (CHANGES row 46 is still generation-pending), so the mark
+       beat lit ONLY the first word and left the other three navy. Same trap for an autoplay refusal,
+       which also ends instantly and on every page's first beat.
+       So "the clip ended" is no longer sufficient to stop: the walk also has to have REACHED the last
+       token. With no audio, currentAudio is null and the tick already falls back to the synthetic
+       420ms-per-akshara timeline, so the marking still reads - silently, but complete. When the clip
+       DOES play, frac is ~1 by the time it ends, cur is already the last token, and this finishes
+       exactly as before. */
+    if(ended && cur >= w.length - 1){ finish(); return; }
     raf = requestAnimationFrame(tick);
   };
-  const stop = ()=>{ if(raf) cancelAnimationFrame(raf); raf = 0; };
-  play(src || null, ()=>{ stop(); if(onDone) onDone(); });
+  play(src || null, ()=>{ ended = true;
+    if(!tokens || !tokens.length || cur >= w.length - 1) finish(); });
   if(tokens && tokens.length) raf = requestAnimationFrame(tick);
   return stop;
 }
@@ -7246,7 +7545,51 @@ const SlideModules = {
          streak that any correct drop resets lets one hard item ride on the others' successes. */
       const _sgWrong = new Map();
       if(slide.data.reveal_seq) sortSeqReveal(tray, slide);   // [20a SORT-01] opt-in
+      /* [S01r4v] DRAG DEMO - SME: "show how to drag the element into the box, currently it feels
+         confusing". travelNudge already animates the hand from one element to another, and its own
+         gate is HAND_PHASES (tutorial + guided), so this page qualifies; it has simply never been
+         called from anywhere but terminalHold, i.e. only as help EARNED by two wrong drops.
+         Two deliberate choices:
+           - it travels to the BINS ROW, not to the correct basket. travelNudge centres on whatever
+             element it is handed, so the row's centre is the midpoint BETWEEN the two baskets: the
+             child is shown the GESTURE without being shown the ANSWER.
+           - opt-in on data.drag_demo, so no other sort slide changes behaviour.
+         FOR REVIEW: [28f] says guided earns a hand only after 2 failed attempts. That ruling is about
+         hints carrying the ANSWER; this one carries the MECHANIC and deliberately points nowhere
+         useful. Flagged in CHANGES.md so the SME can overrule. It waits out the one-by-one reveal and
+         the prompt VO, then stops on the very first press and never comes back. */
+      if(slide.data.drag_demo){
+        const _demoOff = ()=>{ stopNudge(); document.removeEventListener("pointerdown", _demoOff, true); };
+        const _armDemo = ()=>{
+          if(CARD.slides[state.idx] !== slide) return;                            // navigated away
+          if(state.revealing || isPlaying){ setTimeout(_armDemo, 300); return; }   // reveal/prompt still running
+          if(state.locked || placed > 0) return;                                   // solved or locked already
+          /* [S01r4x] aim at the BASKET the first tile belongs in, not at the bins ROW. r4v pointed
+             at the row so the demo could not reveal an answer - but the row's centre is the empty gap
+             BETWEEN the two boxes, so the gesture read as "drag upwards into nothing". The SME asked
+             to "show the hand going towards the box". This does reveal one of the four pairings; the
+             child still makes every drop themselves and the demo stops after 3 passes. In CHANGES so
+             it can be overruled. */
+          const _first = tray.children[0];
+          const _goal = [...binsRow.children].find(b => b.dataset.gender === _first.dataset.gender) || binsRow;
+          travelNudge(_first, _goal, slide, 3);
+          document.addEventListener("pointerdown", _demoOff, true);
+        };
+        setTimeout(_armDemo, 600);
+      }
       [...tray.children].forEach(tile => {
+        /* [S01r4s] SPEAK ON PICK-UP - "when the child taps or picks up an image, play its name",
+           so the child can decide which basket BEFORE dragging. makeDraggable exposes opts.onTap for
+           a tap but nothing for a grab, and this mechanic passed no opts at all: the only places the
+           word was ever spoken were the one-by-one tray reveal and the correct-drop echo below.
+           A pointerdown listener is the idiom MATCH_DRAG_N already uses and that installDragVoGate
+           is written around - the gate runs in the CAPTURE phase and swallows the press while a
+           prior VO is still sounding, so this can never cut the instruction line. */
+        tile.addEventListener("pointerdown", ()=>{
+          if(state.locked || state.revealing) return;
+          if(tile.classList.contains("snapped")) return;
+          speakNoLock(tile.dataset.audio);   /* [S01r4t] NOT play() - see speakNoLock */
+        });
         makeDraggable(tile, (zone, t) => {
           const bin = zone.closest(".sort-bin"); if(!bin) return;
           state.attempts++;
@@ -7279,7 +7622,8 @@ const SlideModules = {
               clearHold(tray); clearHold(binsRow);
               state.helpShown = false; state.scaffoldLevel = 0;
             }
-            if(t.dataset.audio && placed < need) play("assets/Audio/" + t.dataset.audio + "." + AUDIO_EXT, ()=>{});   // [20a SORT-01] speak-on-match
+            /* [S01r4s] speak-on-match dropped: the name is spoken on PICK-UP now, so saying it
+               again a second later on the drop is an echo, not information. */
             SwiftPAL.emit("gender_sort_item", { slide_id: slide.id, gender: t.dataset.gender, attempts: state.attempts });
             if(placed === need){
               state.locked = true;
@@ -7292,6 +7636,10 @@ const SlideModules = {
           } else {
             bin.classList.add("hover"); bin.style.borderColor = "var(--wrong)";
             setTimeout(()=>{ bin.classList.remove("hover"); bin.style.borderColor = ""; }, 500);
+            /* [S01r4s] "gently shake and return to its original position". Only the BIN flashed red;
+               the tile itself had no feedback at all. makeDraggable already clears the transform on a
+               rejected drop, so the return home was free - this adds the shake it was missing. */
+            t.classList.add("sort-shake"); setTimeout(()=> t.classList.remove("sort-shake"), 430);
             dragWrong(slide);   // buzz + Swiftie + spoken try_again (pre-readers need the spoken recovery)
             SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
             /* [28p] terminal rung, via the SAME contract every other mechanic uses (28l/28o): glow the
@@ -8212,9 +8560,9 @@ const SlideModules = {
       const badge = document.createElement("div"); badge.className = "tap-all-sound"; badge.style.cursor = "pointer";
       badge.innerHTML = `<span class="ink-glyph">${d.target_sound || ""}</span>`;
       badge.onclick = ()=>{ state.audioReplays++; play(audioFor(slide, "target") || null); };
-      const counter = document.createElement("div"); counter.className = "tap-all-count";
-      const setCount = ()=>{ counter.innerHTML = `<span class="c-found">${found}</span> / ${need}`; };
-      head.appendChild(badge); head.appendChild(counter);
+      /* [S01r4q] SME: "remove 0/2". The running tally is off the screen; `found` and `need` still
+         drive completion, they just no longer have a readout. The badge keeps the row. */
+      head.appendChild(badge);
       const strip = document.createElement("div"); strip.className = "tap-all-strip";
       const chips = [];
       items.forEach(it => {
@@ -8225,7 +8573,7 @@ const SlideModules = {
           if(state.locked || chip.classList.contains("got") || chip.classList.contains("nope")) return;
           const after = (cb)=>{ if(src) play(src, cb); else cb(); };
           if(it.has === true){
-            chip.classList.add("got"); sfxCorrect(); found++; setCount();
+            chip.classList.add("got"); sfxCorrect(); found++;
             SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, word: it.word_hi });
             after(()=>{
               if(found >= need){
@@ -8257,19 +8605,27 @@ const SlideModules = {
                that did not exist here. handOnAnswer self-gates to tutorial/guided, so this lands on
                page 9 (guided) and stays absent in practice, per the round-3 no-hand-in-practice rule.
                It only points: the chip's own onclick is untouched, so the child still taps it. */
-            after(()=> play(wrongClip(slide), ()=>{
+            /* [S01r4q] SME: "play only this Hint VO" - the slide's own `hint` clip (vo_g2_hint),
+               NOT the vo_g2_try rung the ladder used to open with, and not the tapped word's own
+               clip either: the deck's wrong-tap flow is shake -> red -> hint -> retry, with no word
+               in it. Reading it off the slide means P1/P7 get their own; wrongClip is the fallback. */
+            play(audioFor(slide, "hint") || wrongClip(slide), ()=>{
               if(state.attempts < 2 || state.locked) return;
               if(CARD.slides[state.idx] !== slide) return;
               const t = chips.find((c, ix) => items[ix] && items[ix].has === true && !c.classList.contains("got"));
-              if(t){ handOnAnswer(t, slide); state.nudgeUsed = true;
+              /* [S01r4u] honour data.allow_hand here too. handOnAnswer self-gates to tutorial+guided
+                 (Yasir's round-3 rule), which is why page 7 shows the hand and pages 10 and 13 — the
+                 same mechanic in the practice phase — never did. allow_hand is the per-slide opt-in
+                 the balloon page already uses, so a practice slide can ask for the hand by name
+                 rather than the rule being loosened for the whole fleet. */
+              if(t){ handOnAnswer(t, slide, !!d.allow_hand); state.nudgeUsed = true;
                      state.scaffoldLevel = Math.max(state.scaffoldLevel, 3);
                      SwiftPAL.emit("nudge_invoked", { slide_id: slide.id, phase: slide.phase }); }
-            }));   /* [28i] graded ladder */
+            });
           }
         };
         strip.appendChild(chip); chips.push(chip);
       });
-      setCount();
       wrap.appendChild(head); wrap.appendChild(strip);
       host.appendChild(wrap);
       $("hintBtn").onclick = ()=>{ if(state.locked) return; state.hintUsed = true;
@@ -8277,6 +8633,42 @@ const SlideModules = {
         play(audioFor(slide, "hint") || audioFor(slide, "try_again") || null, ()=>{}); };
       $("navBtn").style.display = "none"; setNavActive(false);
       state.replayAudio = ()=> play(audioFor(slide, "prompt") || null, ()=>{});
+
+      /* [S01r4p] OPTION ENTRY - "after the instruction VO finishes, show the options one by one".
+         The card has carried `reveal_seq` since round 4 and CHANGES row 67 recorded it as already
+         satisfied, but ONLY mountTapOptions and sortSeqReveal ever read that flag: this mechanic
+         never did, so all four chips were on screen from mount, underneath the instruction VO.
+         Deliberately the SAME shape as mountTapOptions' reveal rather than a second one - the prompt
+         plays to COMPLETION, then each chip fades in speaking its own word, then taps open. Every
+         step carries a per-clip fallback and there is a global net, so a missing or blocked clip can
+         never soft-lock the page; this deck still has ungenerated clips, so that matters.
+         ownsAudio is read by mountSlide AFTER mount returns, so setting it here is what stops
+         autoPlayChain starting a second, overlapping copy of the prompt. */
+      if(d.reveal_seq){
+        chips.forEach(c => c.classList.add("tap-seq-hidden"));
+        state.locked = true; state.ownsAudio = true; state.revealing = true;
+        let revDone = false;
+        const enableAll = ()=>{ if(revDone) return; revDone = true;
+          state.locked = false; state.revealing = false; state.ownsAudio = false;
+          chips.forEach(c => c.classList.remove("tap-seq-hidden")); };
+        const sayThen = (src, next)=>{
+          if(revDone || CARD.slides[state.idx] !== slide) return;
+          let advanced = false, fb = null;
+          const go = ()=>{ if(advanced || revDone) return; advanced = true; if(fb) clearTimeout(fb); next(); };
+          play(src || null, go);
+          fb = setTimeout(go, 4500);
+        };
+        const revStep = (i)=>{
+          if(revDone || CARD.slides[state.idx] !== slide) return;
+          if(i >= chips.length){ enableAll(); return; }
+          chips[i].classList.remove("tap-seq-hidden");
+          const aid = items[i] && items[i].audio;
+          sayThen(aid ? ("assets/Audio/" + aid + "." + AUDIO_EXT) : null,
+                  ()=> setTimeout(()=> revStep(i + 1), 180));
+        };
+        sayThen(audioFor(slide, "prompt") || null, ()=> revStep(0));
+        setTimeout(()=>{ if(CARD.slides[state.idx] === slide) enableAll(); }, 16000);
+      }
     }
   },
 
@@ -8554,8 +8946,14 @@ const SlideModules = {
            (documented failure, HI01H02_L01_S01 shipped 4 blank match slides that way). */
         b.className = "balloon bcol-" + (i % 6) + " seq-hidden";
         b.style.setProperty("--bi", String(i));
-        b.innerHTML = '<div class="bal-body">' + imgOrEmoji(it.img, it.emoji, "bal-img", "bal-emoji") +
-                      '<span class="bal-shine"></span></div><span class="bal-tie"></span>';
+        /* [S01r5c] .bal-lift wraps the balloon so the IDLE FLOAT and the ENTRANCE can live on
+           different elements. They were both on .balloon, and an animation beats a transition on the
+           same property - so `.seq-hidden{transform:translateY(46px)}` never actually ran and the
+           balloons only faded in. Float moves to the wrapper, .balloon keeps the transform for the
+           rise, and .popped / .bal-shake stop fighting balFloat as a side effect. */
+        b.innerHTML = '<div class="bal-lift"><div class="bal-body">' +
+                      imgOrEmoji(it.img, it.emoji, "bal-img", "bal-emoji") +
+                      '<span class="bal-shine"></span></div><span class="bal-tie"></span></div>';
         field.appendChild(b); cells.push({ b, it });
       });
       /* [S01r5g] SWIFTEE HOLDING THE BALLOONS, bottom-left, exactly where the SME's reference puts
@@ -8591,11 +8989,32 @@ const SlideModules = {
       const alive = ()=> CARD.slides[state.idx] === slide;
       const sparkle = (el)=>{
         if(document.documentElement.classList.contains("no-anim")) return;
+        /* [S01r4u] MORE SPARKLE ON THE POP. This was 8 particles on a fixed 45° cross, every one the
+           same size, colour, distance and duration — so the burst read as a single 8-pointed shape
+           flicking outward rather than as a balloon coming apart. Now two rings, 22 particles: a fast
+           outer throw and a slower, smaller inner spray, each particle carrying its own angle jitter,
+           distance, size, spin and warm hue. Two rings at different speeds is what reads as debris;
+           one ring at one speed reads as a diagram. */
         const s = document.createElement("div"); s.className = "bal-sparkle";
-        for(let i = 0; i < 8; i++){
-          const p = document.createElement("i"); p.style.setProperty("--a", (i * 45) + "deg"); s.appendChild(p);
-        }
-        el.appendChild(s); setTimeout(()=>{ try{ s.remove(); }catch(e){} }, 900);
+        const R = (a, b)=> a + Math.random() * (b - a);
+        const HUES = ["#FFD86B","#FFC93C","#FFE9A8","#FFB01F","#FFF4D0"];
+        [{n:13, d:[92,132], sz:[7,12], t:[.62,.86]},     /* outer: thrown far and fast   */
+         {n:9,  d:[44,76],  sz:[4,8],  t:[.48,.70]}      /* inner: closer, smaller, brief */
+        ].forEach((ring, ri)=>{
+          for(let i = 0; i < ring.n; i++){
+            const p = document.createElement("i");
+            p.style.cssText =
+              "--a:" + ((i * (360 / ring.n)) + R(-13, 13) + ri * 18).toFixed(1) + "deg;" +
+              "--d:" + R(ring.d[0], ring.d[1]).toFixed(0) + "px;" +
+              "--sz:" + R(ring.sz[0], ring.sz[1]).toFixed(1) + "px;" +
+              "--sp:" + Math.round(R(-160, 160)) + "deg;" +
+              "--t:" + R(ring.t[0], ring.t[1]).toFixed(2) + "s;" +
+              "--dl:" + Math.round(R(0, 90)) + "ms;" +
+              "background:" + HUES[(i + ri) % HUES.length] + ";";
+            s.appendChild(p);
+          }
+        });
+        el.appendChild(s); setTimeout(()=>{ try{ s.remove(); }catch(e){} }, 1200);
       };
       const remainingCorrect = ()=> cells.find(c => c.it.has === true && !c.b.classList.contains("popped"));
       /* [S01r5i] a shockwave ring, dropped in behind the balloon for the length of the pop */
@@ -8728,13 +9147,9 @@ function starBurst(){
   host.appendChild(cv);
   const ctx = cv.getContext("2d");
   const COLORS = ["#FFE400","#FFBD00","#E89400","#FFCA6C","#FDFFB8"];
-  /* [S01r4r · fln-animation-toolkit recipe 8] RETUNED: fewer, slower, longer-lived.
-     This function already WAS the kit's "old" burst, parameter for parameter (100/0.96/22, 80 stars
-     + 20 circles, shots at 0/150/300). The kit ships a retune, and the reason is that 300 particles
-     leaving the centre at 22px/frame read as a single bright flash that is over before the child
-     looks up. Halving the launch speed and raising the decay lets them float and fade instead, and
-     dropping to 40 per shot stops them merging into one mass.
-     Gravity stays 0 by design — these float and fade, they do not fall; the confetti is what falls. */
+  /* [S01r4r · fln-animation-toolkit recipe 8] RETUNED: fewer, slower, longer-lived. 300 particles
+     leaving centre at 22px/frame read as one bright flash that is over before the child looks up.
+     Gravity stays 0 by design - these float and fade; the confetti is what falls. */
   const TICKS = 150, DECAY = 0.975, START_V = 14, SPIN = 0.18;
   const SHOTS = [0, 220, 440];
   const parts = [];
@@ -9065,6 +9480,7 @@ function conceptTileHTML(c){
 
 /* ---------- 15. BOOT ---------- */
 function boot(){
+  buildHandFx();   // [S01r4s] nudge-hand tap ripple — wrapped internally, cannot strand the loader
   buildSky();   // [S01r4r] start-screen sky — wrapped internally, can never strand #bootLoader (kit R4)
   // god-mode visual theme (opt-in via CARD.theme) — warms the whole stage; scoped CSS under .thm-*
   if(CARD.theme) $("stage").classList.add("thm-" + CARD.theme);
