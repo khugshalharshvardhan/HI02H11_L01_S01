@@ -159,6 +159,35 @@
 ### His restore then dropped four of MY effects in turn (hand ripple, hand press, wrong ring,
 ### celebration retune). Both sides are now re-applied on top of each other and verified present.
 ### RECONCILE engine_local/ AND the recipe repo→factory BEFORE EVERY EDIT — not just the recipe.
+### S01r4w — NO EMOJI ANYWHERE, and the SME's own balloon-pop sound.
+###  · The five images that had been falling back to emoji (obj_ghar, obj_kela, obj_machhli,
+###    obj_patang, obj_patta) are in. All five arrived cropped EDGE-TO-EDGE (99-100% of canvas both
+###    ways) with a matte fringe — obj_machhli's was pure red. Dropped in raw they would have
+###    rendered visibly larger than their neighbours and touched their chip edges, so each was
+###    matte-stripped, trimmed to true ink and re-padded to the HOUSE framing, measured across the
+###    20 assets already correct: median 82.2%W / 88.7%H. Verified on the render: zero emoji and
+###    zero broken images across all 14 slides. The receipt's "Art: emoji-fallback" FAIL is gone
+###    — 17 pass/3 FAIL → 18 pass/2 FAIL.
+###  · Balloon pop now plays the SME's recording. Trimmed 1.97s → 0.21s: the source had 140ms of
+###    LEADING silence, which would have landed the bang after the balloon had already gone, plus
+###    1.7s of dead air. Peak now sits 30ms in. sfxCorrect still fires alongside it — the pop and
+###    the "that was right" ding are two different messages and this page wants both.
+### ⚠ TWO PRE-EXISTING DIST DEFECTS found while verifying, both now fixed:
+###  1. The committed dist referenced swifty_with_balloons twice in its HTML and shipped NEITHER
+###     file — the balloon mascot has been a broken image in every dist cut since it landed. The
+###     factory had no assets/gif at all; I had been reconciling engine_local and the recipe but
+###     never the ASSET folders.
+###  2. balloon.png is painted by .balloon in style.css but was not on dist_local's UI whitelist,
+###     so every dist pruned it. That list is the only thing deciding what survives, and nothing
+###     cross-checks it against the CSS.
+### ⚠ CARRYING THE GIF BROKE THE 10 MB CAP (11.68 MB). Re-encoded to the format every other
+### animated mascot here already uses: swifty_with_balloons .gif+.png (2,145 KB) → .webp pair
+### (456 KB) at 408px/10fps, and balloon.png (106 KB) → balloon.webp (16 KB) at 300px — .bal-body
+### is 150x172, so both are still a true 2x. Dist 11.68 → 9.97 MB, under the cap, no 404s.
+### Originals kept at _assets_round4/sme_originals/.
+### ⚠ THREE DEAD UI REFERENCES remain, pre-existing and untouched: hint.png, hint_active.png,
+### peeking_pal.gif are referenced by the engine but exist nowhere. Harmless only while those code
+### paths stay unused.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.

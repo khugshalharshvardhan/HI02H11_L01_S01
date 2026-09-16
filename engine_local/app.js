@@ -5851,8 +5851,15 @@ const SlideModules = {
          toggles for precisely as long as a clip is sounding. So she gestures while the VO talks and
          freezes the moment it stops, with no timer of our own to drift. */
       const sw = document.createElement("div"); sw.className = "bal-swiftee";
-      sw.innerHTML = '<img class="bsw-anim" src="assets/gif/swifty_with_balloons.gif" alt="">' +
-                     '<img class="bsw-still" src="assets/gif/swifty_with_balloons_still.png" alt="">';
+      /* [S01r4w] ANIMATED WEBP, not GIF. Two separate problems sat on this pair:
+         the committed dist shipped NEITHER file, so this mascot has been a broken image there since
+         it landed; and once carried, 2,145 KB took the dist to 11.68 MB against a 10 MB cap.
+         Re-encoded to the format every other animated mascot in this bundle already uses
+         (new_landing_swiftee_anim.webp, peeking.webp, sw_lg_celebrating_anim.webp): 408px — the box
+         is 226, so still ~1.8x for retina — 10fps instead of 20, alpha intact.
+         2,145 KB -> 456 KB; dist 11.68 -> 9.85 MB. Originals: _assets_round4/sme_originals/. */
+      sw.innerHTML = '<img class="bsw-anim" src="assets/gif/swifty_with_balloons.webp" alt="">' +
+                     '<img class="bsw-still" src="assets/gif/swifty_with_balloons_still.webp" alt="">';
       /* [S01r5h] SHE IS ALSO THE REPLAY CONTROL. The reference screen has no audio chip, and the deck
          lists what may be on screen: "only the mascot, balloons, object images". Hiding the chip
          would otherwise take the child's only way to hear the instruction again, so the mascot who
@@ -5933,7 +5940,12 @@ const SlideModules = {
                the balloon and expands as it goes, so the burst has an outward gesture and not just a
                shrink; the 8 existing sparkle particles ride on top. */
             b.classList.add("popped"); sparkle(b); burstRing(b);
-            playSfx("sfx_pop"); sfxCorrect(); setSwMood("happy");
+            /* [S01r4v] the SME's own balloon-pop recording, replacing the generic burst. Trimmed
+               1.97s -> 0.21s: the source had 140ms of LEADING silence, which would have landed the
+               bang after the balloon had already gone, and 1.7s of dead air behind it. The peak now
+               sits 30ms in. sfxCorrect stays — the pop and the "that was right" ding are two
+               different messages, and this page fires them together by design. */
+            playSfx("sfx_bal_pop"); sfxCorrect(); setSwMood("happy");
             found++;
             SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
             afterName(()=>{

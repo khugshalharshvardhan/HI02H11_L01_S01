@@ -1966,7 +1966,10 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
    .balloon .bal-body is (0,2,0) and lost, which left a coloured RECTANGLE behind every balloon */
 .balloon[class*="bcol-"] .bal-body{ background:none; }
 .balloon .bal-body::before{ content:""; position:absolute; inset:0;
-  background:url("assets/UI/balloon.png") center/contain no-repeat;
+  /* [S01r4w] .webp, and 300px rather than 321: .bal-body is 150x172, so this is a true 2x, and
+     every other UI graphic here is already webp. 106 KB -> 25 KB, which is what brings the dist
+     back under its 10 MB cap after this file had to be whitelisted at all. */
+  background:url("assets/UI/balloon.webp") center/contain no-repeat;
   filter:drop-shadow(0 10px 18px rgba(11,61,140,.20)); }
 .balloon .bal-body::after{ display:none; }
 .balloon .bal-shine{ display:none; }
