@@ -500,6 +500,10 @@ def build_card():
                 _item("पानी",  "obj_pani",     "vo_w_pani",     has=True),
                 _item("मछली",  "obj_machhli",  "vo_w_machhli",  has=False),
             ],
+            # [r5f] this page sits in PRACTICE now (r5d moved it last), and HAND_PHASES is
+            # tutorial+guided - so the deck's "show a subtle hand nudge towards one correct
+            # balloon" could never fire. Opt in per-slide rather than widening the phase rule.
+            "allow_hand": True,
             "signal_name": "balloon_sound_first_try",
         },
     })

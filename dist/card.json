@@ -822,7 +822,8 @@
             "has": false
           }
         ],
-        "signal_name": "balloon_sound_first_try"
+        "signal_name": "balloon_sound_first_try",
+        "allow_hand": true
       }
     },
     {

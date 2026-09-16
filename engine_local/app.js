@@ -675,10 +675,39 @@ function clearHold(container){
 const HAND_PHASES = new Set(["tutorial", "guided"]);
 /* [28i] the UN-EARNED hand (idle timer / progress cue) is tutorial-only — see startNudge. */
 const IDLE_HAND_PHASES = new Set(["tutorial"]);
-function handOnAnswer(el, slide){
-  if(!el || !slide || !HAND_PHASES.has(slide.phase)) return;
+function handOnAnswer(el, slide, force){
+  /* [S01r5f] `force` is an explicit, per-slide opt-in and nothing else passes it.
+     The balloon page moved to the END of the lesson (r5d), which meant its phase had to become
+     `practice` or the phase-transition gate would have replayed the guided interstitial near the
+     finish. But HAND_PHASES is tutorial+guided, so that move silently killed the hand nudge its own
+     deck asks for ("if the learner continues to struggle, show a subtle hand nudge towards one
+     correct balloon") - the code was still there and could never fire. Rather than widen the phase
+     rule for the whole fleet, the ONE slide that needs it says so on its card (`data.allow_hand`).
+     Still earned: this page only calls it after a THIRD wrong tap. */
+  if(!el || !slide) return;
+  if(!force && !HAND_PHASES.has(slide.phase)) return;
   stopNudge();          // the flow nudge must not drag the hand off the answer
+  if(force){ const nh = $("nudgeHand"); if(nh) pointNudgeAtForced(el); return; }
   pointNudgeAt(el, true);   // earned by 2 failed attempts — the one case allowed outside tutorial
+}
+/* [S01r5f] pointNudgeAt carries the phase rule itself (28j put it there deliberately, because ~25
+   call sites bypassed every other gate). So a forced hand cannot go through it - it re-checks and
+   returns. This is the same placement maths with the phase check lifted, and it is reachable ONLY
+   from handOnAnswer(..., force). */
+function pointNudgeAtForced(el){
+  const nh = $("nudgeHand");
+  if(!nh || !el) return;
+  const sw = document.querySelector(".slide-stage");
+  if(!sw) return;
+  const s = sw.getBoundingClientRect();
+  const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+  const place = ()=>{
+    const r = el.getBoundingClientRect();
+    nh.style.left = ((r.left - s.left)/scale + r.width/scale/2 - 48) + "px";
+    nh.style.top  = ((r.top  - s.top )/scale + r.height/scale + 4) + "px";
+  };
+  place(); requestAnimationFrame(place);
+  nh.classList.add("show", "hint-glow");
 }
 function pointNudgeAt(el, earned){
   if(!el) return;
@@ -5721,9 +5750,33 @@ const SlideModules = {
                       '<span class="bal-shine"></span></div><span class="bal-tie"></span></div>';
         field.appendChild(b); cells.push({ b, it });
       });
+      /* [S01r5g] SWIFTEE HOLDING THE BALLOONS, bottom-left, exactly where the SME's reference puts
+         her. TWO images, not one: a GIF cannot be paused, so the animated frame and a still of its
+         first frame are both in the DOM and CSS swaps them on `body.vo-lock` - which setPlaying()
+         toggles for precisely as long as a clip is sounding. So she gestures while the VO talks and
+         freezes the moment it stops, with no timer of our own to drift. */
+      const sw = document.createElement("div"); sw.className = "bal-swiftee";
+      sw.innerHTML = '<img class="bsw-anim" src="assets/gif/swifty_with_balloons.gif" alt="">' +
+                     '<img class="bsw-still" src="assets/gif/swifty_with_balloons_still.png" alt="">';
+      /* [S01r5h] SHE IS ALSO THE REPLAY CONTROL. The reference screen has no audio chip, and the deck
+         lists what may be on screen: "only the mascot, balloons, object images". Hiding the chip
+         would otherwise take the child's only way to hear the instruction again, so the mascot who
+         gives the instruction now answers to a tap. Guarded so a replay cannot talk over a clip that
+         is already sounding, or start once the round is won. */
+      sw.onclick = ()=>{
+        if(state.locked || isPlaying) return;
+        state.audioReplays++;
+        play(audioFor(slide, "prompt") || null, ()=>{});
+      };
+      field.appendChild(sw);
       host.appendChild(field);
       /* the deck's reference screen is a bare stage: no prompt band, no hint chip, no आगे */
       $("stage").classList.add("vo-only");
+      /* [S01r5i] the stage is 1333x750 scaled to fit, so on most screens BODY shows around it. It
+         paints #F2F7FA while this page paints #EAF2FB, which read as a pale band down each side.
+         body cannot be reached from a .stage descendant selector, so the class goes on body and is
+         taken off in the same teardown that removes vo-only. */
+      document.body.classList.add("bal-page");
       $("hintBtn").classList.remove("show"); $("hintBtn").style.display = "none";
       $("navBtn").style.display = "none"; setNavActive(false);
 
@@ -5737,6 +5790,12 @@ const SlideModules = {
         el.appendChild(s); setTimeout(()=>{ try{ s.remove(); }catch(e){} }, 900);
       };
       const remainingCorrect = ()=> cells.find(c => c.it.has === true && !c.b.classList.contains("popped"));
+      /* [S01r5i] a shockwave ring, dropped in behind the balloon for the length of the pop */
+      const burstRing = (el)=>{
+        if(document.documentElement.classList.contains("no-anim")) return;
+        const r = document.createElement("span"); r.className = "bal-ring";
+        el.appendChild(r); setTimeout(()=>{ try{ r.remove(); }catch(e){} }, 700);
+      };
 
       let busy = false;
       cells.forEach(({ b, it }) => {
@@ -5751,7 +5810,14 @@ const SlideModules = {
             if(name) play(name, go); else go(); };
 
           if(it.has === true){
-            b.classList.add("popped"); sparkle(b); sfxCorrect(); setSwMood("happy");
+            /* [S01r5i] IT HAS TO POP, NOT VANISH. It was sfxCorrect() - the generic ding every
+               mechanic uses - over a scale-down, which reads as the balloon fading out. sfx_pop.ogg
+               already ships (7.3KB) and was unused by this page; playSfx gives it its own channel so
+               it lands on the tap instead of queuing behind the object name. A ring is added under
+               the balloon and expands as it goes, so the burst has an outward gesture and not just a
+               shrink; the 8 existing sparkle particles ride on top. */
+            b.classList.add("popped"); sparkle(b); burstRing(b);
+            playSfx("sfx_pop"); sfxCorrect(); setSwMood("happy");
             found++;
             SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
             afterName(()=>{
@@ -5783,7 +5849,7 @@ const SlideModules = {
                 state._balFb = false;
                 if(n >= 3 && alive()){                       /* "if the learner continues to struggle" */
                   const t = remainingCorrect();
-                  if(t){ handOnAnswer(t.b, slide); state.nudgeUsed = true;
+                  if(t){ handOnAnswer(t.b, slide, !!d.allow_hand); state.nudgeUsed = true;
                          state.scaffoldLevel = Math.max(state.scaffoldLevel, 3); }
                 }
               });
@@ -5946,6 +6012,7 @@ function mountSlide(idx){
   { const _pb = $("promptText").parentElement;
     if(_pb) _pb.style.display = (slide.prompt_hi ? "" : "none"); }
   $("stage").classList.remove("vo-only");
+  document.body.classList.remove("bal-page");   /* [S01r5i] */
 
   // Hint button stays HIDDEN until the learner makes a wrong attempt, then it is
   // exposed (graduated scaffold). Mastery uses the SAME scaffold — not excluded.
