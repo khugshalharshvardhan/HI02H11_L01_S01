@@ -214,6 +214,27 @@
 ### `state` declaration — 18,562 chars, and mountSlide threw on every slide. Restored from HEAD and
 ### redone with the edit bounded to the single function. Bound a structural edit to its own
 ### function; never search the file for a closing brace.
+### S01r4y — **page 13 (G1)**: the mascot was SHUFFLING. Root cause found by matching every frame
+### of the shipped webp back to the source gif: the order was
+###   [0, 25, 4, 6, 8, 10, 12, ... 34]
+### — the SECOND frame of every loop was source frame 25, a pose from near the end, before snapping
+### back to frame 4. It flashed once per 1.8s loop. ffmpeg's `fps=10` filter with `-vsync 0` (my own
+### r4w conversion) produced it; nothing in the pipeline checks frame ORDER, so it shipped.
+### Rebuilt with PIL, indexing the source frames explicitly instead of letting a filter resample:
+### 18 frames taken as [0,2,4...34], uniform 100ms, loop 0, same 408px and the same 425 KB, so the
+### dist cap is untouched (9.97 MB). Verified three ways — frame order strictly increasing, ANMF
+### durations read straight out of the container (18 x 100ms = 1800ms, matching the source's
+### 36 x 50ms), and sampled in the browser at 60ms: max per-sample motion 16.8%, ZERO jumps over
+### 18% (the bad frame produced a ~40% one).
+### Two things I checked and ruled out on the way, both worth knowing:
+###  · PIL's WebP reader does NOT expose per-frame durations — it reports None/0ms even for a file
+###    with correct timing. I nearly 'fixed' a non-bug on that reading. Parse the ANMF chunks.
+###  · The anim/still swap is not the problem: measured 3 flips in 12s, and the still matches
+###    animation frame 0 to within 5.1% of pixels, so the swap is seamless.
+### ⚠ The frame rate is still 10fps against the source's 20. Per-step motion is 11.4% vs 6.8%. 20fps
+### costs 565-874 KB depending on size and does not fit under the 10 MB cap; uniform timing needs a
+### frame count that divides 36, so 24 frames is not an option either. If the motion still reads as
+### choppy now that the order is right, the lever is the cap, not the encoder.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.
