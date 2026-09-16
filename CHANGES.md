@@ -188,6 +188,32 @@
 ### ⚠ THREE DEAD UI REFERENCES remain, pre-existing and untouched: hint.png, hint_active.png,
 ### peeking_pal.gif are referenced by the engine but exist nowhere. Harmless only while those code
 ### paths stay unused.
+### S01r4x — **pages 7 (G2), 10 (P1), 12 (P7)**: the hand nudge points AT the box, and clears on tap.
+###  · THE FINGERTIP NOW LANDS ON THE TILE. _placeNudge put the hand BELOW it — [28h] moved it there
+###    because the hand was covering the word, and [28j] then measured text rects to push it below
+###    the label too. Both fixed a real defect, but the cure left the finger pointing at the GAP
+###    under the tile. The hand's own geometry is why below was tempting: the fingertip sits near
+###    the TOP of the 96px box (39.93, 6.38 — measured by rasterising the art) and the palm hangs
+###    DOWN-RIGHT, so centring the box on a tile buries the tile under the palm. Anchoring the
+###    FINGERTIP to the tile's RIGHT side instead puts the finger on the target and swings the palm
+###    off to the right, where there is nothing to cover.
+###    Measured on all three: tip ON the tile at 81% across / 52% down, distance 0.
+###    ⚠ It does still grip the label's right edge — 22% of पपीता, 14% of मामा, 6% of चाँद. That is
+###    the tradeoff [28h] was avoiding, now bounded: Yasir's original report measured 92-100%
+###    coverage, and the word stays readable at these figures. Worth one look before it ships.
+###  · THE HAND CLEARS ON TAP. TAP_ALL_WITH_SOUND's chip onclick never called stopNudge(), so it
+###    stayed on screen pointing at a tile already answered. mountTapOptions has cleared it since
+###    [27d]; this mechanic was simply missed. The balloon page already did it right.
+###  · ⚠ A SECOND COPY OF THE PLACEMENT existed. pointNudgeAtForced() carried its own centred,
+###    below-the-tile arithmetic, so the FORCED path (practice pages opting in via data.allow_hand,
+###    and the balloon page) ignored _placeNudge entirely. Page 7 came out right while 10 and 12
+###    still measured 8.4px BELOW the tile at 46% across — the old signature exactly. It now
+###    delegates. One placement function, one behaviour.
+### ⚠ SELF-INFLICTED, CAUGHT AND REVERTED: my first pass at this rewrote _placeNudge by searching
+### the whole file for its closing line, which matched a LATER one and deleted 12 functions and the
+### `state` declaration — 18,562 chars, and mountSlide threw on every slide. Restored from HEAD and
+### redone with the edit bounded to the single function. Bound a structural edit to its own
+### function; never search the file for a closing brace.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.

@@ -3904,11 +3904,13 @@ function pointNudgeAtForced(el){
   if(!sw) return;
   const s = sw.getBoundingClientRect();
   const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
-  const place = ()=>{
-    const r = el.getBoundingClientRect();
-    nh.style.left = ((r.left - s.left)/scale + r.width/scale/2 - 48) + "px";
-    nh.style.top  = ((r.top  - s.top )/scale + r.height/scale + 4) + "px";
-  };
+  /* [S01r4x] DELEGATE, do not duplicate. This carried its own copy of the placement - centred on the
+     tile and dropped `height + 4` below it - so the forced path (practice pages that opt in through
+     data.allow_hand, and the balloon page) kept the old below-the-box position even after
+     _placeNudge was rewritten to put the fingertip ON the target. Measured: pages 10 and 12 still
+     had the tip 8.4px BELOW the tile at 46% across, exactly the old signature, while page 7 through
+     the unforced path was already correct. One placement function, one behaviour. */
+  const place = ()=> _placeNudge(el, nh);
   place(); requestAnimationFrame(place);
   nh.classList.add("show", "hint-glow");
 }
@@ -3942,49 +3944,34 @@ function _placeNudge(el, nh){
   const r = el.getBoundingClientRect();
   const sw = document.querySelector(".slide-stage").getBoundingClientRect();
   const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
-  nh.style.left = ((r.left - sw.left)/scale + r.width/scale/2 - 48) + "px";
-  /* [28h] THE HAND SITS BELOW THE TILE, NEVER ON ITS WORD.
-     Yasir 2026-07-28: "hand nudge is overlapping the word, so the hand nudge is to be placed lower."
-     The old line put the fingertip 56 design-px INSIDE the bottom edge — fine for a bare picture tile
-     (the original caller), fatal once handOnAnswer() started pointing at .opt-cell, whose bottom strip
-     IS the label. Measured on HI01H01_L02_S05 P1: hand 859-951 x 576-668 vs label 852-958 x 587-614,
-     i.e. the hand covered 92 of the label's 106px width and ALL of its height — the child was shown
-     the answer with the answer hidden under a hand.
-     Now the hand's top starts just past the tile's bottom edge, so it can never cover tile content
-     whatever the tile is. Clamped: if that would push it off the bottom of the stage, it goes ABOVE
-     the tile instead (still adjacent, still unambiguous) rather than being silently clipped away. */
-  /* [28j] PLACEMENT, corrected twice over. 28h moved the hand below the tile and introduced two new
-     failures, both measured on real builds:
-       (a) EMPTY SKY. The "flip above if it would run off the stage" clamp put the hand 100-395px ABOVE
-           a tall TAP_IN_SCENE hotspot (a whole standing figure), i.e. in open sky pointing at nothing,
-           on 4 of 6 guided slides of HI01H07_L01_S02. Flipping is wrong for this hand: it points UP,
-           so above the target it points away from it. Clamp INSIDE the stage instead — at worst it
-           overlaps the target's lower edge, which is where it used to live and is still unambiguous.
-       (b) A LABEL BELOW THE ANCHOR. Anchoring to the bottom of the element PASSED IN only helps when
-           that element contains the text. GENDER_INTRO passes the cat IMAGE while .cat-word sits below
-           it inside the card, so "below the image" landed straight on the word — 56% covered on T3
-           (better than 28h's 100%, still wrong). Assuming the anchor encloses the label is what made
-           this a per-mechanic whack-a-mole, so instead of anchoring smarter we MEASURE: find real text
-           rects near the landing spot and drop below the lowest one. That works for any mechanic,
-           including ones not written yet. */
-  const HAND_H = 96, GAP = 4, stageH = sw.height/scale;
-  const top = (r.top - sw.top)/scale, h = r.height/scale;
-  let below = top + h + GAP;
-  // Push past any TEXT that sits below the anchor but shares its horizontal span (the label case).
-  const _tile = el.closest(".opt-cell, .gender-cat, .sentence-word, .tut-card, .q-cell, .ms-item") || el.parentElement;
-  if(_tile){
-    _tile.querySelectorAll(".lbl, .cat-word, .sw-text, .opt-label, .story-q-opt-label, .pic-label, .count-badge")
-      .forEach(t => {
-        const tr = t.getBoundingClientRect();
-        if(tr.width < 2 || tr.height < 2) return;
-        if(tr.right < r.left || tr.left > r.right) return;      // not in this column — ignore
-        const tb = (tr.bottom - sw.top)/scale;
-        if(tb > below - HAND_H && tb + GAP > below) below = tb + GAP;   // clear it
-      });
-  }
-  // Never off-stage, and never flipped above (see (a)) — clamp into the stage as a last resort.
-  if(below + HAND_H > stageH) below = Math.max(0, stageH - HAND_H);
-  nh.style.top = below + "px";
+  /* [S01r4x] THE FINGERTIP GOES ON THE TARGET.
+     It used to sit BELOW the tile: [28h] moved it there because the hand covered the word, and [28j]
+     then measured text rects to push it below the label too. Both fixed a real defect, but the cure
+     left the hand pointing at the GAP under the tile — on pages 7/10/12 it hovered underneath with
+     its finger touching nothing, which is the report.
+     The hand's own geometry is why below-the-tile was tempting: the fingertip sits near the TOP of
+     the 96px box (measured by rasterising the art at 8x: 39.93, 6.38) and the palm hangs DOWN-RIGHT
+     from it, so centring the box on a tile buries the tile under the palm.
+     So anchor the FINGERTIP, not the box, and anchor it to the tile's RIGHT side: the finger lands
+     inside the tile near its right edge and the palm swings off to the right and below, where there
+     is nothing to cover. The label is centred at the bottom, so it stays readable — the thing [28h]
+     was protecting — while the finger is unambiguously ON the thing to tap. */
+  const FX = 39.93, FY = 6.38;                 // fingertip inside the 96x96 hand box
+  const HAND = 96, stageH = sw.height/scale, stageW = sw.width/scale;
+  const L = (r.left - sw.left)/scale, T = (r.top - sw.top)/scale;
+  const W = r.width/scale, Hh = r.height/scale;
+  let tipX = L + W * 0.78;
+  let tipY = T + Hh * 0.52;                    // above centre: the picture, not the word
+  /* on a wide target the 78% point can still sit far from the right edge; keep the finger within
+     34px of it so the palm always clears the tile, however wide it is */
+  tipX = Math.min(Math.max(tipX, L + W - 34), L + W - 6);
+  let left = tipX - FX, top = tipY - FY;
+  /* never off-stage — an off-stage hand points at nothing at all, which is strictly worse than one
+     nudged a few px off the ideal spot */
+  left = Math.max(0, Math.min(left, stageW - HAND));
+  top  = Math.max(0, Math.min(top,  stageH - HAND));
+  nh.style.left = left + "px";
+  nh.style.top = top + "px";
 }
 
 /* ---------- 6. IDLE VO REPLAY [27b] ----------
@@ -8574,6 +8561,10 @@ const SlideModules = {
         const src = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
         chip.onclick = ()=>{
           if(state.locked || chip.classList.contains("got") || chip.classList.contains("nope")) return;
+          /* [S01r4x] the hand has done its job the moment the child acts on it. mountTapOptions has
+             cleared it on tap since [27d]; this mechanic never did, so on pages 7/10/12 the hand
+             stayed on screen pointing at a tile that had already been answered. */
+          stopNudge();
           const after = (cb)=>{ if(src) play(src, cb); else cb(); };
           if(it.has === true){
             chip.classList.add("got"); sfxCorrect(); found++;
