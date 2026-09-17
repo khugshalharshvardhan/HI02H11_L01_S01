@@ -1,0 +1,30 @@
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# .env holds the Gemini key the asset generators need. It must never be
+# committed: this repo is shared, and a key pushed once is a key to rotate.
+# .env.example IS committed — it is the template, with no real value in it.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.json
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ── Local scratch from build / revise runs ───────────────────────────────────
+# Backups the rebuild and asset steps leave beside the file they replaced.
+# NOTE: *.patch is deliberately NOT ignored — ENGINE_DIFF.patch and
+# my_engine_change.patch are part of the handover.
+*.bak
+*.bak.*
+*.orig
+*.rej
+
+# ── OS / editor ──────────────────────────────────────────────────────────────
+Thumbs.db
+desktop.ini
+.DS_Store
