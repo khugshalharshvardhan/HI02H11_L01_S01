@@ -2297,6 +2297,42 @@ html.no-anim .nudge-hand .nh-tapfx{display:none;}
 html.no-anim .wg-fx{display:none;}
 @media (prefers-reduced-motion: reduce){ .wg-fx{display:none;} }
 
+
+/* ═══ [S01r4z] TWO SME RULINGS REVERSED, ON REQUEST. Both of these were deliberate before, so the
+   reasons are kept here rather than deleted — if either is ever questioned, this is the history. ═══ */
+
+/* ---- 1. NO TICK ON A CORRECT OPTION ----
+   Three sites carried one: .opt-cell.correct::after (a 64px green disc), and .tap-all-item.got::after
+   twice over (the second, at [30f], supersedes the first). The mark does not disappear with it — the
+   green border and fill stay, .ck-correct still pops the tile, and the tap-all item keeps tapGotPop.
+   This is also what the fln-animation-toolkit states as the house rule ("the green outline IS the
+   correct-mark, no fill, no tick") — recipe 9 — which is why recipe 19 was installed without it. */
+.opt-cell.correct::after,
+.tap-all-item.got::after{ content:none !important; display:none !important; }
+
+/* ---- 2. A WRONG TAP WIGGLES, IT DOES NOT TURN RED ----
+   Supersedes [28r] ("BOTH wrong attempts flash RED FIRST") and the red half of [28p]/[28u]. Only the
+   COLOUR goes: buzzShake still fires, still snaps rather than eases, and the card is still released
+   after a first miss. The grey lock on the 2nd wrong (.crossed / .nope) was already neutral, so the
+   red is now gone from the whole wrong path rather than from one rung of it.
+   Specificity note (kit R11, and the reason 28p's own fix needed two selectors): the theme-scoped
+   `.stage.thm-toybox .opt-cell.wrong-flash` is 0,4,0 and beats a bare 0,2,0 rule regardless of source
+   order, so the override has to carry !important rather than rely on coming last. */
+.opt-cell.wrong-flash,
+.stage.thm-toybox .opt-cell.wrong-flash,
+.sentence-word.wrong-flash,
+.tap-all-item.wrong-flash,
+.opt-cell.wrong{
+  border-color:var(--line,#E3ECF7) !important;
+  background:#fff !important;
+  box-shadow:0 5px 12px rgba(11,61,140,.10) !important;
+  animation:buzzShake .4s !important;          /* the wiggle is the whole feedback now */
+  transition:none !important;
+}
+/* the outward spark ring added with toolkit recipe 20 was red by definition — with the colour gone
+   from the tile, a red burst around it is the only red left on screen, so it goes too */
+.wg-fx{ display:none !important; }
+
 </style>
 </head>
 <body class="is-start">

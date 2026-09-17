@@ -235,6 +235,41 @@
 ### costs 565-874 KB depending on size and does not fit under the 10 MB cap; uniform timing needs a
 ### frame count that divides 36, so 24 frames is not an option either. If the motion still reads as
 ### choppy now that the order is right, the lever is the cap, not the encoder.
+### S01r4z / S01r5a — four asks.
+###  1. NO TICK ON A CORRECT OPTION. Three sites carried one: .opt-cell.correct::after (a 64px green
+###     disc) and .tap-all-item.got::after twice over. The mark survives — green border and fill
+###     stay, .ck-correct still pops the tile, tapGotPop still fires. Verified: content:none,
+###     display:none on both, border still rgb(0,177,50).
+###     ⚠ This is the fln-animation-toolkit's own house rule (recipe 9, "the green outline IS the
+###     correct-mark"), which is why recipe 19 was installed without it in r4q. Now adopted.
+###  2. A WRONG TAP WIGGLES, IT DOES NOT TURN RED. Supersedes [28r] ("BOTH wrong attempts flash RED
+###     FIRST") and the red half of [28p]/[28u]. Only the COLOUR goes: buzzShake still fires and
+###     still snaps rather than eases, and the card is still released after a first miss. Verified
+###     at the tap: animation buzzShake, background #fff, border #E3ECF7, no red anywhere. The
+###     toolkit's red spark ring (recipe 20, added r4s) is hidden with it — with the tile neutral it
+###     would have been the only red left on screen.
+###     ⚠ [28r] was an SME ruling, reversed on request. One CSS block reverts it.
+###  3. The SME's own correct/incorrect recordings replace the toolkit's. Both start at 0.02s, so no
+###     onset fix was needed; trimmed to 0.86s / 0.73s (the sources carried 0.6s and 1.16s of dead
+###     air) and converted to Opus. sfxCorrect/sfxWrongSoft already resolve to these ids, so no code
+###     changed. Verified firing: sfx_wrong.ogg on a wrong tap.
+###  4. THE BALLOON MASCOT IS BACK AT THE SOURCE'S OWN 20fps. r4y fixed the out-of-order frame but
+###     left it at 18 frames/10fps, which is what still read as glitchy: per-step motion 11.4% against
+###     the source's 6.8%. Now all 36 frames at 50ms, 408px, order verified as identity.
+###     PROVEN THE ONLY WAY THAT SETTLES IT — both files rendered SIDE BY SIDE in the same browser at
+###     the real 226px box and sampled at 50ms: source gif avg 18.7% / max 29.3%, new webp avg 18.6%
+###     / max 28.6%, same count of large steps. It now moves like the SME's original.
+###     ⚠ Measuring animated WebP through PIL is unreliable — it reports no per-frame durations, and
+###     a LOSSLESS encode measured MORE frame-to-frame change than its own source, which is
+###     impossible. Parse ANMF chunks for timing; measure motion in the browser.
+### ⚠ ROOM FOR 20fps CAME FROM PRUNING ORPHANS, not from quality. 36 frames cost 874 KB against
+### 425 KB, which would have broken the 10 MB cap. dist_local now drops any asset whose id appears
+### nowhere in the built HTML: 51 files, left behind by slides deleted across the rounds. The
+### keep-test is deliberately the widest exact one — the HTML inlines the card AND the engine, so a
+### clip fetched by convention (sfx_*) survives without enumerating conventions, and it prints what
+### it dropped. Dist 9.97 → 9.33 MB pruned, → 9.80 MB with the 20fps mascot. Walked all 14 slides
+### served FROM THE DIST: zero image/UI 404s; the six audio 404s are the ungenerated clips already
+### on the receipt's standing FAIL list, absent from the factory too.
 ### ⚠ TAG NAMESPACES. The engine comments run S01r4b..S01r4k; the recipe runs r4b..r4o, and
 ### the two series independently reached "r4j" meaning different things (engine: the left
 ### side-bearing clip; recipe: mark_bare on T5/T1). Entries here now use the name the CODE uses.
