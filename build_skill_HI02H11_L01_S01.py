@@ -142,6 +142,16 @@ VO = {
     "vo_snd_r":  "र से रस्सी।",
     "vo_snd_n":  "न से नाव।",       # [r4 · row 102] NEW — page 14's correct answer had no sound clip
 
+    # [r5c] BARE letter sounds for the one-by-one option reveal. The SME ruling on page 9 was
+    # "play only these च, ल, र sound not more than that — currently it plays ल से लट्टू, र से
+    # रस्सी, which should not happen". G3 satisfies that because vo_snd_ch/l/r were cut down to
+    # the bare akshara; P4 runs the SAME reveal mechanic but its म and न options still pointed at
+    # the full carrier phrases (vo_snd_m is 2.17s of "म से मछली।"), so it reproduced exactly the
+    # behaviour that was rejected. These two ids carry the bare sound for the reveal ONLY —
+    # vo_snd_m keeps the carrier phrase because the TEACH page (T5) genuinely teaches "म से मछली".
+    "vo_ltr_m":  "म",
+    "vo_ltr_n":  "न",
+
     # ---- object names (tap-to-hear) --------------------------------------------------------
     "vo_w_aam": "आम", "vo_w_champa": "चंपा", "vo_w_chandi": "चाँदी", "vo_w_chuha": "चूहा",
     "vo_w_laal": "लाल", "vo_w_mala": "माला", "vo_w_mama": "मामा", "vo_w_muli": "मूली",
@@ -446,9 +456,11 @@ def build_card():
     slides.append(pick_sound(
         "P4", "practice", VO["vo_p4_prompt"],
         ["नानी", "नई", "नाव", "लाई।"], "vo_line_l6", "न",
-        [{"letter": "म", "audio": "vo_snd_m"},
+        # [r5c] bare sounds on the reveal — see the vo_ltr_* note in the VO map above.
+        # (ल already points at vo_snd_l, which was itself cut to the bare akshara for G3.)
+        [{"letter": "म", "audio": "vo_ltr_m"},
          {"letter": "ल", "audio": "vo_snd_l"},
-         {"letter": "न", "audio": "vo_snd_n"}],
+         {"letter": "न", "audio": "vo_ltr_n"}],
         # [r5b] NO `hint` KEY, for the same reason as G3 above: the reveal path speaks
         #   audioFor("hint") || audioFor("reveal") || ...
         # so while a hint was authored, the REVEAL never reached vo_p4_reveal

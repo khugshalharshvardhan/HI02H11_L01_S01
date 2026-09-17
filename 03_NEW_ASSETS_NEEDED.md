@@ -25,16 +25,32 @@ asset is delivered.
 
 ## New / re-recorded audio — `build/assets/Audio/`
 
-| Clip id | Spoken text | Note |
-|---|---|---|
-| `vo_snd_n` | न (bare sound) | **missing** — needed for new page 14 letter options |
-| `vo_landing` | नमस्ते दोस्त! मैं हूँ Swiftee। आज हम जानेंगे कि वाक्य में कौन-सी ध्वनि बार-बार सुनाई देती है। सुनो—"काला कौआ काँव-काँव करता।" इस वाक्य में "क" की ध्वनि यानी आवाज़ बार-बार आ रही है। | re-record, sentence changed |
-| `vo_line_l2` | चूहे ने चार चने चबाए। | re-record (was "चूहा चार चने चबाए") |
-| `vo_line_l3` | मेरे मामा मीठी मलाई लाए। | re-record (was "मामा मीठी मलाई लाए") |
-| new sentence VO | नानी नई नाव लाई। | new page 14 |
-| `vo_w_patang` / `vo_w_patta` / `vo_w_kela` / `vo_w_ghar` / `vo_w_machhli` | word names | for tap-to-hear on the new options |
-| SFX | काँव-काँव crow call | new page 1 |
+**All generated 2026-09-17** (Gemini TTS, voice **Kore**, `.ogg`, matching the existing 65 clips).
+Every clip was verified by forced-choice listening-back before installing; the method was first
+validated on already-approved clips (5/5).
 
-> `vo_snd_*` clips must be a **bare sound** (pa, cha, ma, na…), not the
-> carrier word — see `04_VO_RECORDING_LIST_current.md` for the full
-> existing clip list and the recording rule.
+| Clip id | Spoken text | Status |
+|---|---|---|
+| `vo_line_l6` | नानी नई नाव लाई। | **generated** — the new page-14 sentence |
+| `vo_snd_n` | न से नाव। | **generated** — carrier phrase (page 14 `audio.target`) |
+| `vo_ltr_n` | न | **generated** — BARE sound, page 14 letter reveal |
+| `vo_ltr_m` | म | **generated** — BARE sound, page 14 letter reveal |
+| `vo_w_chand` | चाँद | **generated** |
+| `vo_w_chinti` | चींटी | **generated** |
+| `vo_w_ghar` | घर | **generated** |
+| `vo_w_kela` | केला | **generated** |
+| `vo_w_machhli` | मछली | **generated** |
+| `vo_w_patang` | पतंग | **generated** |
+| `vo_w_patta` | पत्ता | **generated** |
+| `vo_landing` | (see `04_VO_RECORDING_LIST_current.md`) | already on disk — NOT re-recorded |
+| `vo_line_l2` / `vo_line_l3` | — | already on disk — NOT re-recorded |
+| SFX काँव-काँव crow call | — | **still outstanding** (page 1) |
+
+> **The bare-sound rule.** `vo_snd_*` read "<letter> से <word>" in the card only because the TTS
+> model hard-refuses an isolated akshara. Where a page reveals letter options one by one, the
+> option must play the BARE sound (the SME ruling on page 9: *"play only these च, ल, र sound, not
+> more than that"*). Page 9 gets this from `vo_snd_ch/l/r`, which were cut down to the bare
+> akshara; page 14 now gets it from `vo_ltr_m` / `vo_ltr_n`, added for exactly that purpose.
+> `vo_snd_m` keeps its carrier phrase because the TEACH page genuinely teaches "म से मछली".
+>
+> See `04_VO_RECORDING_LIST_current.md` for the full clip list and the human-recording rule.

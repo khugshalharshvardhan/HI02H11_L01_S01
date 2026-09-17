@@ -625,7 +625,7 @@
         "options": [
           {
             "letter": "म",
-            "audio": "vo_snd_m"
+            "audio": "vo_ltr_m"
           },
           {
             "letter": "ल",
@@ -633,7 +633,7 @@
           },
           {
             "letter": "न",
-            "audio": "vo_snd_n"
+            "audio": "vo_ltr_n"
           }
         ],
         "signal_name": "sentence_sound_first_try",
@@ -853,6 +853,8 @@
       "vo_line_l2": "assets/Audio/vo_line_l2.ogg",
       "vo_line_l3": "assets/Audio/vo_line_l3.ogg",
       "vo_line_l6": "assets/Audio/vo_line_l6.ogg",
+      "vo_ltr_m": "assets/Audio/vo_ltr_m.ogg",
+      "vo_ltr_n": "assets/Audio/vo_ltr_n.ogg",
       "vo_p1_done": "assets/Audio/vo_p1_done.ogg",
       "vo_p1_hint": "assets/Audio/vo_p1_hint.ogg",
       "vo_p1_prompt": "assets/Audio/vo_p1_prompt.ogg",
@@ -923,6 +925,8 @@
       "vo_line_l2": "चूहे ने चार चने चबाए।",
       "vo_line_l3": "मेरे मामा मीठी मलाई लाए।",
       "vo_line_l6": "नानी नई नाव लाई।",
+      "vo_ltr_m": "म",
+      "vo_ltr_n": "न",
       "vo_p1_done": "शाबाश! म की आवाज़ वाले सारे शब्द मिल गए।",
       "vo_p1_hint": "हर शब्द सुनो — क्या उसमें म की आवाज़ सुनाई देती है?",
       "vo_p1_prompt": "जिन शब्दों में म की आवाज़ सुनाई दे, उन पर टैप करो।",

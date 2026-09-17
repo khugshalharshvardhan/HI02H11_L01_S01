@@ -814,3 +814,102 @@ The game was left exactly as the deck specified on all of these.
 | radish `obj_muli` | **final** — supplied by the SME, installed r4l as-is (clean alpha, framing already matched) |
 | `sfx_kanv` crow call | **final** — SME recording, trimmed to one 0.57 s call (r4d) |
 | Everything else (73 clips, 14 pictures, all UI) | final, unchanged, untouched by this round |
+
+
+---
+
+# Round 5c — the 9 unvoiced clips generated, and page 14's letter reveal made bare
+
+**Ask:** *"if its correct then go ahead and generate the VOs that will be needed in this project"*
+(after confirming the Gemini key in `.env` was added correctly — it was).
+
+## What was generated
+
+Nine `vo_*` ids were referenced by the card but had **no file on disk**, so five pages played
+silence where a clip was expected. All nine now exist, generated with **voice `Kore`, `.ogg`** —
+the voice `_assets_round4/GENERATE_ASSETS.md` pins for this lesson, so the new clips match the
+existing 65 rather than introducing a second narrator.
+
+| Clip | Text | Heard on |
+|---|---|---|
+| `vo_line_l6` | नानी नई नाव लाई। | page 14 sentence |
+| `vo_snd_n` | न से नाव। | page 14 `audio.target` |
+| `vo_w_chand` | चाँद | pages 12, 14 |
+| `vo_w_chinti` | चींटी | pages 10, 12 |
+| `vo_w_ghar` | घर | page 13 (balloons) |
+| `vo_w_kela` | केला | pages 7, 13 |
+| `vo_w_machhli` | मछली | page 13 |
+| `vo_w_patang` | पतंग | pages 7, 13 |
+| `vo_w_patta` | पत्ता | page 13 |
+
+`gen_tts` skips existing files by default and was run **without `--force`**, so the 56 clips already
+on disk — including the bare `vo_snd_ch/l/r` the SME signed off on for page 9 — were not touched.
+
+### Two clips needed hand-work
+- **`vo_w_ghar`** ("घर") was the one clip `gen_tts` could not produce: it exhausted the whole refuser
+  ladder (every rung returned HTTP 200 with no audio). Recovered by wrapping the word in an English
+  instruction the Hindi voice does not speak — 0.93 s, one clean burst, matching its siblings.
+- **`vo_w_patang`** came back from the wrapper fallback at 1.61 s with **two** speech bursts where
+  its siblings are ~0.95 s and one. Replaced with a plain-prompt take: 1.09 s, single burst.
+
+### How each clip was checked
+Open transcription is unreliable for isolated Hindi words — as a control, it misread **3 of 10
+clips that are already shipped and approved**. So every clip was verified by **forced choice**
+instead (identify the word from a list of ten). That method scored **5/5 on the same controls open
+transcription failed**, and **every** new clip identified correctly.
+
+## Page 14's letter reveal now plays bare sounds (SME ruling, carried over from page 9)
+
+Page 14 (`P4`) runs the **same one-by-one letter reveal as page 9** (`seq_say_whole` +
+`fixed_order`). Page 9 was fixed earlier on the SME's instruction — *"play only these च, ल, र
+sound not more than that, currently it plays ल से लट्टू, र से रस्सी, which should not happen"* —
+by cutting `vo_snd_ch/l/r` down to the bare akshara.
+
+Page 14 was still pointing its म and न options at the **full carrier phrases**: `vo_snd_m` is
+2.17 s of "म से मछली।". Generating `vo_snd_n` as written ("न से नाव।") and leaving it wired there
+would have reproduced the exact behaviour the SME rejected, on a new page.
+
+So two bare clips were added **for the reveal only**:
+
+| New id | Source | Length |
+|---|---|---|
+| `vo_ltr_m` | the leading म cut from `vo_snd_m` | 0.39 s |
+| `vo_ltr_n` | synthesised bare न, silence-trimmed | 0.43 s |
+
+(0.38–0.41 s is exactly the length of the approved `vo_snd_ch/l/r`.) No trim of `vo_snd_n` gave a
+recognisable न — every window read as च or ट — which is why that one is synthesised rather than cut.
+
+`vo_snd_m` **keeps** its carrier phrase: page 3 genuinely teaches "म से मछली", and only page 14's
+option was changed. The whole card diff against the last commit is 6 lines:
+
+```
++ /assets/audio/vo_ltr_m, /assets/audio/vo_ltr_n
++ /assets/audio_text/vo_ltr_m = "म", /assets/audio_text/vo_ltr_n = "न"
+~ /slides[10]/data/options[0]/audio  vo_snd_m -> vo_ltr_m
+~ /slides[10]/data/options[2]/audio  vo_snd_n -> vo_ltr_n
+```
+
+## Receipt
+
+- **`Voice-over: all 67 lines have real audio — OK`.** This was the standing FAIL; it is cleared on
+  both `build/` and `dist/`.
+- `dist/` re-cut: **9.84 MB**, under the 10 MB cap, `missing none`.
+- The remaining `dist` FAIL — *"Engine UI assets: `start_mascot.png`, `start_btn.png`"* — is a
+  **checker artifact, not a defect**: this isolated engine references `start_mascot.**webp**`
+  (which ships) behind an `onerror` fallback, and does not reference `start_btn` at all.
+- No page was recaptured: this round changed **audio ids only**, so every shot is unchanged.
+
+## Still outstanding
+
+1. **A human has not heard any of these 11 clips.** Forced-choice identification proves the right
+   word was said; it does not judge warmth, pace or child-appropriateness.
+2. **The काँव-काँव crow SFX for page 1** is still not delivered.
+3. **Regeneration hazard.** `vo_snd_ch/l/r` hold a *bare* sound while their `audio_text` still reads
+   the carrier phrase (the placeholder convention). Anyone running `gen_tts --force` would
+   regenerate them as full phrases and silently undo the page-9 ruling. The text was left as-is
+   because it is also the human VO team's recording script.
+4. **Page 1 vs pages 3 and 5 are inconsistent.** Page 1's teach step plays the bare `vo_snd_ch`
+   (0.38 s) while pages 3 and 5 play full carrier phrases (`vo_snd_m` 2.17 s, `vo_snd_p` 1.57 s) —
+   a side effect of the page-9 trim, since page 1 shares that id. **Not changed here**: the SME
+   asked for bare sounds on the letter-reveal pages, not on the teach pages, and changing what
+   page 1 says is their call, not mine.
