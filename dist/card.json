@@ -585,10 +585,10 @@
             "gender": "P"
           },
           {
-            "word_hi": "चाँदी",
-            "img": "obj_chandi",
-            "emoji": "🪙",
-            "audio": "vo_w_chandi",
+            "word_hi": "चम्मच",
+            "img": "obj_chammach",
+            "emoji": "🥄",
+            "audio": "vo_w_chammach",
             "gender": "P"
           }
         ],
@@ -987,6 +987,7 @@
   ],
   "_emoji_fallback": {
     "obj_aam": "🥭",
+    "obj_chammach": "🥄",
     "obj_chand": "🌙",
     "obj_chandi": "🪙",
     "obj_chashma": "👓",
@@ -1079,6 +1080,7 @@
       "vo_t5_explain": "assets/Audio/vo_t5_explain.ogg",
       "vo_t6_prompt": "assets/Audio/vo_t6_prompt.ogg",
       "vo_w_aam": "assets/Audio/vo_w_aam.ogg",
+      "vo_w_chammach": "assets/Audio/vo_w_chammach.ogg",
       "vo_w_chand": "assets/Audio/vo_w_chand.ogg",
       "vo_w_chandi": "assets/Audio/vo_w_chandi.ogg",
       "vo_w_chashma": "assets/Audio/vo_w_chashma.ogg",
@@ -1162,6 +1164,7 @@
       "vo_t5_explain": "मेरे, मामा, मीठी, मलाई—इन सब शब्दों में म की आवाज़ बार-बार आई।",
       "vo_t6_prompt": "हमने म की आवाज़ सुनी। यह आवाज़ म अक्षर से लिखी जाती है। जैसे—म से मूली।",
       "vo_w_aam": "आम",
+      "vo_w_chammach": "चम्मच",
       "vo_w_chand": "चाँद",
       "vo_w_chandi": "चाँदी",
       "vo_w_chashma": "चश्मा",
@@ -1187,6 +1190,7 @@
     },
     "image": {
       "obj_aam": "assets/Images/obj_aam.png",
+      "obj_chammach": "assets/Images/obj_chammach.png",
       "obj_chand": "assets/Images/obj_chand.png",
       "obj_chandi": "assets/Images/obj_chandi.png",
       "obj_chashma": "assets/Images/obj_chashma.png",
@@ -2065,6 +2069,16 @@
           0.61
         ]
       ],
+      "vo_w_chammach": [
+        [
+          0.28,
+          0.7
+        ],
+        [
+          0.8,
+          0.94
+        ]
+      ],
       "vo_w_chand": [
         [
           0.28,
@@ -2272,6 +2286,7 @@
       "vo_t5_explain": 7.53,
       "vo_t6_prompt": 7.17,
       "vo_w_aam": 0.85,
+      "vo_w_chammach": 1.17,
       "vo_w_chand": 1.05,
       "vo_w_chandi": 0.97,
       "vo_w_chashma": 0.93,

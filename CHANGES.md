@@ -2186,3 +2186,61 @@ every guard passing. The tell was that **nothing changed**, not that anything fa
 3. **`vo_w_patta` is fine, and this is the note saying so.** It failed one shuffle of the sweep
    (read as कबूतर); re-asked six times it came back **5/6**, with the single miss on the same seed
    and naming a word that sounds nothing like it. ASR noise on a pre-existing clip — not regenerated.
+
+---
+
+# r5q — चम्मच takes चाँदी's place in the प/च sort
+
+SME art, one swap, page 10 (`G5`).
+
+## The swap
+
+| out | in | box |
+|---|---|---|
+| चाँदी | **चम्मच** | च |
+
+चाँदी and चम्मच both begin **च**, so the boxes still take **two and two**. That is the check this
+page needs: a swap that moved a tile across bins would have left one box unfillable and the other
+over-subscribed, and the page would have sat there waiting for a tile that does not exist.
+
+**चाँदी has not left the lesson** — page 14's second balloon round still uses it, so `obj_chandi` and
+`vo_w_chandi` still ship.
+
+The supplied file was a clean cutout, so it was trimmed and fitted to this lesson's 512px long edge
+(189×512 — a spoon is a narrow subject, and `object-fit:contain` gives it the tile's full height).
+The original is filed as `_assets_round4/chammach_SOURCE.png`.
+
+## चश्मा and चम्मच are now both in this lesson, and that is worth a measurement
+
+r5p added **चश्मा** to page 13. Adding **चम्मच** put a genuine near-neighbour beside it — same
+opening अक्षर, same length, and the middle differs by one conjunct. The forced-choice sweep noticed
+immediately: `vo_w_chashma`, which passed cleanly in r5p, came back UNSTABLE as soon as चम्मच joined
+the option list.
+
+So it was asked directly, six shuffles each:
+
+```
+against the FULL word list   vo_w_chashma   5/6      vo_w_chammach  6/6
+head to head, only those two vo_w_chashma   6/6      vo_w_chammach  6/6
+```
+
+**Head to head both are 6/6**, which is the test that actually answers the question — the clips are
+distinguishable, and the one full-list miss is the same seed-1 positional artifact that `vo_w_patta`
+shows. Neither clip was regenerated.
+
+The two words never appear on the same page (चम्मच on 10, चश्मा on 13), so a child is never asked to
+tell them apart. This note exists so that if someone later puts them side by side, they know the pair
+was measured rather than assumed.
+
+## Receipt
+
+- 15 slides; all three guards pass on all four trees, now 75 authored lines / 81 clips
+- HTML byte-identical across all four (`5be10c3721985143`)
+- Page 10 renders चूहा · पानी · पायल · चम्मच into the प/च boxes, **0 broken images**
+- `vo_w_chammach` came off the **primary** TTS rung — no refuser-ladder fallback
+- **dist 9.72 MB — 290 KB under the cap** (92 clips, 24 images)
+
+## Still needs a human
+
+Nobody has heard `vo_w_chammach`. It identifies 6/6 against the full word list and 6/6 against चश्मा
+directly, but that is a machine listening, not a person.

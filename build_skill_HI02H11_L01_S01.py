@@ -208,6 +208,8 @@ VO = {
     # [r5p] SME supplied the art for these three and named where each one goes: चिड़िया and लड्डू
     # replace चींटी and लाल on P1, चश्मा replaces चींटी on P7.
     "vo_w_chidiya": "चिड़िया", "vo_w_laddu": "लड्डू", "vo_w_chashma": "चश्मा",
+    # [r5q] SME art again: चम्मच takes चाँदी's place in the प/च sort.
+    "vo_w_chammach": "चम्मच",
 
     "vo_try_again": "एक बार फिर सुनो।",
 }
@@ -238,6 +240,7 @@ EMOJI = {
     # [r5p] the emoji is only the no-art fallback, but it still has to READ as the word: a
     # generic bird for चिड़िया (🐦, not the black 🐦‍⬛ that is already कौआ), a sweet for लड्डू, glasses for चश्मा.
     "obj_chidiya": "🐦", "obj_laddu": "🍬", "obj_chashma": "👓",
+    "obj_chammach": "🥄",
 }
 
 
@@ -535,10 +538,13 @@ def build_card():
         # pre-reader, and "प की आवाज़ वाला" is a sentence; the letter alone is the label.
         [{"gender": "S", "label": "प"},
          {"gender": "P", "label": "च"}],
-        [_item("पानी",  "obj_pani",   "vo_w_pani",   gender="S"),
-         _item("पायल",  "obj_payal",  "vo_w_payal",  gender="S"),
-         _item("चूहा",  "obj_chuha",  "vo_w_chuha",  gender="P"),
-         _item("चाँदी", "obj_chandi", "vo_w_chandi", gender="P")],
+        # [r5q] SME swap: चाँदी -> चम्मच. Both begin च, so the च box still takes two and the प box
+        # still takes two - a swap across bins would have left one box unfillable.
+        # चाँदी has NOT left the lesson: page 14's second balloon round still uses it.
+        [_item("पानी",  "obj_pani",     "vo_w_pani",     gender="S"),
+         _item("पायल",  "obj_payal",    "vo_w_payal",    gender="S"),
+         _item("चूहा",  "obj_chuha",    "vo_w_chuha",    gender="P"),
+         _item("चम्मच", "obj_chammach", "vo_w_chammach", gender="P")],
         {"prompt": "vo_g5_prompt", "target": "vo_snd_p", "hint": "vo_g5_hint",
          "try_again": "vo_g5_try", "correct": "vo_g5_correct"},
         "sound_sort_first_try"))
