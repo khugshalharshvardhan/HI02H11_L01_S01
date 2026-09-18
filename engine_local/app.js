@@ -1240,7 +1240,7 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
       let advanced = false, fb = null;
       const go = ()=>{ if(advanced || _done) return; advanced = true; if(fb) clearTimeout(fb); next(); };
       play(src || null, go);
-      fb = setTimeout(go, 4500);                                    // safety net: never stall on one clip
+      fb = setTimeout(go, _clipNetMs(src));                                    // safety net: never stall on one clip
     };
     const _revStep = (i)=>{
       if(_done || CARD.slides[state.idx] !== slide) return;         // [24a bug-hunt F1] navigated away OR net fired → abort the chain
@@ -1266,7 +1266,10 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
       _sayThen(_wholeSrc, _optsFirst);
     });
     // global safety net — never soft-lock. One more clip in the chain needs a longer net.
-    setTimeout(()=>{ if(CARD.slides[state.idx] === slide) _enableAll(); }, _wholeSrc ? 22000 : 16000);
+    setTimeout(()=>{ if(CARD.slides[state.idx] === slide) _enableAll(); },
+      _chainNetMs([(slide.audio && slide.audio.prompt) || null]
+        .concat(_wholeSrc ? [slide.data.whole_audio] : [])
+        .concat(_opts.map(o => (o && o.audio) || null)), _wholeSrc ? 22000 : 16000));
     return;
   }
   /* [28f] idle hand REMOVED on answerable slides — it fired at nudge_timeout_ms (guided 5000ms),
@@ -1301,7 +1304,7 @@ function sortSeqReveal(tray, slide){
     if(done || CARD.slides[state.idx] !== slide) return;
     let advanced = false, fb = null;
     const go = ()=>{ if(advanced || done) return; advanced = true; if(fb) clearTimeout(fb); next(); };
-    play(src || null, go); fb = setTimeout(go, 4500);
+    play(src || null, go); fb = setTimeout(go, _clipNetMs(src));
   };
   const step = ()=>{
     if(done || CARD.slides[state.idx] !== slide) return;         // navigated away / net fired -> abort
@@ -1989,6 +1992,100 @@ function _tokenWeight(t){
   }
   return Math.max(1, n);
 }
+/* [S01r5h] HOW LONG A FEEDBACK SOUND OWNS THE SPEAKER.
+   sfxCorrect/sfxWrongSoft/playSfx each ride their OWN Audio element, so play()'s stopAudio() cannot
+   see them and a word started in the same breath sounds UNDER them. On the balloon page that is
+   fatal to the word: sfx_wrong runs 0.73s and every wrong-answer clip has ~0.27s of leading silence
+   and ~0.5s of speech, so the buzzer covered 80-100% of आम, घर, मछली and केला. The SME heard it as
+   "the machli/aam/ghar sound is not coming properly" - the clips were fine, they were buried.
+   Hold the word until the effect is done. Lengths come from the card (assets.audio_dur); an id the
+   card does not carry falls back to a short, safe hold rather than guessing long. */
+function _sfxHoldMs(){
+  var map = (CARD && CARD.assets && CARD.assets.audio_dur) || {}, max = 0;
+  for(var i = 0; i < arguments.length; i++){
+    var id = arguments[i];
+    if(!id) continue;
+    var sec = map[id];
+    max = Math.max(max, sec ? Math.round(sec * 1000) : 250);
+  }
+  return max ? max + 60 : 0;      /* a hair of air, so the two do not butt against each other */
+}
+/* [S01r5g] SIZE THE PER-CLIP SAFETY NET TO THE CLIP.
+   The one-by-one option reveals advance on a fallback timer so a missing or blocked clip can never
+   stall the page. That timer was a flat 4500ms, which silently assumes every clip is shorter than
+   4.5s. Two of this lesson's question prompts are 5.05s ("ध्यान से सुनो — इस वाक्य में कौन-सी आवाज़
+   बार-बार आई?" on G3, and P4's), so on those pages the net fired while the prompt was still
+   speaking: the chain moved on, play() stopped the prompt mid-word and started the next clip over
+   it. That is the "mix up of VO in the whole page" the SME reported on page 8.
+   The build now writes each clip's real length to CARD.assets.audio_dur, so the net can be the
+   clip's own length plus a margin. Unknown clip => the original 4500ms, unchanged. */
+function _clipNetMs(src){
+  var DEFAULT = 4500;
+  if(!src) return DEFAULT;
+  var t = String(src), q = Math.max(t.lastIndexOf("/"), t.lastIndexOf("\\")),
+      base = t.slice(q + 1), dot = base.lastIndexOf(".");
+  var id = dot > 0 ? base.slice(0, dot) : base;
+  var map = CARD && CARD.assets && CARD.assets.audio_dur;
+  var sec = map && map[id];
+  if(!sec) return DEFAULT;
+  return Math.max(DEFAULT, Math.round(sec * 1000) + 1500);   /* margin covers decode + a slow start */
+}
+/* [S01r5g] The GLOBAL backstop has to outlast the per-clip nets it is backing up, or raising one
+   makes the other fire first and force-enable the page mid-narration. Sum the nets for the clips
+   this chain will actually play, and keep the old flat value as a floor. */
+function _chainNetMs(ids, floorMs){
+  var total = 0;
+  for(var i = 0; i < (ids || []).length; i++){
+    total += _clipNetMs(ids[i] ? ("assets/Audio/" + ids[i] + ".x") : null) + 300;
+  }
+  return Math.max(floorMs || 16000, total + 2000);
+}
+/* [S01r5f] Tokenise a spoken line for the karaoke walk.
+   Plain whitespace splitting glues an em-dash pair into ONE token, and a cue that names the word
+   AFTER the dash then fires when the word BEFORE it starts. On the landing line the spoken script
+   reads "...है। सुनो—काला कौआ...", so the hero word काला was cued at the onset of सुनो - about
+   half a token early. Splitting after the dash makes each cue land on its own word. Where the cued
+   word already STARTS its token ("चबाए—इन"), this changes nothing. */
+function _voTokens(line){
+  return String(line || "").replace(/([—–])/g, "$1 ").split(/\s+/).filter(Boolean);
+}
+/* [S01r5f] THE HIGHLIGHT RAN AHEAD OF THE VOICE, AND A PAUSE IS WHY.
+   The walk below is proportional: it spreads the tokens across the clip in proportion to akshara
+   weight. That assumes the voice speaks CONTINUOUSLY. It does not. vo_landing is 14.97s of which
+   only 11.21s is speech — the rest is the pauses at its four dandas and its em-dash. Wall-clock
+   keeps running through those pauses while the token walk keeps advancing, so the marking creeps
+   ahead of the voice and finishes early; measured on that line the drift reaches ~2.4s by the end.
+   The SME reported it as "the highlighting does not sync with the VO".
+   The build now measures WHEN each clip is actually sounding (assets.audio_speech, written by
+   speech_map() in the recipe) and the walk is driven by SPEECH elapsed instead of wall-clock:
+   it advances while the voice sounds and HOLDS STILL through a pause. Within a run of speech the
+   uniform-rate assumption survives, and there it is a good one.
+   No map for this clip (unmeasurable container, or one unbroken run of speech) => `_speechFrac`
+   returns null and the original wall-clock walk runs unchanged. */
+function _speechSegsFor(src){
+  if(!src) return null;
+  var t = String(src), q = Math.max(t.lastIndexOf("/"), t.lastIndexOf("\\")),
+      base = t.slice(q + 1), dot = base.lastIndexOf(".");
+  var id = dot > 0 ? base.slice(0, dot) : base;
+  var sp = CARD && CARD.assets && CARD.assets.audio_speech;
+  return (sp && sp[id]) || null;
+}
+/* Fraction of the clip's TOTAL speech that has been heard by time `t` (seconds).
+   Time inside a pause returns the fraction at the pause's start, so the walk parks there. */
+function _speechFrac(segs, t){
+  if(!segs || !segs.length) return null;
+  var total = 0, i;
+  for(i = 0; i < segs.length; i++) total += (segs[i][1] - segs[i][0]);
+  if(total <= 0) return null;
+  var acc = 0;
+  for(i = 0; i < segs.length; i++){
+    var s = segs[i][0], e = segs[i][1];
+    if(t >= e){ acc += (e - s); continue; }
+    if(t > s)  acc += (t - s);
+    break;
+  }
+  return Math.min(1, acc / total);
+}
 /* Play `src` and call apply(i) as each token becomes the one being spoken.
    Anchored to the engine's own currentAudio, so stopAudio() and the generation guard still own the
    clip exactly as they do for every other beat. Falls back to a synthetic timeline when the clip is
@@ -1996,6 +2093,7 @@ function _tokenWeight(t){
 function karaokePlay(src, tokens, apply, onDone){
   const w = (tokens || []).map(_tokenWeight);
   const tot = w.reduce((a, b) => a + b, 0) || 1;
+  const segs = _speechSegsFor(src);       /* [S01r5f] when this clip is actually sounding */
   const FALLBACK_MS = 420 * tot;          /* ~one akshara-beat per 420ms when we cannot measure */
   const t0 = performance.now();
   let raf = 0, cur = -2, ended = false, finished = false;
@@ -2005,7 +2103,11 @@ function karaokePlay(src, tokens, apply, onDone){
     const a = currentAudio;
     const dur = (a && isFinite(a.duration) && a.duration > 0) ? a.duration * 1000 : FALLBACK_MS;
     const el  = (a && a.currentTime > 0) ? a.currentTime * 1000 : (performance.now() - t0);
-    const frac = Math.min(1, el / dur);
+    /* [S01r5f] Prefer SPEECH-elapsed over wall-clock: a pause must not advance the marking.
+       Only meaningful against the clip's own clock, so the synthetic fallback timeline (no audio,
+       autoplay refused, capture tool) keeps the plain proportional walk it always had. */
+    const sfrac = (segs && a && a.currentTime > 0) ? _speechFrac(segs, a.currentTime) : null;
+    const frac = (sfrac === null) ? Math.min(1, el / dur) : sfrac;
     let acc = 0, k = 0;
     for(; k < w.length - 1; k++){ acc += w[k] / tot; if(frac < acc) break; }
     if(k !== cur){ cur = k; apply(k); }
@@ -2508,7 +2610,7 @@ const SlideModules = {
 
         const line = (CARD.assets && CARD.assets.audio_text &&
                       CARD.assets.audio_text[(slide.audio || {}).prompt]) || "";
-        const toks = line ? line.split(/\s+/).filter(Boolean) : [];
+        const toks = line ? _voTokens(line) : [];
         /* resolve each cue to a token index, scanning forward so a repeated word maps in order */
         const cues = []; let from = 0;
         (rf.cues || []).forEach(c => {
@@ -2520,10 +2622,22 @@ const SlideModules = {
         const fired = new Set();
         const alive = ()=> CARD.slides[state.idx] === slide;
         let done = false;
+        /* [S01r5j] BEATS THAT WAIT FOR THE WHOLE LINE. The SME: "whenever an image comes ... it will
+           come AFTER the vo is done - 'च से चूहा' then the mouse image comes". The example word ENDS
+           the spoken line, so no token cue can express "after it": anchoring the picture to चूहा
+           would land it ON the word, not after. These run off the clip's end instead, staggered so
+           the picture, its label and the letter-mark read as three beats rather than one jump. */
+        const afterLine = (rf.after_line || []).slice();
+        const runAfter = (i)=>{
+          if(!alive() || i >= afterLine.length) return;
+          (act[afterLine[i]] || (()=>{}))();
+          setTimeout(()=> runAfter(i + 1), 520);
+        };
         const finish = ()=>{ if(done) return; done = true;
           /* anything the clip never reached still has to happen - a stalled clip must not leave the
              picture hidden forever (that is a blank teach slide, and it is invisible to every gate) */
           cues.forEach(c => { if(!fired.has(c)) { fired.add(c); (act[c.do] || (()=>{}))(); } });
+          runAfter(0);
           state.demoRunning = false; setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true); };
 
         const src = audioFor(slide, "prompt") || audioFor(slide, "word_name") || null;
@@ -5536,7 +5650,7 @@ const SlideModules = {
           let advanced = false, fb = null;
           const go = ()=>{ if(advanced || revDone) return; advanced = true; if(fb) clearTimeout(fb); next(); };
           play(src || null, go);
-          fb = setTimeout(go, 4500);
+          fb = setTimeout(go, _clipNetMs(src));
         };
         const revStep = (i)=>{
           if(revDone || CARD.slides[state.idx] !== slide) return;
@@ -5547,7 +5661,9 @@ const SlideModules = {
                   ()=> setTimeout(()=> revStep(i + 1), 180));
         };
         sayThen(audioFor(slide, "prompt") || null, ()=> revStep(0));
-        setTimeout(()=>{ if(CARD.slides[state.idx] === slide) enableAll(); }, 16000);
+        setTimeout(()=>{ if(CARD.slides[state.idx] === slide) enableAll(); },
+          _chainNetMs([(slide.audio && slide.audio.prompt) || null]
+            .concat(items.map(t => (t && t.audio) || null)), 16000));
       }
     }
   },
@@ -5711,7 +5827,7 @@ const SlideModules = {
                vo_t1_words is exactly its four words, so it keeps the original pacing untouched. */
             const line = (st.audio && CARD.assets && CARD.assets.audio_text &&
                           CARD.assets.audio_text[st.audio]) || "";
-            const toks = line ? line.split(/\s+/).filter(Boolean) : [];
+            const toks = line ? _voTokens(line) : [];
             if(toks.length > listed.length){
               /* Trailing danda / comma / dash differ between the chip and the script - the chip reads
                  "चबाए।" while the script runs it into "चबाए—इन" - so compare on the bare word. */
@@ -5918,10 +6034,14 @@ const SlideModules = {
           if(isPlaying && !state._balFb) return;              /* never talk over the prompt */
           if(state._balFb){ stopAudio(); state._balFb = false; }
           stopNudge(); busy = true;
-          const vb = setTimeout(()=>{ busy = false; }, 4000);      /* fail-safe: a superseded onEnd must not soft-lock */
+          const vb = setTimeout(()=>{ busy = false; }, 5600);      /* fail-safe: a superseded onEnd must not soft-lock (covers the hold below) */
           const name = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
-          const afterName = (cb)=>{ const go = ()=>{ clearTimeout(vb); busy = false; cb(); };
-            if(name) play(name, go); else go(); };
+          /* `hold` keeps the object's name off the speaker until the pop/ding/buzz has finished -
+             see _sfxHoldMs. `busy` is already true for the whole wait, so a second tap cannot land
+             in the gap. */
+          const afterName = (cb, hold)=>{ const go = ()=>{ clearTimeout(vb); busy = false; cb(); };
+            const start = ()=>{ if(!alive()) return; if(name) play(name, go); else go(); };
+            if(hold > 0) setTimeout(start, hold); else start(); };
 
           if(it.has === true){
             /* [S01r5i] IT HAS TO POP, NOT VANISH. It was sfxCorrect() - the generic ding every
@@ -5951,7 +6071,7 @@ const SlideModules = {
               } else {
                 play(audioFor(slide, "correct") || null, ()=>{});
               }
-            });
+            }, _sfxHoldMs("sfx_bal_pop", "sfx_correct"));
           } else {
             state.attempts++; sfxWrongSoft(); setSwMood("tryagain");
             b.classList.add("bal-shake");
@@ -5972,7 +6092,7 @@ const SlideModules = {
                          state.scaffoldLevel = Math.max(state.scaffoldLevel, 3); }
                 }
               });
-            });
+            }, _sfxHoldMs("sfx_wrong"));
           }
         };
       });
@@ -6416,6 +6536,10 @@ function boot(){
       if(hero.hide_title){ const t = $("sgTitle"); if(t) t.remove(); }
       const c0 = el.closest && el.closest(".sg-content");
       if(c0) c0.classList.add("has-hero", "lh-content");
+      /* [S01r5i] the CARD needs its own hook: .sg-btn is its child, not .sg-content's, so no
+         selector rooted at .sg-content can reach it and the stylesheet has to scope the button
+         nudge from here. */
+      { const k0 = el.closest && el.closest(".sg-card"); if(k0) k0.classList.add("lh-card"); }
 
       window._landingSentence = (src)=>{
         window._lhRan = true;
@@ -6443,7 +6567,7 @@ function boot(){
 
         const line = (CARD.assets && CARD.assets.audio_text &&
                       CARD.assets.audio_text[hero.sync_audio || "vo_landing"]) || "";
-        const toks = line ? line.split(/\s+/).filter(Boolean) : [];
+        const toks = line ? _voTokens(line) : [];
         /* exact token first, then substring - "काला" lives inside the token "सुनो—काला", while a
            bare "क" cue must land on the standalone word क and not on the क buried in "वाक्य" */
         const findTok = (needle, start)=>{
@@ -6467,7 +6591,12 @@ function boot(){
         const run = (c)=>{
           if(fired.has(c)) return; fired.add(c);
           if(c.do === "word"){ const w = ws[c.i];
-            if(w){ w.classList.remove("seq-hidden"); w.classList.add("lh-in"); } }
+            /* [S01r5h] the word arrives AND its own क lights, both on the token the voice is
+               speaking - "highlight the क letter with sync of the vo". The later whole-strip
+               `light` cue is left in place as a catch-all: by then every word is already lit, so
+               it is a no-op on a normal run and still finishes the line if a word cue was missed
+               (no audio, autoplay refused, a capture tool freezing the page). */
+            if(w){ w.classList.remove("seq-hidden"); w.classList.add("lh-in", "lh-lit"); } }
           else (acts[c.do] || (()=>{}))();
         };
         let done = false, stopK = null;

@@ -29,6 +29,12 @@ asset is delivered.
 Every clip was verified by forced-choice listening-back before installing; the method was first
 validated on already-approved clips (5/5).
 
+> **r5e, same day — 21 MORE clips were regenerated.** The 20 round-4 **re-records** in
+> `_assets_round4/regen_ids.txt` had never actually been re-recorded: `gen_tts` skips ids whose
+> file already exists, and the r5d run used no `--force`, so the lesson was still speaking its
+> round-3 voice-over on 20 lines. Plus `vo_p1_try`, a partial take. See **r5e** in `CHANGES.md`.
+> None of the 21 has been heard by a human yet.
+
 | Clip id | Spoken text | Status |
 |---|---|---|
 | `vo_line_l6` | नानी नई नाव लाई। | **generated** — the new page-14 sentence |
@@ -44,7 +50,7 @@ validated on already-approved clips (5/5).
 | `vo_w_patta` | पत्ता | **generated** |
 | `vo_landing` | (see `04_VO_RECORDING_LIST_current.md`) | already on disk — NOT re-recorded |
 | `vo_line_l2` / `vo_line_l3` | — | already on disk — NOT re-recorded |
-| SFX काँव-काँव crow call | — | **still outstanding** (page 1) |
+| SFX `sfx_kanv` काँव-काँव crow call | — | **delivered r4d** — SME recording, cut to one 0.57 s call; ships in `build/` and `dist/` |
 
 > **The bare-sound rule.** `vo_snd_*` read "<letter> से <word>" in the card only because the TTS
 > model hard-refuses an isolated akshara. Where a page reveals letter options one by one, the

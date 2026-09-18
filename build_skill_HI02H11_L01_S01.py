@@ -167,10 +167,17 @@ VO = {
 
 # Copied in by the kit / inherited — never recorded for this lesson.
 INHERITED_AUDIO = ["vo_pt_tutorial", "vo_pt_guided", "vo_pt_practice",
-                   "sfx_celebrate", "sfx_correct", "sfx_wrong", "sfx_tap", "sfx_pop"]
+                   "sfx_celebrate", "sfx_correct", "sfx_wrong", "sfx_tap", "sfx_pop",
+                   # [r5h] sfx_bal_pop ships and the balloon page plays it, but it was referenced
+                   # ONLY from engine code, so the card never declared it and it had no entry in
+                   # audio_dur - which the balloon page now needs to know how long to hold a word
+                   # back behind its feedback sound.
+                   "sfx_bal_pop"]
 # [r4 · row 13] "A small काँव-काँव sound effect can play when the crow appears, if suitable."
-# Needs a real recording; until one lands the landing simply stays silent at that beat (playSfx
-# no-ops on a missing file), which is the right failure — never a synthesized bird.
+# DELIVERED in r4d: an SME recording, trimmed here to one call. This list means "not scripted
+# in VO" — these are sounds, not lines — not "still outstanding". sfx_kanv stays in it because a
+# sound effect must never be routed to the TTS map; the untrimmed source is kept in
+# _assets_round4/ so the cut can be redone without asking the SME again.
 SFX_TO_RECORD = ["sfx_kanv"]
 
 # ══════════════════════════════════════════════════════════════════════════════════════════
@@ -247,10 +254,14 @@ def meet_letter(sid, letter, word, img, prompt_clip, word_clip, sound_clip, cue_
                 # without a forced aligner.
                 "cues": [
                     {"at": "सुनी", "do": "letter"},   # "हमने <letter> की आवाज़ सुनी।"
-                    {"at": "लिखी", "do": "pic"},      # "...अक्षर से लिखी जाती है।"
-                    {"at": "जैसे", "do": "label"},    # "जैसे—<letter> से <word>।"
-                    {"at": cue_word, "do": "mark"},   # the example word itself
-                ]
+                ],
+                # [r5j] THE PICTURE WAITS FOR THE LINE TO FINISH. The SME: "whenever an image comes
+                # ... it will come AFTER the vo is done - 'च से चूहा' then the mouse image comes".
+                # These three used to be token cues (pic on "लिखी", label on "जैसे", mark on the
+                # example word), which put the picture on screen a whole sentence BEFORE the word
+                # naming it was spoken. The example word ends the line, so "after it" cannot be
+                # written as a token cue at all - the engine runs these off the clip's end.
+                "after_line": ["pic", "label", "mark"],
             },
         },
     }
@@ -622,6 +633,23 @@ def build_card():
         "audio_ext": "ogg",
         "img_ext": "png",
     }
+    # WHEN the voice is actually sounding, per clip - see the SPEECH SEGMENTS note above. Only the
+    # clips that pause are listed; for the rest the engine's plain wall-clock walk is already right.
+    _spm = speech_map(OUT, set(card["assets"]["audio"]))
+    if _spm:
+        card["assets"]["audio_speech"] = _spm
+    # HOW LONG each clip runs. The engine's one-by-one option reveal advances on a per-clip safety
+    # net so a missing file can never stall the page, and that net was a flat 4.5s - shorter than
+    # this lesson's two 5.05s question prompts, which were therefore CUT and had the next clip
+    # started over them. With the real length in hand the net can be sized to the clip.
+    _dur = {}
+    for _a in sorted(card["assets"]["audio"]):
+        _p = os.path.join(OUT, "assets", "Audio", "%s.ogg" % _a)
+        _s = _clip_seconds(_p) if os.path.exists(_p) else None
+        if _s:
+            _dur[_a] = round(_s, 2)
+    if _dur:
+        card["assets"]["audio_dur"] = _dur
 
     # Fail loudly rather than shipping a silent beat where a line was meant to be: every clip a
     # slide references must either have a script here or be one of the inherited/sfx assets.
@@ -631,12 +659,308 @@ def build_card():
     return card
 
 
+# ══════════════════════════════════════════════════════════════════════════════════════════
+#  SPEECH SEGMENTS — what the karaoke highlighting needs in order to actually stay in step.
+#
+#  karaokePlay spreads a line's tokens across the clip's duration in proportion to akshara
+#  weight. That silently assumes the voice speaks CONTINUOUSLY, and it does not: vo_landing is
+#  14.97s of which only 11.21s is speech. The other 3.76s is pauses at its four dandas and its
+#  em-dash. Wall-clock keeps running through a pause while the token walk keeps advancing, so the
+#  highlight drifts AHEAD of the voice — by up to ~2.4s late in that line, which is the "does not
+#  sync with the VO" the SME reported.
+#
+#  There is no forced aligner in this toolchain, so we cannot know which word is spoken when. But
+#  we can measure exactly WHEN THE VOICE IS SOUNDING, which removes the whole pause error: the
+#  engine advances the walk only while speech is present and holds it still through a pause.
+#  Within a run of speech the uniform-rate assumption survives, and it is a far better one.
+#
+#  Measured here rather than in the browser because the browser cannot see inside the clip, and
+#  measured in pure Python because ffmpeg is not on the build path.
+# ══════════════════════════════════════════════════════════════════════════════════════════
+SPEECH_NOISE_DB = -38.0      # same floor ffmpeg's silencedetect uses in this bundle's tooling
+SPEECH_MIN_SIL  = 0.10       # a gap shorter than this is articulation, not a pause
+SPEECH_FRAME    = 0.010
+
+
+def _wav_mono16(path):
+    """(samples, rate) for a 16-bit PCM WAV, else (None, 0).
+
+    Only build-stage WAV is read: gen_tts writes RIFF under an .ogg name and the dist step is what
+    re-encodes to Opus, so this sees the uncompressed original. A clip we cannot decode simply
+    yields no segments and the engine falls back to its old wall-clock timing.
+    """
+    import array
+    d = io.open(path, "rb").read()
+    if d[:4] != b"RIFF":
+        return None, 0
+    i, rate, bits, ch = 12, 0, 16, 1
+    while i + 8 <= len(d):
+        cid = d[i:i + 4]
+        n = int.from_bytes(d[i + 4:i + 8], "little")
+        if cid == b"fmt ":
+            ch   = int.from_bytes(d[i + 10:i + 12], "little")
+            rate = int.from_bytes(d[i + 12:i + 16], "little")
+            bits = int.from_bytes(d[i + 22:i + 24], "little")
+        elif cid == b"data":
+            if bits != 16 or not rate:
+                return None, 0
+            a = array.array("h")
+            a.frombytes(d[i + 8:i + 8 + (n - (n % 2))])
+            if ch > 1:
+                a = array.array("h", a[::ch])       # take one channel, not a mixdown
+            return a, rate
+        i += 8 + n + (n & 1)
+    return None, 0
+
+
+def _speech_segments(path):
+    """[[start, end], ...] seconds where the clip is sounding, plus its duration."""
+    import math
+    a, rate = _wav_mono16(path)
+    if not a or not rate:
+        return None, 0.0
+    fl  = max(1, int(rate * SPEECH_FRAME))
+    thr = (10.0 ** (SPEECH_NOISE_DB / 20.0)) * 32768.0
+    try:                                   # audioop is C-speed; gone in 3.13, so never required
+        import warnings
+        with warnings.catch_warnings():    # it is deprecated, and the fallback below covers its loss
+            warnings.simplefilter("ignore", DeprecationWarning)
+            import audioop
+        raw = a.tobytes()
+        loud = [audioop.rms(raw[s * 2:(s + fl) * 2], 2) >= thr
+                for s in range(0, len(a) - fl + 1, fl)]
+    except Exception:
+        loud = []
+        for s in range(0, len(a) - fl + 1, fl):
+            acc = 0
+            for v in a[s:s + fl]:
+                acc += v * v
+            loud.append(math.sqrt(acc / fl) >= thr)
+    dur  = len(a) / float(rate)
+    need = int(round(SPEECH_MIN_SIL / SPEECH_FRAME))
+    segs, i, n = [], 0, len(loud)
+    while i < n:
+        if not loud[i]:
+            i += 1
+            continue
+        j = i
+        while j < n:
+            if loud[j]:
+                j += 1
+                continue
+            k = j
+            while k < n and not loud[k]:
+                k += 1
+            if (k - j) < need and k < n:   # too short to be a pause - keep walking
+                j = k
+                continue
+            break
+        segs.append([round(i * SPEECH_FRAME, 3), round(min(dur, j * SPEECH_FRAME), 3)])
+        i = j
+    return (segs or None), round(dur, 3)
+
+
+def speech_map(out_dir, audio_ids):
+    """{id: [[start, end], ...]} for every clip we can measure — the card's audio_speech block.
+
+    Clips whose whole body is one unbroken run of speech are LEFT OUT: for those the engine's
+    existing wall-clock timing is already correct, and carrying them would grow the card for
+    nothing. Only clips that actually pause need describing.
+    """
+    out = {}
+    for aid in sorted(audio_ids):
+        p = os.path.join(out_dir, "assets", "Audio", "%s.ogg" % aid)
+        if not os.path.exists(p):
+            continue
+        segs, dur = _speech_segments(p)
+        if not segs:
+            continue
+        speech = sum(e - s for s, e in segs)
+        # one segment covering essentially the whole clip tells the engine nothing new
+        if len(segs) == 1 and speech >= 0.95 * dur:
+            continue
+        out[aid] = segs
+    return out
+
+
+# ══════════════════════════════════════════════════════════════════════════════════════════
+#  BARE-SOUND GUARD — the one regression this card cannot catch by reading itself.
+#
+#  vo_snd_ch/l/r are BARE aksharas on disk (0.38-0.41s), but their VO text above still reads the
+#  carrier phrase "<letter> से <word>", because that text doubles as the human VO team's recording
+#  script. So the card DESCRIBES a phrase while the disk HOLDS a letter, on purpose.
+#
+#  That gap is a trap: `gen_tts --force` re-synthesises every clip FROM assets.audio_text, which
+#  turns these three back into 1.5-2.2s phrases and silently undoes the SME's page-9 ruling —
+#  "play only these च, ल, र sound not more than that". Nothing downstream would notice: the ids
+#  still resolve, the clips still play, and the receipt still reports every line as having real
+#  audio, because it counts files rather than listening to them.
+#
+#  So measure the clips instead of trusting the text. A bare akshara runs ~0.4s and a carrier
+#  phrase ~1.5s or more, so the two are nearly four times apart and 0.8s sits in open space
+#  between them — wide enough that a slower take or a different voice will not trip it.
+# ══════════════════════════════════════════════════════════════════════════════════════════
+BARE_SOUND_IDS = ("vo_snd_ch", "vo_snd_l", "vo_snd_r", "vo_ltr_m", "vo_ltr_n")
+BARE_SOUND_MAX_SEC = 0.8
+
+
+def _clip_seconds(path):
+    """Length of a build-stage clip, stdlib only — ffprobe is not on the build path.
+
+    Both containers turn up here: gen_tts writes RIFF/WAV under an .ogg name and only the dist
+    step re-encodes to real Opus, so build/ is mostly WAV. An unrecognised container returns
+    None, and the caller treats that as "cannot tell" rather than guessing a number.
+    """
+    with io.open(path, "rb") as f:
+        data = f.read()
+    if data[:4] == b"RIFF":
+        # Walk the chunks rather than assuming a 44-byte header, so a WAV carrying a LIST or
+        # fact chunk reports its real length instead of a slightly wrong one.
+        i, byte_rate = 12, 0
+        while i + 8 <= len(data):
+            cid = data[i:i + 4]
+            n = int.from_bytes(data[i + 4:i + 8], "little")
+            if cid == b"fmt ":
+                byte_rate = int.from_bytes(data[i + 16:i + 20], "little")
+            elif cid == b"data":
+                return n / byte_rate if byte_rate else None
+            i += 8 + n + (n & 1)
+        return None
+    if data[:4] == b"OggS":
+        # Opus counts its granule at 48 kHz whatever the input rate was; the last page carries
+        # the running total, and pre-skip is decoder priming that is never heard.
+        h = data.find(b"OpusHead")
+        skip = int.from_bytes(data[h + 10:h + 12], "little") if h >= 0 else 0
+        last = data.rfind(b"OggS")
+        if last < 0 or last + 14 > len(data):
+            return None
+        gran = int.from_bytes(data[last + 6:last + 14], "little", signed=True)
+        return max(0.0, (gran - skip) / 48000.0)
+    return None
+
+
+def check_bare_sounds(out_dir):
+    """Refuse to finish a build in which a bare letter sound has grown back into its phrase."""
+    regressed, unreadable = [], []
+    for a in BARE_SOUND_IDS:
+        p = os.path.join(out_dir, "assets", "Audio", "%s.ogg" % a)
+        if not os.path.exists(p):
+            continue                 # a missing clip is the receipt's VO-coverage row to report
+        sec = _clip_seconds(p)
+        if sec is None:
+            unreadable.append(a)
+        elif sec > BARE_SOUND_MAX_SEC:
+            regressed.append("%s = %.2fs" % (a, sec))
+    if regressed:
+        raise AssertionError("\n".join([
+            "BARE-SOUND REGRESSION — %s." % ", ".join(regressed),
+            '        These ids must hold the bare akshara, not the full "<letter> से <word>"',
+            "        carrier. The usual cause is `gen_tts --force`, which rebuilds them from",
+            "        assets.audio_text — still the carrier phrase, because it doubles as the",
+            "        human VO team's recording script. Restore the clips from git and re-run",
+            "        gen_tts WITHOUT --force. The ruling being undone is the SME's on page 9;",
+            "        see CHANGES.md.",
+        ]))
+    if unreadable:
+        print("  !!  bare-sound guard could not read: %s" % ", ".join(unreadable))
+    else:
+        print("  ok  bare letter sounds still bare (%d clips under %.1fs)"
+              % (len(BARE_SOUND_IDS), BARE_SOUND_MAX_SEC))
+
+def check_clip_lengths(out_dir, card):
+    """Flag any clip too short to CONTAIN the line the card says it speaks.
+
+    This is the companion to the bare-sound guard, and it exists because two real defects reached
+    a reviewer's ears in r5d:
+
+      * vo_landing still held the ROUND-3 line. The r4 re-record list named 20 ids whose text had
+        changed, but gen_tts skips an id whose file already exists, so a run WITHOUT --force
+        silently left every one of them on the old take.
+      * vo_p1_try held a PARTIAL take — 1.45s of a line needing ~4s, the model having obeyed the
+        trailing imperative and spoken only part. Its near-twin vo_p7_try runs 3.97s.
+
+    Neither was visible to the receipt, whose "every line has real audio" row counts FILES. A file
+    was present in both cases; it just said the wrong thing.
+
+    The floor is gen_tts's own min_pcm_bytes rule (~14 Devanagari chars/sec, required at 55% of
+    that). It is deliberately generous — it catches a clip that cannot possibly hold its line, not
+    one that merely sounds rushed — so a failure here is a real defect, never a judgement call.
+    """
+    text = (card.get("assets") or {}).get("audio_text") or {}
+    short, missing = [], []
+    for aid, line in sorted(text.items()):
+        if aid in BARE_SOUND_IDS:
+            continue            # their text is a placeholder by design - the other guard owns them
+        n = len((line or "").strip())
+        if not n:
+            continue
+        p = os.path.join(out_dir, "assets", "Audio", "%s.ogg" % aid)
+        if not os.path.exists(p):
+            missing.append(aid)
+            continue
+        sec = _clip_seconds(p)
+        if sec is None:
+            continue            # unreadable container - not something to fail a build over
+        floor = max(0.3, 0.55 * (n / 14.0))
+        if sec < floor:
+            short.append("%s = %.2fs (needs >=%.2fs for %d chars)" % (aid, sec, floor, n))
+    if short:
+        raise AssertionError("\n".join([
+            "CLIP TOO SHORT FOR ITS LINE — %d clip(s):" % len(short)]
+            + ["          " + s for s in short]
+            + ["        Either the clip is a PARTIAL take, or the card's text was rewritten and the",
+               "        clip was never re-recorded (gen_tts skips existing files unless you pass",
+               "        --force). Re-run gen_tts --force --only <id> for each, then listen to it."]))
+    if missing:
+        print("  !!  no clip on disk for: %s" % ", ".join(missing))
+    print("  ok  every authored line has a clip long enough to contain it (%d checked)"
+          % (len([a for a in text if a not in BARE_SOUND_IDS and (text[a] or '').strip()]) - len(missing)))
+
+def check_speech_map(out_dir, card):
+    """The card's speech map must describe the audio sitting next to it.
+
+    This catches a DELIVERY that has drifted from the build it claims to be. It was written after
+    exactly that: 40 clips in the handover's build/ turned out to be different takes from the
+    factory's, so the card shipped a speech map measured against audio the player would never hear,
+    and the marking would have been keyed to pauses that were not there. Segments running past the
+    end of the clip is the cheap, unambiguous symptom.
+    """
+    segs_by_id = (card.get("assets") or {}).get("audio_speech") or {}
+    wrong = []
+    for aid, segs in sorted(segs_by_id.items()):
+        p = os.path.join(out_dir, "assets", "Audio", "%s.ogg" % aid)
+        if not os.path.exists(p):
+            wrong.append("%s: described but not present" % aid)
+            continue
+        dur = _clip_seconds(p)
+        if dur is None:
+            continue
+        if any(e <= s for s, e in segs):
+            wrong.append("%s: a segment does not advance" % aid)
+        elif any(segs[i][0] < segs[i - 1][1] for i in range(1, len(segs))):
+            wrong.append("%s: segments overlap" % aid)
+        elif segs[-1][1] > dur + 0.05:
+            wrong.append("%s: speech map ends at %.2fs but the clip is %.2fs"
+                         % (aid, segs[-1][1], dur))
+    if wrong:
+        raise AssertionError("\n".join([
+            "SPEECH MAP DOES NOT MATCH THE AUDIO — %d clip(s):" % len(wrong)]
+            + ["          " + w for w in wrong]
+            + ["        The card was built against different audio than the bundle now holds. Copy the",
+               "        intended clips in and rebuild, so assets.audio_speech is measured from what",
+               "        actually ships - the karaoke marking is timed off these numbers."]))
+    print("  ok  speech map matches the audio on disk (%d clips described)" % len(segs_by_id))
+
+
 def main():
     # ENGINE GUARD — FLN guards through unified_build (engine_guard is the maths-side module and is
     # not importable here). Under the isolation shim this resolves to THIS GAME's engine_local copy.
     unified_build.require_current_engine()
     card = build_card()
     unified_build.build_bundle(card, OUT, html_name="%s.html" % CODE)
+    check_bare_sounds(OUT)
+    check_clip_lengths(OUT, card)
+    check_speech_map(OUT, card)
     print("  OK  %s — %d slides  %s" % (CODE, len(card["slides"]), card["phase_distribution"]))
     print("      audio ids: %d   images: %d"
           % (len(card["assets"]["audio"]), len(card["assets"]["image"])))

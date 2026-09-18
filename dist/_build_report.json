@@ -1,0 +1,163 @@
+{
+ "schema": "swiftpal-build-report/1",
+ "generated_at": "2026-09-17T13:04:13",
+ "skill_code": "HI02H11_L01_S01",
+ "engine_expected": "2026.08.04b-r4-unified",
+ "engine_file_sha256": {
+  "HI02H11_L01_S01.html": "a7f50b58258aa62da284e98e1da33b87f2cab234cdbd118c27e8b02f58007d71"
+ },
+ "receipt": {
+  "counts": "18 pass / 1 FAIL / 5 warn",
+  "delivery_mode": false,
+  "rows": [
+   {
+    "ok": true,
+    "label": "Playable HTML present",
+    "detail": "HI02H11_L01_S01.html"
+   },
+   {
+    "ok": true,
+    "label": "Card data loads",
+    "detail": "from card.json"
+   },
+   {
+    "ok": true,
+    "label": "Slides present",
+    "detail": "14 slides"
+   },
+   {
+    "ok": true,
+    "label": "phase_distribution == #slides",
+    "detail": "14 vs 14"
+   },
+   {
+    "ok": null,
+    "label": "Mechanic variety: >=2 gesture families + >=1 produce, pick not dominant",
+    "detail": "PICK dominates (9/10 test slides) — MCQ-in-costume ({'pick': 9, 'sort': 1}). Swap some for produce (make/build/trace/sort)."
+   },
+   {
+    "ok": true,
+    "label": "Speak-word: every word option has a clip (opt.audio / phonemes)",
+    "detail": "OK"
+   },
+   {
+    "ok": true,
+    "label": "HTML wires engine + card",
+    "detail": "cardData + engine (split or inlined)"
+   },
+   {
+    "ok": true,
+    "label": "Engine: ISOLATED on purpose (not stale)",
+    "detail": "private engine_local/ copy, isolated from 2026.08.04b-r4-unified, ENGINE DIFF NOT RUN (RuntimeError: shared engine not locatable from dist) — no longer receives shared-engine changes"
+   },
+   {
+    "ok": true,
+    "label": "Engine CONTENT in sync (verbatim, not just the stamp)",
+    "detail": "OK — shipped engine embeds the canonical app.js verbatim"
+   },
+   {
+    "ok": true,
+    "label": "style.css CONTENT in sync (verbatim, not just app.js)",
+    "detail": "OK — shipped CSS embeds the canonical style.css verbatim"
+   },
+   {
+    "ok": true,
+    "label": "CSS token: --bg:#F2F7FA (the ONE stage background, 20a ruling)",
+    "detail": "OK"
+   },
+   {
+    "ok": true,
+    "label": "CSS: toybox theme keeps background:var(--bg) (no re-tint)",
+    "detail": "OK"
+   },
+   {
+    "ok": true,
+    "label": "Voice-over: all 67 lines have real audio",
+    "detail": "OK"
+   },
+   {
+    "ok": true,
+    "label": "Art: all 18 images generated (not emoji-fallback)",
+    "detail": "OK"
+   },
+   {
+    "ok": true,
+    "label": "No orphaned audio (every shipped clip is referenced)",
+    "detail": "OK"
+   },
+   {
+    "ok": true,
+    "label": "Numerals: display fields are Arabic digits (policy)",
+    "detail": "OK"
+   },
+   {
+    "ok": false,
+    "label": "Engine UI assets: all 11 referenced files in assets/UI",
+    "detail": "MISSING (Swiftie/start art vanishes silently): ['start_mascot.png', 'start_btn.png']"
+   },
+   {
+    "ok": null,
+    "label": "SME review PPT generated",
+    "detail": "NO .pptx — review deck step SKIPPED"
+   },
+   {
+    "ok": null,
+    "label": "Page-capture shots present (visual gate ran)",
+    "detail": "0 shots (expected ~15)"
+   },
+   {
+    "ok": true,
+    "label": "Voice roles: every slide SPEAKS its prompt (incl. celebration)",
+    "detail": "OK"
+   },
+   {
+    "ok": null,
+    "label": "Voice roles: question slides carry a spoken HINT",
+    "detail": "silent hint button: ['T3', 'T5', 'T1', 'G3', 'P4']"
+   },
+   {
+    "ok": null,
+    "label": "Voice roles: question slides carry a spoken REVEAL",
+    "detail": "silent reveal: ['T3', 'T5', 'T1']"
+   },
+   {
+    "ok": true,
+    "label": "Voice roles: landing greeting on disk",
+    "detail": "OK"
+   },
+   {
+    "ok": true,
+    "label": "Voice roles: phase-gate lines on disk",
+    "detail": "OK"
+   }
+  ]
+ },
+ "content": {
+  "slides": 14,
+  "mechanics": {
+   "SENTENCE_SOUND": 5,
+   "MEET_LETTER": 3,
+   "TAP_ALL_WITH_SOUND": 3,
+   "SORT_VACHAN": 1,
+   "TAP_BALLOON_SOUND": 1,
+   "CELEBRATION": 1
+  },
+  "phase_distribution": {
+   "tutorial": 6,
+   "guided": 3,
+   "practice": 5
+  }
+ },
+ "assets": {
+  "images": 18,
+  "audio_files": 77,
+  "audio_lines_authored": 67,
+  "audio_silent_pending": [],
+  "bytes_total": 9839462
+ },
+ "environment": {
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.10",
+  "gemini_key_present": false
+ }
+}

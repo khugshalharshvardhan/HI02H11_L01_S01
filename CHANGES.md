@@ -903,13 +903,600 @@ option was changed. The whole card diff against the last commit is 6 lines:
 
 1. **A human has not heard any of these 11 clips.** Forced-choice identification proves the right
    word was said; it does not judge warmth, pace or child-appropriateness.
-2. **The काँव-काँव crow SFX for page 1** is still not delivered.
-3. **Regeneration hazard.** `vo_snd_ch/l/r` hold a *bare* sound while their `audio_text` still reads
-   the carrier phrase (the placeholder convention). Anyone running `gen_tts --force` would
-   regenerate them as full phrases and silently undo the page-9 ruling. The text was left as-is
-   because it is also the human VO team's recording script.
-4. **Page 1 vs pages 3 and 5 are inconsistent.** Page 1's teach step plays the bare `vo_snd_ch`
+2. **Page 1 vs pages 3 and 5 are inconsistent.** Page 1's teach step plays the bare `vo_snd_ch`
    (0.38 s) while pages 3 and 5 play full carrier phrases (`vo_snd_m` 2.17 s, `vo_snd_p` 1.57 s) —
    a side effect of the page-9 trim, since page 1 shares that id. **Not changed here**: the SME
    asked for bare sounds on the letter-reveal pages, not on the teach pages, and changing what
    page 1 says is their call, not mine.
+
+## Closed since the VO round
+
+### The crow SFX was already delivered — that item was stale
+
+This list carried *"the काँव-काँव crow SFX for page 1 is still not delivered"* from an earlier
+round, and it contradicted **row 13** and the asset table in this same document. The recording
+landed in **r4d**: an SME-supplied 10.8 s source, cut to the one clean isolated call at
+1.34–1.90 s. Re-verified on disk — `sfx_kanv.ogg` is 0.57 s, and the cut matches a burst the
+source really has at 1.366–1.793 s. It ships in `build/` and `dist/` and is wired to the landing
+hero (`picture_sfx`). Nothing to do; the line is removed and the build script's stale
+`SFX_TO_RECORD` comment ("until one lands the landing simply stays silent") is corrected.
+
+### The regeneration hazard is now caught by the build
+
+The hazard was real and is unchanged in nature: `vo_snd_ch/l/r` hold a *bare* akshara
+(0.38–0.41 s) while their `audio_text` still reads the carrier phrase, because that text doubles
+as the human VO team's recording script. `gen_tts --force` would rebuild them from that text as
+1.4–2.2 s phrases and silently undo the SME's page-9 ruling.
+
+Documenting it did not prevent it, because nothing downstream can see it: the ids still resolve,
+the clips still play, and the receipt's *"all 67 lines have real audio"* row counts files rather
+than listening to them. So the build now **measures** the clips instead of trusting the text —
+`check_bare_sounds()` in `build_skill_HI02H11_L01_S01.py`, run straight after `build_bundle`:
+
+| | |
+|---|---|
+| Guarded ids | `vo_snd_ch`, `vo_snd_l`, `vo_snd_r`, `vo_ltr_m`, `vo_ltr_n` |
+| Threshold | **0.8 s** — bare aksharas run 0.38–0.43 s, carriers 1.41–2.17 s, so it sits in open space between them |
+| On regression | the build **fails** with the offending ids, their lengths, and the fix (restore from git, re-run `gen_tts` *without* `--force`) |
+
+The length reader is stdlib-only — ffprobe is not on the build path — and handles both containers
+that occur here, since `gen_tts` writes **RIFF/WAV under an `.ogg` name** and only the dist step
+re-encodes to real Opus. It was checked against ffprobe across all **123** clips in `build/`:
+worst disagreement **33 ms**, and the only files it declines to read are the three `.mp3`s, where
+it returns "cannot tell" rather than a wrong number. Verified to pass on `build/` and `dist/` as
+they stand, and to fail on a simulated `--force` regression.
+
+> **Not a defect, but worth knowing:** `build/assets/Audio` is 16 MB because 106 of its 123 clips
+> are uncompressed WAV carrying an `.ogg` extension. `dist/` re-encodes all 77 it ships to genuine
+> Ogg/Opus and comes to 0.85 MB, so this never reaches a child's device. Browsers sniff content
+> rather than trusting the extension, so `build/` plays correctly too.
+
+---
+
+# r5e — the lesson was still speaking its round-3 voice-over
+
+**Reported by ear**, 2026-09-17: *"it still playing the same old VOs"*. Correct, on 20 of 67 lines.
+
+## What happened
+
+Round 4 rewrote 20 VO lines. `_assets_round4/regen_ids.txt` lists them under
+*"RE-RECORD (20) — the file on disk is the OLD line and will be overwritten"*, with the full
+old→new text for each.
+
+They were never overwritten. `gen_tts.py` skips any id whose file already exists —
+
+```python
+if os.path.exists(out) and not a.force: print(f"[{aid}] skip (exists)")
+```
+
+— which is the right default for **resuming a rate-limited run**, but wrong for a **re-record**,
+because a re-record already has a file: the old take. The r5d run was made deliberately *without*
+`--force` to protect the 56 approved clips, and in doing so it skipped all 20 re-records. The
+runbook's own command was missing `--force` too, so the error was waiting to be made.
+
+**Nothing caught it.** The receipt's *"all 67 lines have real audio — OK"* row counts FILES. A file
+was present for every id; it simply said the round-3 line. The round then reported the voice-over
+FAIL as cleared, which was true of the 9 genuinely missing clips and false of these 20.
+
+### How it was confirmed before anything was regenerated
+
+`vo_landing` settles it arithmetically. The card's text is **176 characters / 33 words**; the file
+on disk was **6.41 s**. At the ~14 Devanagari chars/sec these voices actually run, that line needs
+**≈12.6 s** — fitting it into 6.41 s would require 5.1 words/sec, about double a narration pace for
+a five-year-old. The old 18-word line fits 6.41 s comfortably. Measured against the generator's own
+`min_pcm_bytes` floor, `vo_landing` was **below** the minimum length that could contain its line.
+
+Regenerated, it is **14.97 s** — the first time the file has ever held the sentence the card
+claims. Across all 20, duration moved in the direction the text changed in every case where the two
+texts differ in length.
+
+## Fixed
+
+| | |
+|---|---|
+| Re-recorded | the **20** ids in `regen_ids.txt`, `gen_tts --force --only <id>` per id, voice **Kore**, `.ogg` |
+| Also fixed | **`vo_p1_try`** — a PARTIAL take (see below) |
+| Rebuilt | card + HTML **byte-identical** (`a7f50b58…`) — this round changed audio bytes only |
+| `dist/` | 20+1 clips re-encoded, Opus **32k mono** (settings confirmed byte-exact against three untouched clips) → **9.92 MB**, under the 10 MB cap |
+
+### `vo_p1_try` was speaking a third of its line
+
+Found while sweeping *every* clip, not just the 20. It held **1.45 s** for a 58-character line
+needing **≥2.28 s**; its near-twin `vo_p7_try` (53 chars, same shape) runs 3.97 s. This is the
+**partial take** `min_pcm_bytes` was written to catch — the model obeys a trailing imperative
+("एक बार फिर सुनो।") and speaks only part of the sentence. It predates that check, so nothing ever
+measured it. Regenerated: **4.33 s**.
+
+## The build now measures clips instead of counting them
+
+`check_clip_lengths()` runs after `build_bundle` and fails the build if any clip is too short to
+contain the line the card says it speaks. The floor is gen_tts's own rule (~14 chars/sec, required
+at 55%) — deliberately generous, so a failure is a real defect and never a judgement call.
+
+Run against the tree **as the reviewer heard it** (git `HEAD`), it fails with exactly the two
+defects this round fixed:
+
+```
+CLIP TOO SHORT FOR ITS LINE — 2 clip(s):
+          vo_landing = 6.41s (needs >=6.91s for 176 chars)
+          vo_p1_try  = 1.45s (needs >=2.28s for 58 chars)
+```
+
+It cannot catch a stale clip whose replacement text happens to be a similar length — no automated
+check can. It does catch every case where the text grew, and every partial take.
+
+`_assets_round4/GENERATE_ASSETS.md` step 2 is corrected: it was missing `--force`, **and** it piped
+a comma list into `--only`, which takes a single id (`ids = [a.only]`) and would have exited with
+*"audio_id(s) not in card audio_text"*.
+
+## Still needs a human
+
+1. **Nobody has heard these 21 clips.** Length proves a clip is long enough to hold its line; it
+   does not prove the words are right, nor judge warmth or pace.
+2. **Two came back through the refuser ladder** and may differ in timbre — flag for the ear-check:
+   **`vo_g1_hint`** (recovered via `danda`) and **`vo_p1_try`** (recovered via `wrapped(Kore)`).
+3. **`vo_g5_try`** is not fixed and not certainly broken: 2.05 s against a 3.21 s expectation, so it
+   clears the floor but sits low. It was left alone rather than regenerated, because re-rolling a
+   clip that may be fine is itself an unrequested change. Worth an ear.
+4. **`dist/` has ~80 KB of headroom** under the 10 MB cap (9.92 MB, up from 9.84 MB — the new
+   `vo_landing` is 8.5 s longer). The next audio addition may need a lower Opus bitrate.
+
+---
+
+# r5f — the rest of the stale voice-over, and the highlighting that ran ahead of it
+
+Three reports, all confirmed: *"there are still many places where you used the old VOs"*, *"the VO of
+चाँद does not feel right"*, and *"the highlighting of letter and word does not sync with the VOs"*.
+
+## 1 · The delivery and the factory held DIFFERENT audio
+
+`build/` in this handover and `KG/HI02H11_L01_S01/` in the factory had **40 clips that were not the
+same file**. r5e had verified that `card.json`, the recipe and `app.js` matched across the two, and
+stopped there — it never compared the audio. So r5e regenerated into the factory, and the player
+opened `build/`.
+
+All 40 of `build/`'s versions **match git `HEAD`**; none of the factory's do. The factory's were
+written 2026-09-17 13:15, after r5d's commit at 13:06, by a run nobody recorded — and one of them
+was **broken**: `vo_snd_m` said *"मासी मछली"* instead of *"म से मछली"*. Two others (`vo_ltr_m`,
+`vo_ltr_n`) no longer matched the lengths CHANGES.md records for them.
+
+The reviewed, committed audio in `build/` was therefore treated as authoritative and copied back
+over the factory. All 120 clips are now identical in `build/`, `dist/` and both factory trees.
+
+## 2 · Four more clips were missing words — the model was obeying them
+
+Found by transcribing every clip back and comparing with the line the card says it speaks. Four
+came back short, and re-running `gen_tts` did **not** fix them, which is what identified the cause:
+these are not stale takes, they are **partial** ones. The model treats an imperative as an
+instruction and declines to voice it — the failure `min_pcm_bytes` was written for.
+
+| Clip | Was heard as | Missing |
+|---|---|---|
+| `vo_g5_try` | "यह टोकरी सही नहीं है।" | the whole second sentence, "शब्द की आवाज़ फिर सुनो।" |
+| `vo_g2_reveal` | "इसमें प की आवाज़ है।" | the opening "सुनो —" |
+| `vo_p1_reveal` | "इसमें म की आवाज़ है।" | the opening "सुनो —" |
+| `vo_p7_reveal` | "इसमें च की आवाज़ है।" | the opening "सुनो —" |
+
+They slipped past every check because a partial take is **padded with silence**: `vo_g5_try` was
+3.49s long with only 1.54s of speech. Duration looked right; the words were not there.
+
+So they were re-synthesised judging each take on **speech time measured with silence detection**,
+not on file size, climbing the refuser ladder until a take actually contained the line.
+`vo_g2_reveal` needed `wrapped-lesson(Kore)` and `vo_p7_reveal` needed `wrapped(Kore)`; the plain
+and danda rungs both returned the truncated version. All four now transcribe complete.
+
+## 3 · चाँद, and the clips that only looked wrong
+
+`vo_w_chand` was re-recorded as asked (it came back through the `wrapped-lesson(Kore)` rung — **ear-check it**).
+
+The transcription sweep also flagged nine single-word clips, and they turned out to be **fine**:
+open transcription is unreliable for an isolated Hindi word, which this bundle already knew. Under
+**forced choice** — the method r5d validated at 5/5 on approved controls — 16 of 17 identified
+correctly on two independent shuffles. The one holdout, `vo_w_aam`, identified as आम **3/3** once
+the options included near-neighbours (आ, नाम, काम, शाम); against the lesson's own word list, which
+contains nothing that rhymes with it, the model had simply been guessing. No defect.
+
+`vo_snd_ch/l/r` and `vo_ltr_m/n` still read as mismatches and still **should** — their text is the
+carrier-phrase placeholder and their audio is the bare akshara, by the SME's page-9 ruling.
+
+## 4 · Why the highlighting ran ahead of the voice
+
+Two independent causes, both fixed in `engine_local/app.js`.
+
+**The walk did not know about pauses.** `karaokePlay` spreads a line's tokens across the clip in
+proportion to akshara weight, which assumes the voice speaks continuously. `vo_landing` is 14.97s
+of which only **11.21s is speech** — the other 3.76s is the pauses at its four dandas and its
+em-dash. Wall-clock ran through those pauses while the walk kept advancing.
+
+The build now measures when each clip is actually sounding (`speech_map()` → `assets.audio_speech`,
+64 clips described) and the walk is driven by **speech elapsed**: it advances while the voice
+sounds and holds still through a pause. Measured in isolation this is worth **0.3–0.4s** — real,
+but smaller than it first looks, because evenly-spread pauses largely cancel.
+
+**A cue was landing on the wrong word.** The bigger error. The spoken script reads
+"…है। **सुनो—काला** कौआ…", and whitespace tokenising glues `सुनो—काला` into ONE token — so the hero
+word काला was cued at the onset of **सुनो**. Tokens are now split after an em-dash, so each cue
+lands on the word it names. Where the cued word already starts its token (`चबाए—इन`), nothing
+changes.
+
+Net effect on the landing, simulated against the real clip and card:
+
+| cue | was | now | shift |
+|---|---|---|---|
+| काला | 7.87s | 8.54s | +0.67s |
+| क (all क light) | 11.61s | 12.03s | +0.43s |
+| ध्वनि (crow) | 11.97s | 12.30s | +0.33s |
+
+Both fixes are in `karaokePlay` itself, so all four highlighting paths inherit them: the landing
+hero, the MEET_LETTER reveal, and both SENTENCE_SOUND beats.
+
+**The limit, stated plainly.** There is still no forced aligner in this toolchain. Within a run of
+speech the walk is still proportional, so a word spoken unusually slowly can still drift. What is
+fixed is that the marking no longer advances through silence, and no longer fires on a neighbouring
+word. Exact word-level sync would need an aligner.
+
+## 5 · A third guard
+
+`check_speech_map()` fails the build if the card's speech map does not describe the audio beside it
+— segments that overlap, do not advance, or run past the end of the clip. That is the cheap symptom
+of the §1 drift: a card measured against audio the player will never hear. All three guards now run
+after every build and pass on `build/` and `dist/`.
+
+## Receipt
+
+- **27 clips** regenerated this session (20 r4 re-records, `vo_p1_try`, `vo_g5_try`, three reveals,
+  `vo_w_aam`, `vo_w_chand`), **40** restored from the committed audio
+- All 120 audio files identical across `build/`, `dist/` and both factory trees
+- `dist/` **9.96 MB**, under the 10 MB cap — but only ~40 KB of headroom left
+- Every sentence-length clip transcribes at **≥90%** against its card text; the remainder are the
+  five bare-by-design ids and single words cleared by forced choice
+
+## Still needs a human ear
+
+1. **Nobody has heard any of the 27 clips.** Transcription proves the words; it does not judge
+   warmth, pace or child-appropriateness.
+2. **Five came back through the refuser ladder** and may differ in timbre — `vo_g1_hint` (danda),
+   `vo_p1_try` (wrapped), `vo_w_chand` (wrapped-lesson), `vo_g2_reveal` (wrapped-lesson),
+   `vo_p7_reveal` (wrapped).
+3. **The sync fix has not been watched in a browser.** It is verified by simulation against the
+   real clip and card, not by eye on the running lesson.
+4. **`dist/` is ~40 KB under the cap.** The next audio change will likely need a lower Opus bitrate.
+
+---
+
+# r5g — page 8's VO overlap, page 13's layout, and three word clips
+
+Five asks. Page numbers below are the **player's** order (the 14-slide card), which is how they were
+reported; the internal slide ids are given alongside because `card.json` still uses those.
+
+## 1 · "Page 8 — there is a mix up of VO in the whole page" — a timeout, not a wiring error
+
+Page 8 (`G3`) reveals its three letter options one at a time, and the chain is **strictly
+sequenced**: the prompt plays to completion, then the sentence, then each option. Each step carries
+a fallback timer so a missing or blocked clip can never stall the page —
+
+```js
+fb = setTimeout(go, 4500);      // safety net: never stall on one clip
+```
+
+— and that flat 4500 ms silently assumes **every clip is shorter than 4.5 s**. `vo_g3_prompt` is
+**5.05 s**. So on this page the net fired while the prompt was still speaking: the chain advanced,
+`play()` stopped the prompt mid-word, and the sentence started over it. Everything after that landed
+early too. That is the mix-up.
+
+**Page 11 (`P4`) has the identical defect** — `vo_p4_prompt` is also 5.05 s. It was not reported, but
+it is the same line of code and is fixed with it. A sweep of every `reveal_seq` chain found these two
+and no others.
+
+The build now writes each clip's real length to `assets.audio_dur` (76 ids) and the net is sized to
+the clip — `max(4500, duration + 1500ms)`, so 6550 ms for those two prompts and no change anywhere
+else. All three copies of that timer are fixed (`mountTapOptions`, `sortSeqReveal`, and
+SENTENCE_SOUND's own chip reveal). The **global** backstop that sits behind those per-clip nets was a
+flat 16000/22000 ms, which a raised per-clip net could have outlived — it is now computed from the
+chain it is actually backing (`_chainNetMs`), keeping the old value as a floor.
+
+## 2 · Page 13 layout (`G1`, the balloon page)
+
+| Ask | Change |
+|---|---|
+| balloons a little bigger | `.balloon` **150 → 164px** (and the `≤1400px` `.vo-only` rule **146 → 160px**), body and object art in proportion |
+| balloons a little higher | the field is vertically centred, so the stage now reserves more below it: `.stage.vo-only .slide-stage` padding-bottom **26 → 96px**, lifting the group **~35px** |
+| Swiftie a little bigger | `.bal-swiftee` **226×228 → 248×250px** |
+
+Two knock-on adjustments were needed, both arithmetic rather than taste:
+
+- **Four balloons per row had only 8px of slack.** The field caps its width so exactly four fit and
+  five cannot (the comment on `.balloon-field` records a past 3/3/2 break). At 164px, four no longer
+  fitted. The column gap goes **44 → 34px** and the cap **820 → 838px**: four now need 758px against
+  758px of content, and five need 956px, so the 4-per-row set is preserved at both sizes.
+- **Swiftie grows down and right from a fixed corner.** The field centres on the 1333px stage, so at
+  838px it starts at x=247.5. `left` moves **-252 → -240px** to keep her on-stage (x=7.5) with
+  **32px** of clearance to the first balloon, and `top` **344 → 322px** so that growing 22px taller
+  keeps her feet on the same line instead of pushing them into the stage edge.
+
+Verified by headless capture at 1333×750, not only by arithmetic: four per row, both rows clear,
+Swiftie clear of the balloons and inside the stage.
+
+## 3 · The question text sat too far right
+
+`--band-pad-l` **150 → 120px**, a 20% cut to the inset, moving the question text 30px left in the
+pill on every page that uses it. It still clears Swiftie's avatar (text now starts at x≈196, the
+avatar ends at x≈160).
+
+## 4 · आम, मछली and घर
+
+All three re-synthesised. Checked by **forced choice against deliberately confusable options** —
+including `आ` for आम, so a clipped final consonant could not pass:
+
+| Clip | Identified as (3 shuffles) |
+|---|---|
+| `vo_w_aam` | आम / आम / आम |
+| `vo_w_ghar` | घर / घर / घर |
+| `vo_w_machhli` | मछली / मछलि / मछली — the odd one differs only in final vowel length, i.e. ASR noise |
+
+`vo_w_ghar` again refused the plain rung and came back on `wrapped-lesson(Kore)` — **ear-check it**.
+
+## Receipt
+
+- All three guards pass on `build/` and `dist/`; all 120 audio files and the HTML identical across
+  `build/`, `dist/` and both factory trees
+- No clip in any `reveal_seq` chain can now outlive its own safety net
+- `dist/` **9.97 MB** as it sits, but `card.json`, `ENGINE_DIFF.patch` and `_build_report.json`
+  (92 KB) are dropped before zipping, so the **shippable payload is 9.87 MB — 126 KB under the cap**
+
+## Still needs a human
+
+1. **The page-8 fix cannot be seen in a screenshot** — it is a timing fault. It is verified by
+   arithmetic (5.05s clip vs a 6550ms net) and by the sweep finding no remaining over-long clip, but
+   somebody should play pages 8 and 11 and hear the prompt finish before the sentence starts.
+2. **`vo_w_ghar`** came back through a wrapper rung and may differ in timbre.
+3. **The layout changes were captured with animation frozen**, which is how the capture tool works;
+   the balloons' float animation was not observed at the new size.
+
+---
+
+# r5h — the क lights word by word, and the balloon words stop being buried
+
+## 1 · The cover: each word's क lights as that word is spoken
+
+The landing already revealed the four words one at a time against the greeting. The **highlight**
+did not follow them: a single `light` cue removed `.lh-dim` from the whole strip, so all four क lit
+together — and that cue is anchored to the standalone «क» in the LAST sentence
+("इस वाक्य में **क** की ध्वनि…"), several seconds after the line the SME was watching.
+
+The beat is now **per word**: each word's own क lights on the token the voice is speaking, so काला
+कौआ काँव-काँव करता lights left to right under the narration.
+
+- `app.js` — a word cue now adds `lh-lit` alongside `lh-in`.
+- `style.css` — two rules let ONE word light while the strip as a whole is still dim. They carry one
+  class more than the two `.lh-strip.lh-dim` rules above them, so they win on specificity without
+  `!important`.
+
+The old whole-strip `light` cue is deliberately **left in place** as a catch-all. On a normal run
+every word is already lit by the time it fires, so it changes nothing; when there is no audio at all
+(autoplay refused, missing clip, a capture tool freezing the page) `finish()` runs every cue and the
+cover still resolves to the finished, fully-lit sentence.
+
+Verified in headless Chrome by polling the DOM, not by screenshot — a static capture cannot show
+sequencing:
+
+```
+  t(s)   lit words     (X = that word's क is lit)
+   8.9   X...          काला
+   9.2   XX..          कौआ
+   9.6   XXX.          काँव-काँव
+  10.3   XXXX          करता।
+```
+
+## 2 · "The machli sound is not coming properly" — it was never the clip
+
+मछली was re-recorded twice across r5g and this round and kept being reported. It was the wrong
+thing to fix. The clip is fine; **the buzzer was sitting on top of it.**
+
+`sfxCorrect` / `sfxWrongSoft` / `playSfx` each ride their **own** `Audio` element, so `play()`'s
+`stopAudio()` cannot see them. On a balloon tap the feedback sound and the object's name were
+started in the same breath, and the feedback sound is the longer of the two:
+
+| clip | leading silence | speech | how much of it the 0.72s buzzer covered |
+|---|---|---|---|
+| `vo_w_aam` | 0.26s | 0.35s | **100%** |
+| `vo_w_machhli` | 0.27s | 0.54s | **85%** |
+| `vo_w_ghar` | 0.28s | 0.56s | **80%** |
+| `vo_w_kela` | 0.29s | 0.47s | **92%** |
+
+That is exactly the set the SME reported — आम, घर and मछली are three of the page's four wrong
+answers, and they are the three most heavily covered. The correct answers were masked too, by the
+0.85s `sfx_correct` ding.
+
+The object's name now waits for the effect to finish (`_sfxHoldMs`, sized from the card's
+`assets.audio_dur`): **780ms** on a wrong tap, **910ms** on a correct one. The pop and the ding still
+land ON the tap, which is what the earlier rounds asked for — only the spoken word moves.
+
+`sfx_bal_pop` also had to be **declared in the card**. It ships and the page plays it, but it was
+referenced only from engine code, so it had no `audio_dur` entry for the hold to read.
+
+Measured in a real browser, logging every `Audio` the page creates:
+
+```
+tap मछली (wrong)     +   2ms  sfx_wrong.ogg        tap पतंग (correct)   +   3ms  sfx_bal_pop.ogg
+                     + 789ms  vo_w_machhli.ogg                          +   3ms  sfx_correct.ogg
+                                                                        + 916ms  vo_w_patang.ogg
+                                                                        +2078ms  vo_g1_correct.ogg
+```
+
+`busy` is already held for the whole wait, so a second tap cannot land in the gap; the tap's
+fail-safe timer goes 4000 → 5600ms to cover the hold.
+
+## Receipt
+
+- All three guards pass on `build/` and `dist/`; HTML and all 121 audio files identical across
+  `build/`, `dist/` and both factory trees
+- Shippable dist payload **9.87 MB**, 123 KB under the cap
+- मछली was re-scored by forced choice against confusable spellings (मछलि, बछली, मसली, मचली, मक्खी,
+  बछड़ी) across five fresh takes — all five identified 3/3, which is itself the evidence that the
+  clip was never the problem
+
+## Still needs a human
+
+1. **Nobody has heard the balloon page since the hold was added.** The order is proven; whether a
+   ~0.8s gap between the buzz and the word feels right to a five-year-old is a judgement call, and
+   it is one line (`_sfxHoldMs`) to retune.
+2. **The cover was verified with the DOM, not by ear.** The words light one at a time against the
+   clip's own timeline, but nobody has watched it next to the narration.
+3. `vo_w_ghar` still carries the `wrapped-lesson(Kore)` timbre from r5g.
+
+---
+
+# r5i — balloons higher, the cover text off the border, and मछली by a different method
+
+## 1 · The balloon page: the lever from r5g had stopped working
+
+r5g lifted the group by reserving more space under it (`padding-bottom` 26 → 96px), because the
+field is vertically centred in what the stage leaves. Asked to lift it again, raising that value to
+156px **moved nothing**, and measuring the running page said why:
+
+```
+.slide-stage content box   438px      the field is TALLER than the box it is centred in,
+.balloon-field             542px      so there is no free space for align-content:center to
+                                      share out - the field just starts at the top and overflows
+```
+
+The field grew past its container when the balloons went to 164px in r5g. So the lift now comes
+from a **negative top margin** (`-50px`), which works regardless of overflow. Measured: the field
+sat 156px below the stage top and only 52px above its bottom; it is now even.
+
+That in turn needed `overflow:visible` on this page's `.slide-stage`. It clips at y=175 and the
+lifted balloons sit at y=160, with `balFloat` raising them another **13px** at its peak — the first
+capture after the lift showed the top row cut by a visible seam. The 150px band above the slide is
+**empty on this page** (prompt band, hint button and audio chip are all `display:none` under
+`.vo-only`), and `.stage` still clips, so nothing can escape the card. Scoped to `.vo-only`; every
+other page keeps its clip.
+
+`padding-bottom` goes back to r5g's 96px — leaving it at 156 would read as a lever that works.
+
+## 2 · The cover: the sentence was over the card's edge, not just near it
+
+Measured on the running cover: the sentence sat **5px** below the card's top border and the content
+block actually started **6px ABOVE** it, while 115px of the card went unused underneath.
+
+`.sg-content` is centred in `.sg-card` by its margin box, so its bottom margin is the lever:
+120 → **60px**, which moves the block down 30px. The sentence now sits **39px** clear of the border.
+
+That exposed a second problem the first fix caused: the crow landed **11px on top of** the शुरू करें
+button, because `.sg-btn` is `position:absolute` and does not move with the block. Solving the
+geometry showed the block cannot fit above the button at its current height at all — it needs to be
+≤317px and it is 347px. Rather than shrink the crow, which nobody asked to change, the room comes
+from the **40px of unused card sitting under the button**: the button drops to `bottom:16px`, and the
+hero's internal gap goes 16 → 6px. Crow to button is now **+18px**.
+
+The shared `.sg-btn{bottom:40px}` rule is a fleet standard swept by `_tools/start_btn_standard.py`,
+so it is **not** edited. The override is scoped to `.sg-card.lh-card`, a hook the landing-hero branch
+now sets in `app.js` — `.sg-btn` is the card's child, not `.sg-content`'s, so no selector rooted at
+the content block can reach it.
+
+| | before | after |
+|---|---|---|
+| sentence below the card's top border | 5px | **39px** |
+| crow image to button | −11px (overlapping) | **+18px** |
+| block inside the card | started 6px above it | 201..538 inside 172..628 |
+
+## 3 · मछली, by a different method
+
+Re-recorded twice already and still reported. Every check I have passes it — forced choice 3/3
+against confusable spellings (मछलि, बछली, मसली, मचली, मक्खी, बछड़ी), a clean transcription, and a
+"fully articulated" quality rating — on **both** the old take and the new. **My tooling cannot hear
+what the SME is hearing**, and five fresh takes all scored identically, so re-rolling again was not
+going to help.
+
+So the production method changed instead. Isolated-word TTS is where this model's Hindi is weakest:
+with no prosodic context it clips codas and flattens aspiration. The clip is now **cut out of a
+carrier sentence** — "मछली पानी में तैरती है।" — taking the first speech burst, which is unambiguous
+because the word starts the sentence. 45ms of head and 75ms of tail kept, 15ms/60ms fades,
+loudnorm. It carries 0.57s of speech in a 0.69s file where the isolated take had 0.53s in 1.09s:
+more word, less padding.
+
+The carrier and the technique are recorded in `_assets_round4/vo_carrier_sources/`.
+
+## Receipt
+
+- All three guards pass on `build/` and `dist/`; HTML and all 121 audio files identical across
+  `build/`, `dist/` and both factory trees
+- Shippable dist payload **9.88 MB**, 121 KB under the cap
+- Both layout changes verified by **measuring the running page** and by capture, not by eye
+
+## Still needs a human
+
+1. **मछली is still unconfirmed.** If it is wrong again, saying *what* it sounds like (wrong
+   consonant? clipped ending? too fast?) would let me target it — or I can voice this one clip with
+   a different speaker, accepting that it will not match the lesson's narrator.
+2. **The balloon page now paints outside `.slide-stage`.** Intended and scoped, but it is the kind
+   of change worth a glance on a real device, where the stage is scaled to fit.
+3. The captures freeze animation; `balFloat` at the new height has been reasoned about (13px peak,
+   clears the stage top) but not watched.
+
+---
+
+# r5j — the teach block sits one square higher, and the picture waits for the word
+
+## 1 · "One box up" on the grid pages
+
+The grid the SME pointed at is `.tut-card`'s own background — graph paper at
+`background-size:46px 46px` — so "one box" is a measured 46px, not a guess.
+
+The block is vertically centred inside `.tut-content`, so 92px of bottom padding moves it up by
+half that: **exactly one square**. It applies to every **tutorial-phase** slide, which is what
+"similar pages like this" means here — `isTut` in `mountSlide` puts pages 1–6 in the card: the
+three SENTENCE_SOUND teach pages and the three MEET_LETTER pages. Pages 7–14 mount bare and are
+untouched.
+
+## 2 · The picture now comes after the line, not a sentence early
+
+The SME: *"whenever an image comes like चूहा, पपीता and all, it will come AFTER the text or VO is
+done — 'च से चूहा' then the mouse image comes."*
+
+It was arriving a whole sentence early. The three MEET_LETTER pages speak one line —
+
+> हमने **च** की आवाज़ **सुनी**। यह आवाज़ च अक्षर से **लिखी** जाती है। **जैसे**—च से **चूहा**।
+
+— and every beat was anchored to a word of it: `letter` on सुनी, **`pic` on लिखी**, `label` on जैसे,
+`mark` on चूहा. So the mouse appeared at "लिखी", in the middle of the second sentence, and the VO
+only got round to naming it one sentence later.
+
+**A token cue cannot express what was asked.** The example word ENDS the line, so anchoring the
+picture to चूहा puts it *on* the word, not after it. The card now carries a separate
+`reveal_flow.after_line` list, which the engine runs off the **clip's end** instead of off a token:
+
+```
+cues:       [ {at: "सुनी", do: "letter"} ]          during the line
+after_line: [ "pic", "label", "mark" ]              once it has finished, 520ms apart
+```
+
+Measured in a real browser on T4, logging the audio element:
+
+```
++   34ms  vo_t4_prompt.ogg          the line starts
++ 6579ms  ENDED vo_t4_prompt.ogg    "...जैसे—च से चूहा।"
++ 6764ms  the picture appears
+```
+
+`after_line` runs inside the existing `finish()`, so it also covers the paths that never reach the
+end of the clip — a stalled or missing file, an autoplay refusal, the 22s fail-safe — and the page
+still resolves to a complete teach screen rather than a blank one.
+
+**The trade, stated plainly:** the middle of the line now has no visual beat. `letter` fires early
+on "सुनी" and nothing else moves until the voice finishes. That is the direct consequence of the
+request, and it is one line of card data to re-balance if it reads as too static.
+
+## Receipt
+
+- All three guards pass on `build/` and `dist/`; HTML identical across `build/`, `dist/` and both
+  factory trees; no audio changed this round
+- Shippable dist payload **9.88 MB**, 120 KB under the cap
+- Both changes verified against the running page — the 46px lift by measuring `.tut-content`, the
+  picture timing by logging when the clip ends versus when `.meet-pic-box` loses `seq-hidden`
+
+## Still needs a human
+
+1. **The pause in the middle of the MEET_LETTER line** (see the trade above) is a judgement call.
+2. The captures freeze animation and strip `seq-hidden`, so the static shots show the picture
+   already present — that is the capture tool, not the runtime. The timing was checked separately.
