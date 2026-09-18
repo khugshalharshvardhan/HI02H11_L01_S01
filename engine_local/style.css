@@ -1909,7 +1909,11 @@ body.is-start .phase-gate{
 /* [S01r5g] SME: Swiftie a little bigger (226->248). `left` moves out with her so the clearance
    to the first balloon is kept: the field is centred on the 1333px stage, so at max-width 838 it
    starts at x=247.5 and she now runs x=7.5..255.5 against a field whose content starts at 287.5. */
-.bal-swiftee{ position:absolute; left:-240px; top:322px; width:248px; height:250px;
+/* [S01r5o] SME: "she feels like she is hovering in the air". She was pinned 322px down a field
+   that r5i then lifted 50px, so she ended up mid-air on the left with nothing under her. 322 -> 392
+   puts her feet near the stage floor (measured: she runs to y=729 of 750) while still riding up with
+   the field, which is what keeps her beside the balloons rather than behind them. */
+.bal-swiftee{ position:absolute; left:-240px; top:372px; width:248px; height:250px;
   cursor:pointer; z-index:3; }
 .bal-swiftee:active{ transform:scale(.97); }
 /* the reference screen carries no audio chip; she replaces it - see the onclick in the module */
@@ -2080,6 +2084,36 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
   18%{ opacity:1; transform:rotate(var(--a)) translateY(calc(var(--d,86px) * -.30)) scale(1.12); }
   100%{ opacity:0;
         transform:rotate(var(--a)) translateY(calc(var(--d,86px) * -1)) scale(.3) rotate(var(--sp,0deg)); } }
+/* [S01r5o] TORN RUBBER, not only sparks. The SME asked for the pop to "feel like the real balloon
+   pop", and sparks alone read as a firework - what says BALLOON is the skin coming apart. Six curved
+   slivers are thrown with the sparks, in the popped balloon's own colour (sparkle() reads it off the
+   .bal-body), tumbling much faster than the sparks do. The lopsided border-radius is what makes a
+   sliver read as a torn piece rather than a confetti rectangle. */
+.bal-sparkle b{ position:absolute; top:46%; left:48%;
+  width:var(--sz,12px); height:calc(var(--sz,12px) * 1.6);
+  border-radius:60% 40% 55% 45% / 45% 55% 40% 60%;
+  background:#FFC93C; opacity:.95; box-shadow:0 1px 3px rgba(11,61,140,.18);
+  animation:balShard var(--t,.66s) cubic-bezier(.16,.74,.3,1) var(--dl,0ms) forwards;
+  transform:rotate(var(--a)) translateY(0); }
+@keyframes balShard{
+  0%{ opacity:1; transform:rotate(var(--a)) translateY(0) scale(.5) rotate(0deg); }
+  22%{ opacity:1; transform:rotate(var(--a)) translateY(calc(var(--d,80px) * -.36)) scale(1); }
+  100%{ opacity:0;
+        transform:rotate(var(--a)) translateY(calc(var(--d,80px) * -1)) scale(.72) rotate(var(--sp,0deg)); } }
+
+/* [S01r5o] TWO MISSES LIGHTS THE ANSWERS. This is what replaced the hand nudge the SME asked to
+   remove: a single hand can only point at ONE of the four targets, while the glow can mark every
+   remaining one, which is what "which ones am I looking for" actually needs. It rides on .bal-lift
+   so it cannot fight balFloat on .balloon (the r5c lesson), and it is dropped when a balloon is
+   refilled, because a refill is always a non-target. */
+@keyframes balHot{
+  0%,100%{ filter:drop-shadow(0 0 0 rgba(255,201,60,0))   drop-shadow(0 6px 10px rgba(11,61,140,.10)); }
+  50%    { filter:drop-shadow(0 0 16px rgba(255,201,60,.95)) drop-shadow(0 6px 10px rgba(11,61,140,.10)); } }
+.balloon.bal-hot .bal-lift{ animation:balFloat 3.4s ease-in-out infinite, balHot 1.25s ease-in-out infinite;
+  /* the shorthand resets animation-delay, and .bal-lift uses it to stagger the float per
+     balloon (--bi * -0.47s). Restated here, or every glowing balloon would suddenly bob in
+     lockstep with the others - visible, and a regression of the r5c stagger. */
+  animation-delay:calc(var(--bi,0) * -0.47s), 0s; }
 
 /* ---- landing: one example sentence instead of a heading + three loose letters -------------------- */
 .sg-title.sg-hide{ display:none; }

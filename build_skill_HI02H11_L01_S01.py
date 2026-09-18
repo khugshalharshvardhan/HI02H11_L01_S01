@@ -78,6 +78,11 @@ VO = {
     "vo_g1_prompt":  "प की आवाज़ वाले चित्र पर टैप कीजिए।",
     "vo_g1_correct": "शाबाश! इसमें प की आवाज़ है।",
     "vo_g1_hint":    "ध्यान से सुनिए, इसमें प की आवाज़ नहीं है।",
+    # [r5o] ROUND 2 hunts a DIFFERENT sound, so it cannot share round 1's praise or hint - both name
+    # the letter out loud. levels[n].audio carries these.
+    "vo_g1_next":     "अब “च” की आवाज़ वाले चित्रों पर टैप करो।",
+    "vo_g1_correct2": "शाबाश! इसमें च की आवाज़ है।",
+    "vo_g1_hint2":    "ध्यान से सुनिए, इसमें च की आवाज़ नहीं है।",
 
     # ---- guided 2 · tap-all प (deck page 9) ---------------------------------------------
     # [r5m] SME: put the letter in inverted commas in the instruction panel. prompt_hi IS this
@@ -194,6 +199,9 @@ VO = {
     "vo_w_pani": "पानी", "vo_w_papita": "पपीता", "vo_w_payal": "पायल", "vo_w_sapna": "सपना",
     # [r4] new options the deck introduced
     "vo_w_patang": "पतंग", "vo_w_patta": "पत्ता", "vo_w_kela": "केला",
+    # [r5o] round 2 fills its distractor side with क words. केला and कौआ were already drawn for this
+    # lesson (कौआ is the cover crow), so only कमल and कबूतर are new art.
+    "vo_w_kauaa": "कौआ", "vo_w_kamal": "कमल", "vo_w_kabutar": "कबूतर",
     "vo_w_ghar": "घर", "vo_w_machhli": "मछली",
     "vo_w_chand": "चाँद",      # [r4 · row 104] deck says चाँद, the old clip said चंदा
     "vo_w_chinti": "चींटी",     # [r4 · rows 89/104] deck says चींटी, the old clip said चींटा
@@ -311,6 +319,13 @@ def meet_letter(sid, letter, word, img, prompt_clip, word_clip, sound_clip, cue_
             },
         },
     }
+
+
+def _bit(word, img, audio, has):
+    """One balloon. Same shape as _item, but `has` is positional: the round tables below list
+    twenty-two of these and the keyword form made them unreadable."""
+    return {"word_hi": word, "img": img, "emoji": EMOJI.get(img, "\u2b50"),
+            "audio": audio, "has": has}
 
 
 def tap_all(sid, phase, sound, prompt, items, clips, allow_hand=False):
@@ -586,21 +601,49 @@ def build_card():
                   "correct": "vo_g1_correct", "hint": "vo_g1_hint"},
         "data": {
             "target_sound": "प",
-            # the deck's own option list, correct and incorrect
-            "items": [
-                _item("पतंग",  "obj_patang",   "vo_w_patang",   has=True),
-                _item("आम",    "obj_aam",      "vo_w_aam",      has=False),
-                _item("पपीता", "obj_papita",   "vo_w_papita",   has=True),
-                _item("केला",  "obj_kela",     "vo_w_kela",     has=False),
-                _item("पत्ता",  "obj_patta",    "vo_w_patta",    has=True),
-                _item("घर",    "obj_ghar",     "vo_w_ghar",     has=False),
-                _item("पानी",  "obj_pani",     "vo_w_pani",     has=True),
-                _item("मछली",  "obj_machhli",  "vo_w_machhli",  has=False),
+            # [r5o] TWO ROUNDS, and the sky never thins out.
+            #   * popping a target REFILLS that balloon from `spares` - the SME asked for "at that
+            #     place other balloon will appear with other image". A refill is always a NON-target,
+            #     so the number still to find stays exactly what the round promised.
+            #   * clearing a round swaps the whole set for the next one.
+            # Round 2 hunts च against क distractors, which is the "words from क and च" that was
+            # asked for. Its four च words, and two of its four क words, are art and clips this
+            # lesson ALREADY ships (कौआ is the cover crow); only कमल and कबूतर are new pictures.
+            # Its three REFILL balloons are words from elsewhere in the lesson rather than three
+            # more new क images: dist has ~100 KB of headroom and five new pictures do not fit.
+            # Written up in CHANGES.md - if the क/च set has to hold through the refills as well,
+            # that is three more images plus a bitrate drop to pay for them.
+            "levels": [
+                {"target_sound": "प",
+                 "items": [_bit("पतंग",  "obj_patang",  "vo_w_patang",  True),
+                           _bit("आम",    "obj_aam",     "vo_w_aam",     False),
+                           _bit("पपीता", "obj_papita",  "vo_w_papita",  True),
+                           _bit("केला",  "obj_kela",    "vo_w_kela",    False),
+                           _bit("पत्ता",  "obj_patta",   "vo_w_patta",   True),
+                           _bit("घर",    "obj_ghar",    "vo_w_ghar",    False),
+                           _bit("पानी",  "obj_pani",    "vo_w_pani",    True),
+                           _bit("मछली",  "obj_machhli", "vo_w_machhli", False)],
+                 "spares": [_bit("माला", "obj_mala", "vo_w_mala", False),
+                            _bit("मूली", "obj_muli", "vo_w_muli", False),
+                            _bit("लाल",  "obj_laal", "vo_w_laal", False)]},
+                {"target_sound": "च",
+                 "audio": {"prompt": "vo_g1_next", "correct": "vo_g1_correct2",
+                           "hint": "vo_g1_hint2", "done": "vo_g1_correct2"},
+                 "items": [_bit("चूहा",   "obj_chuha",   "vo_w_chuha",   True),
+                           _bit("केला",   "obj_kela",    "vo_w_kela",    False),
+                           _bit("चाँद",   "obj_chand",   "vo_w_chand",   True),
+                           _bit("कौआ",    "obj_kauaa",   "vo_w_kauaa",   False),
+                           _bit("चाँदी",  "obj_chandi",  "vo_w_chandi",  True),
+                           _bit("कमल",    "obj_kamal",   "vo_w_kamal",   False),
+                           _bit("चींटी",  "obj_chinti",  "vo_w_chinti",  True),
+                           _bit("कबूतर",  "obj_kabutar", "vo_w_kabutar", False)],
+                 "spares": [_bit("आम",   "obj_aam",     "vo_w_aam",     False),
+                            _bit("घर",   "obj_ghar",    "vo_w_ghar",    False),
+                            _bit("मछली", "obj_machhli", "vo_w_machhli", False)]},
             ],
-            # [r5f] this page sits in PRACTICE now (r5d moved it last), and HAND_PHASES is
-            # tutorial+guided - so the deck's "show a subtle hand nudge towards one correct
-            # balloon" could never fire. Opt in per-slide rather than widening the phase rule.
-            "allow_hand": True,
+            # [r5o] the hand is GONE - two misses now lights every remaining answer instead, which a
+            # single pointing hand could never do on a field of four targets.
+            "allow_hand": False,
             "signal_name": "balloon_sound_first_try",
         },
     })

@@ -6133,53 +6133,38 @@ const SlideModules = {
      line ("a short negative feedback sound only"); 2nd = shake + the hint clip; 3rd = the earned hand
      on a balloon that is still correct. handOnAnswer self-gates by phase, so the hand appears in this
      guided slide and would not in practice - the round-3 no-hand-in-practice ruling still holds. */
+  /* [S01r4] TAP_BALLOON_SOUND - NEW MECHANIC, SME deck page 8: "Remove the existing haan/nahin
+     activity and replace it with an interactive balloon-based activity for identifying the 'pa' sound."
+     It is a multi-select hunt like TAP_ALL_WITH_SOUND, but deliberately NOT that module, because the
+     deck's defining ask is the one TAP_ALL cannot honour: "Do not show any written instruction on the
+     screen. Do not show feedback text... Do not add object names or any text inside the balloons.
+     All instructions, hints, and feedback should come through VO only."
+
+     [S01r5o] ROUNDS. The SME asked for the page to keep going: a popped balloon is replaced in place
+     so the sky never thins out, and when every target in a round has been found the whole set is
+     swapped for the next one. `data.levels` carries those rounds; a card with only `data.items`
+     still works and behaves exactly as before, as one round. */
   TAP_BALLOON_SOUND: {
     mount(host, slide){
       const d = slide.data || {};
-      const items = d.items || [];
-      const need = items.filter(it => it.has === true).length;
+      const LEVELS = (d.levels && d.levels.length)
+        ? d.levels
+        : [{ target_sound: d.target_sound, items: d.items || [], spares: d.spares || [] }];
+      let li = 0, found = 0, need = 0, spares = [], cells = [];
       state.attempts = 0; state.locked = false; state.ownsAudio = true;
-      let found = 0;
 
       const field = document.createElement("div"); field.className = "balloon-field";
-      const cells = [];
-      items.forEach((it, i) => {
-        const b = document.createElement("div");
-        /* seq-hidden, NOT a private class: capture_pages/render tooling settles staggered reveals by
-           stripping .seq-hidden, and a mechanic that invents its own name captures BLANK instead
-           (documented failure, HI01H02_L01_S01 shipped 4 blank match slides that way). */
-        b.className = "balloon bcol-" + (i % 6) + " seq-hidden";
-        b.style.setProperty("--bi", String(i));
-        /* [S01r5c] .bal-lift wraps the balloon so the IDLE FLOAT and the ENTRANCE can live on
-           different elements. They were both on .balloon, and an animation beats a transition on the
-           same property - so `.seq-hidden{transform:translateY(46px)}` never actually ran and the
-           balloons only faded in. Float moves to the wrapper, .balloon keeps the transform for the
-           rise, and .popped / .bal-shake stop fighting balFloat as a side effect. */
-        b.innerHTML = '<div class="bal-lift"><div class="bal-body">' +
-                      imgOrEmoji(it.img, it.emoji, "bal-img", "bal-emoji") +
-                      '<span class="bal-shine"></span></div><span class="bal-tie"></span></div>';
-        field.appendChild(b); cells.push({ b, it });
-      });
       /* [S01r5g] SWIFTEE HOLDING THE BALLOONS, bottom-left, exactly where the SME's reference puts
          her. TWO images, not one: a GIF cannot be paused, so the animated frame and a still of its
          first frame are both in the DOM and CSS swaps them on `body.vo-lock` - which setPlaying()
          toggles for precisely as long as a clip is sounding. So she gestures while the VO talks and
          freezes the moment it stops, with no timer of our own to drift. */
       const sw = document.createElement("div"); sw.className = "bal-swiftee";
-      /* [S01r4w] ANIMATED WEBP, not GIF. Two separate problems sat on this pair:
-         the committed dist shipped NEITHER file, so this mascot has been a broken image there since
-         it landed; and once carried, 2,145 KB took the dist to 11.68 MB against a 10 MB cap.
-         Re-encoded to the format every other animated mascot in this bundle already uses
-         (new_landing_swiftee_anim.webp, peeking.webp, sw_lg_celebrating_anim.webp): 408px — the box
-         is 226, so still ~1.8x for retina — 10fps instead of 20, alpha intact.
-         2,145 KB -> 456 KB; dist 11.68 -> 9.85 MB. Originals: _assets_round4/sme_originals/. */
+      /* [S01r4w] ANIMATED WEBP, not GIF: 2,145 KB -> 456 KB at 408px/10fps, alpha intact.
+         Originals in _assets_round4/sme_originals/. */
       sw.innerHTML = '<img class="bsw-anim" src="assets/gif/swifty_with_balloons.webp" alt="">' +
                      '<img class="bsw-still" src="assets/gif/swifty_with_balloons_still.webp" alt="">';
-      /* [S01r5h] SHE IS ALSO THE REPLAY CONTROL. The reference screen has no audio chip, and the deck
-         lists what may be on screen: "only the mascot, balloons, object images". Hiding the chip
-         would otherwise take the child's only way to hear the instruction again, so the mascot who
-         gives the instruction now answers to a tap. Guarded so a replay cannot talk over a clip that
-         is already sounding, or start once the round is won. */
+      /* [S01r5h] SHE IS ALSO THE REPLAY CONTROL - the reference screen has no audio chip. */
       sw.onclick = ()=>{
         if(state.locked || isPlaying) return;
         state.audioReplays++;
@@ -6189,28 +6174,33 @@ const SlideModules = {
       host.appendChild(field);
       /* the deck's reference screen is a bare stage: no prompt band, no hint chip, no आगे */
       $("stage").classList.add("vo-only");
-      /* [S01r5i] the stage is 1333x750 scaled to fit, so on most screens BODY shows around it. It
-         paints #F2F7FA while this page paints #EAF2FB, which read as a pale band down each side.
-         body cannot be reached from a .stage descendant selector, so the class goes on body and is
-         taken off in the same teardown that removes vo-only. */
       document.body.classList.add("bal-page");
       $("hintBtn").classList.remove("show"); $("hintBtn").style.display = "none";
       $("navBtn").style.display = "none"; setNavActive(false);
 
       const alive = ()=> CARD.slides[state.idx] === slide;
-      const sparkle = (el)=>{
+      /* [S01r5o] A ROUND CAN OVERRIDE THE SLIDE'S LINES. The praise and the hint name the sound
+         being hunted ("इसमें प की आवाज़ है"), so they cannot be shared across rounds that hunt
+         different sounds. `levels[n].audio` carries the round's own ids; anything it does not name
+         falls back to the slide's, so a single-round card needs no audio block at all. */
+      const lvlAudio = (key)=>{
+        const a = (LEVELS[li] || {}).audio;
+        if(a && a[key]) return "assets/Audio/" + a[key] + "." + AUDIO_EXT;
+        return audioFor(slide, key);
+      };
+      const sparkle = (el, hue)=>{
         if(document.documentElement.classList.contains("no-anim")) return;
-        /* [S01r4u] MORE SPARKLE ON THE POP. This was 8 particles on a fixed 45° cross, every one the
-           same size, colour, distance and duration — so the burst read as a single 8-pointed shape
-           flicking outward rather than as a balloon coming apart. Now two rings, 22 particles: a fast
-           outer throw and a slower, smaller inner spray, each particle carrying its own angle jitter,
-           distance, size, spin and warm hue. Two rings at different speeds is what reads as debris;
-           one ring at one speed reads as a diagram. */
+        /* [S01r4u] two rings, 22 particles: a fast outer throw and a slower inner spray, each with
+           its own angle jitter, distance, size, spin and hue. Two rings at different speeds is what
+           reads as debris; one ring at one speed reads as a diagram.
+           [S01r5o] ...plus SHARDS in the balloon's OWN colour. Sparks alone read as a firework; what
+           says "balloon" is torn rubber, so six curved slivers are thrown with the sparks, tumbling
+           as they go. `hue` is the popped balloon's fill, so the debris matches what burst. */
         const s = document.createElement("div"); s.className = "bal-sparkle";
         const R = (a, b)=> a + Math.random() * (b - a);
         const HUES = ["#FFD86B","#FFC93C","#FFE9A8","#FFB01F","#FFF4D0"];
-        [{n:13, d:[92,132], sz:[7,12], t:[.62,.86]},     /* outer: thrown far and fast   */
-         {n:9,  d:[44,76],  sz:[4,8],  t:[.48,.70]}      /* inner: closer, smaller, brief */
+        [{n:13, d:[92,132], sz:[7,12], t:[.62,.86]},
+         {n:9,  d:[44,76],  sz:[4,8],  t:[.48,.70]}
         ].forEach((ring, ri)=>{
           for(let i = 0; i < ring.n; i++){
             const p = document.createElement("i");
@@ -6225,92 +6215,153 @@ const SlideModules = {
             s.appendChild(p);
           }
         });
+        for(let i = 0; i < 6; i++){
+          const f = document.createElement("b");                 /* a shard, not a spark */
+          f.style.cssText =
+            "--a:" + ((i * 60) + R(-22, 22)).toFixed(1) + "deg;" +
+            "--d:" + R(58, 104).toFixed(0) + "px;" +
+            "--sz:" + R(9, 16).toFixed(1) + "px;" +
+            "--sp:" + Math.round(R(-420, 420)) + "deg;" +
+            "--t:" + R(.54, .78).toFixed(2) + "s;" +
+            "--dl:" + Math.round(R(0, 70)) + "ms;" +
+            "background:" + (hue || "#FFC93C") + ";";
+          s.appendChild(f);
+        }
         el.appendChild(s); setTimeout(()=>{ try{ s.remove(); }catch(e){} }, 1200);
       };
-      const remainingCorrect = ()=> cells.find(c => c.it.has === true && !c.b.classList.contains("popped"));
       /* [S01r5i] a shockwave ring, dropped in behind the balloon for the length of the pop */
       const burstRing = (el)=>{
         if(document.documentElement.classList.contains("no-anim")) return;
         const r = document.createElement("span"); r.className = "bal-ring";
         el.appendChild(r); setTimeout(()=>{ try{ r.remove(); }catch(e){} }, 700);
       };
+      const remainingCorrect = ()=> cells.filter(c => c.it.has === true && !c.b.classList.contains("popped"));
+      /* [S01r5o] After two misses the balloons that ARE the answer breathe. This replaces the hand:
+         the SME asked for it to go, and on a field of eight floating targets a single pointing hand
+         could only ever indicate one of the four - the glow can mark them all at once, which is what
+         "which ones am I looking for" actually needs. */
+      const glowCorrect = ()=> remainingCorrect().forEach(c => c.b.classList.add("bal-hot"));
+
+      const fillBalloon = (b, it)=>{
+        /* [S01r5c] .bal-lift wraps the balloon so the IDLE FLOAT and the ENTRANCE live on different
+           elements - an animation beats a transition on the same property, so with both on .balloon
+           the `seq-hidden` rise never ran and they only faded in. */
+        b.innerHTML = '<div class="bal-lift"><div class="bal-body">' +
+                      imgOrEmoji(it.img, it.emoji, "bal-img", "bal-emoji") +
+                      '<span class="bal-shine"></span></div><span class="bal-tie"></span></div>';
+      };
 
       let busy = false;
-      cells.forEach(({ b, it }) => {
+      const wireTap = (cell)=>{
+        const b = cell.b;
         b.onclick = ()=>{
+          const it = cell.it;                                     /* re-read: a balloon can be refilled */
           if(state.locked || busy || b.classList.contains("popped") || b.classList.contains("seq-hidden")) return;
-          if(isPlaying && !state._balFb) return;              /* never talk over the prompt */
+          if(isPlaying && !state._balFb) return;                  /* never talk over the prompt */
           if(state._balFb){ stopAudio(); state._balFb = false; }
           stopNudge(); busy = true;
-          const vb = setTimeout(()=>{ busy = false; }, 5600);      /* fail-safe: a superseded onEnd must not soft-lock (covers the hold below) */
+          const vb = setTimeout(()=>{ busy = false; }, 6500);      /* fail-safe: a superseded onEnd must not soft-lock */
           const name = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
-          /* `hold` keeps the object's name off the speaker until the pop/ding/buzz has finished -
-             see _sfxHoldMs. `busy` is already true for the whole wait, so a second tap cannot land
-             in the gap. */
-          const afterName = (cb, hold)=>{ const go = ()=>{ clearTimeout(vb); busy = false; cb(); };
-            const start = ()=>{ if(!alive()) return; if(name) play(name, go); else go(); };
-            if(hold > 0) setTimeout(start, hold); else start(); };
+          /* [S01r5o] THE WORD COMES FIRST, then everything else. r5h had the feedback sound land on
+             the tap and held the word back behind it, because the buzzer was drowning the word. The
+             SME's ruling settles the order the other way: "the VO of that particular word should play
+             like पतंग and THEN the rest of the VO". So the name plays alone on the tap, and the pop
+             or the buzz - and the line after it - waits for the word to finish. Nothing overlaps, and
+             no hold constant is needed any more. */
+          const afterName = (cb)=>{
+            const go = ()=>{ clearTimeout(vb); busy = false; if(alive()) cb(); };
+            if(name) play(name, go); else setTimeout(go, 120);
+          };
 
           if(it.has === true){
-            /* [S01r5i] IT HAS TO POP, NOT VANISH. It was sfxCorrect() - the generic ding every
-               mechanic uses - over a scale-down, which reads as the balloon fading out. sfx_pop.ogg
-               already ships (7.3KB) and was unused by this page; playSfx gives it its own channel so
-               it lands on the tap instead of queuing behind the object name. A ring is added under
-               the balloon and expands as it goes, so the burst has an outward gesture and not just a
-               shrink; the 8 existing sparkle particles ride on top. */
-            b.classList.add("popped"); sparkle(b); burstRing(b);
-            /* [S01r4v] the SME's own balloon-pop recording, replacing the generic burst. Trimmed
-               1.97s -> 0.21s: the source had 140ms of LEADING silence, which would have landed the
-               bang after the balloon had already gone, and 1.7s of dead air behind it. The peak now
-               sits 30ms in. sfxCorrect stays — the pop and the "that was right" ding are two
-               different messages, and this page fires them together by design. */
-            playSfx("sfx_bal_pop"); sfxCorrect(); setSwMood("happy");
-            found++;
-            SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
+            /* the balloon does not burst until it has been NAMED - see afterName above */
             afterName(()=>{
-              if(!alive()) return;
+              /* the balloon's fill is NOT its background: `.balloon[class*="bcol-"] .bal-body`
+                 resets background to none and the skin is drawn by a hue-rotated ::before.
+                 What each bcol- DOES still set is `color`, so that is the accent to throw. */
+              const _bb = b.querySelector(".bal-body");
+              const hue = _bb ? getComputedStyle(_bb).color : "#FFC93C";
+              b.classList.add("popped"); sparkle(b, hue); burstRing(b);
+              /* [S01r4v] the SME's own pop recording, trimmed 1.97s -> 0.21s with the peak 30ms in.
+                 sfxCorrect stays - the pop and the "that was right" ding are two different messages. */
+              playSfx("sfx_bal_pop"); sfxCorrect(); setSwMood("happy");
+              found++;
+              SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
               if(found >= need){
                 state.locked = true; setSwMood("celebrate"); confettiCannon();
                 SwiftPAL.emit(d.signal_name || "balloon_sound_first_try", {
                   slide_id: slide.id, phase: slide.phase, value: state.attempts === 0,
-                  attempts: state.attempts, latency_ms: Date.now() - state.slideStart });
-                play(audioFor(slide, "done") || audioFor(slide, "correct") || null,
-                     ()=> setTimeout(()=> completeSlide(state.attempts === 0), 700));
+                  attempts: state.attempts, latency_ms: Date.now() - state.slideStart, level: li + 1 });
+                const last = (li >= LEVELS.length - 1);
+                play(lvlAudio(last ? "done" : "correct") || lvlAudio("correct") || null,
+                     ()=>{ if(!alive()) return;
+                           if(last) setTimeout(()=> completeSlide(state.attempts === 0), 700);
+                           else     setTimeout(()=> { li++; renderLevel(); }, 500); });
               } else {
-                play(audioFor(slide, "correct") || null, ()=>{});
+                /* [S01r5o] the popped balloon is REFILLED rather than left as a hole: the SME asked
+                   for "at that place other balloon will appear with other image". It always refills
+                   with a NON-target word, so the number still to find stays exactly what the round
+                   promised and the child cannot be handed a free extra. */
+                const spare = spares.length ? spares.shift() : null;
+                if(spare) setTimeout(()=>{
+                  if(!alive()) return;
+                  cell.it = spare; fillBalloon(b, spare);
+                  b.classList.remove("popped", "bal-hot");
+                  b.classList.add("seq-hidden");
+                  requestAnimationFrame(()=> requestAnimationFrame(()=> b.classList.remove("seq-hidden")));
+                }, 560);
+                play(lvlAudio("correct") || null, ()=>{});
               }
-            }, _sfxHoldMs("sfx_bal_pop", "sfx_correct"));
+            });
           } else {
-            state.attempts++; sfxWrongSoft(); setSwMood("tryagain");
-            b.classList.add("bal-shake");
+            state.attempts++; b.classList.add("bal-shake");
             setTimeout(()=> b.classList.remove("bal-shake"), 620);
             SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
             const n = state.attempts;
             afterName(()=>{
-              if(!alive()) return;
+              sfxWrongSoft(); setSwMood("tryagain");
               /* 1st wrong: the buzz IS the feedback - the deck asks for no voice line here */
               if(n < 2) return;
-              state._balFb = true; state.scaffoldLevel = Math.max(state.scaffoldLevel, 2);
+              /* [S01r5o] two misses earns the glow on every remaining answer. The hand is gone. */
+              glowCorrect();
+              state._balFb = true; state.scaffoldLevel = Math.max(state.scaffoldLevel, 3);
               SwiftPAL.emit("hint_shown", { slide_id: slide.id, attempts: n });
-              play(audioFor(slide, "hint") || audioFor(slide, "try_again") || null, ()=>{
-                state._balFb = false;
-                if(n >= 3 && alive()){                       /* "if the learner continues to struggle" */
-                  const t = remainingCorrect();
-                  if(t){ handOnAnswer(t.b, slide, !!d.allow_hand); state.nudgeUsed = true;
-                         state.scaffoldLevel = Math.max(state.scaffoldLevel, 3); }
-                }
-              });
-            }, _sfxHoldMs("sfx_wrong"));
+              play(lvlAudio("hint") || lvlAudio("try_again") || null,
+                   ()=>{ state._balFb = false; });
+            });
           }
         };
-      });
+      };
 
       /* instruction is VO-only, and the balloons float in after it so the child hears before they act */
       state._balFb = false;
-      const reveal = ()=>{ if(!alive()) return;
-        cells.forEach(({ b }, i) => setTimeout(()=> b.classList.remove("seq-hidden"), i * 170)); };
-      play(audioFor(slide, "prompt") || null, reveal);
-      setTimeout(()=>{ if(alive()) reveal(); }, 9000);        /* FAIL-SAFE: balloons always arrive */
+      const renderLevel = ()=>{
+        if(!alive()) return;
+        const L = LEVELS[li] || {};
+        const its = (L.items || []).slice();
+        spares = (L.spares || []).slice();
+        need = its.filter(it => it.has === true).length;
+        found = 0; state.locked = false; busy = false;
+        [...field.querySelectorAll(".balloon")].forEach(b => b.remove());
+        cells = its.map((it, i) => {
+          const b = document.createElement("div");
+          /* seq-hidden, NOT a private class: capture tooling settles staggered reveals by stripping
+             .seq-hidden, and a mechanic that invents its own name captures BLANK instead. */
+          b.className = "balloon bcol-" + (i % 6) + " seq-hidden";
+          b.style.setProperty("--bi", String(i));
+          fillBalloon(b, it);
+          field.insertBefore(b, sw);
+          const cell = { b, it };
+          wireTap(cell);
+          return cell;
+        });
+        const reveal = ()=>{ if(!alive()) return;
+          cells.forEach(({ b }, i) => setTimeout(()=> b.classList.remove("seq-hidden"), i * 170)); };
+        const say = lvlAudio("prompt") || audioFor(slide, "prompt") || null;
+        play(say, reveal);
+        setTimeout(()=>{ if(alive()) reveal(); }, 9000);   /* FAIL-SAFE: balloons always arrive */
+      };
+      renderLevel();
       state.replayAudio = ()=> play(audioFor(slide, "prompt") || null, ()=>{});
     }
   },

@@ -770,65 +770,183 @@
       },
       "data": {
         "target_sound": "प",
-        "items": [
+        "levels": [
           {
-            "word_hi": "पतंग",
-            "img": "obj_patang",
-            "emoji": "🪁",
-            "audio": "vo_w_patang",
-            "has": true
+            "target_sound": "प",
+            "items": [
+              {
+                "word_hi": "पतंग",
+                "img": "obj_patang",
+                "emoji": "🪁",
+                "audio": "vo_w_patang",
+                "has": true
+              },
+              {
+                "word_hi": "आम",
+                "img": "obj_aam",
+                "emoji": "🥭",
+                "audio": "vo_w_aam",
+                "has": false
+              },
+              {
+                "word_hi": "पपीता",
+                "img": "obj_papita",
+                "emoji": "🍈",
+                "audio": "vo_w_papita",
+                "has": true
+              },
+              {
+                "word_hi": "केला",
+                "img": "obj_kela",
+                "emoji": "🍌",
+                "audio": "vo_w_kela",
+                "has": false
+              },
+              {
+                "word_hi": "पत्ता",
+                "img": "obj_patta",
+                "emoji": "🍃",
+                "audio": "vo_w_patta",
+                "has": true
+              },
+              {
+                "word_hi": "घर",
+                "img": "obj_ghar",
+                "emoji": "🏠",
+                "audio": "vo_w_ghar",
+                "has": false
+              },
+              {
+                "word_hi": "पानी",
+                "img": "obj_pani",
+                "emoji": "💧",
+                "audio": "vo_w_pani",
+                "has": true
+              },
+              {
+                "word_hi": "मछली",
+                "img": "obj_machhli",
+                "emoji": "🐟",
+                "audio": "vo_w_machhli",
+                "has": false
+              }
+            ],
+            "spares": [
+              {
+                "word_hi": "माला",
+                "img": "obj_mala",
+                "emoji": "📿",
+                "audio": "vo_w_mala",
+                "has": false
+              },
+              {
+                "word_hi": "मूली",
+                "img": "obj_muli",
+                "emoji": "🥕",
+                "audio": "vo_w_muli",
+                "has": false
+              },
+              {
+                "word_hi": "लाल",
+                "img": "obj_laal",
+                "emoji": "🔴",
+                "audio": "vo_w_laal",
+                "has": false
+              }
+            ]
           },
           {
-            "word_hi": "आम",
-            "img": "obj_aam",
-            "emoji": "🥭",
-            "audio": "vo_w_aam",
-            "has": false
-          },
-          {
-            "word_hi": "पपीता",
-            "img": "obj_papita",
-            "emoji": "🍈",
-            "audio": "vo_w_papita",
-            "has": true
-          },
-          {
-            "word_hi": "केला",
-            "img": "obj_kela",
-            "emoji": "🍌",
-            "audio": "vo_w_kela",
-            "has": false
-          },
-          {
-            "word_hi": "पत्ता",
-            "img": "obj_patta",
-            "emoji": "🍃",
-            "audio": "vo_w_patta",
-            "has": true
-          },
-          {
-            "word_hi": "घर",
-            "img": "obj_ghar",
-            "emoji": "🏠",
-            "audio": "vo_w_ghar",
-            "has": false
-          },
-          {
-            "word_hi": "पानी",
-            "img": "obj_pani",
-            "emoji": "💧",
-            "audio": "vo_w_pani",
-            "has": true
-          },
-          {
-            "word_hi": "मछली",
-            "img": "obj_machhli",
-            "emoji": "🐟",
-            "audio": "vo_w_machhli",
-            "has": false
+            "target_sound": "च",
+            "audio": {
+              "prompt": "vo_g1_next",
+              "correct": "vo_g1_correct2",
+              "hint": "vo_g1_hint2",
+              "done": "vo_g1_correct2"
+            },
+            "items": [
+              {
+                "word_hi": "चूहा",
+                "img": "obj_chuha",
+                "emoji": "🐭",
+                "audio": "vo_w_chuha",
+                "has": true
+              },
+              {
+                "word_hi": "केला",
+                "img": "obj_kela",
+                "emoji": "🍌",
+                "audio": "vo_w_kela",
+                "has": false
+              },
+              {
+                "word_hi": "चाँद",
+                "img": "obj_chand",
+                "emoji": "🌙",
+                "audio": "vo_w_chand",
+                "has": true
+              },
+              {
+                "word_hi": "कौआ",
+                "img": "obj_kauaa",
+                "emoji": "🐦‍⬛",
+                "audio": "vo_w_kauaa",
+                "has": false
+              },
+              {
+                "word_hi": "चाँदी",
+                "img": "obj_chandi",
+                "emoji": "🪙",
+                "audio": "vo_w_chandi",
+                "has": true
+              },
+              {
+                "word_hi": "कमल",
+                "img": "obj_kamal",
+                "emoji": "⭐",
+                "audio": "vo_w_kamal",
+                "has": false
+              },
+              {
+                "word_hi": "चींटी",
+                "img": "obj_chinti",
+                "emoji": "🐜",
+                "audio": "vo_w_chinti",
+                "has": true
+              },
+              {
+                "word_hi": "कबूतर",
+                "img": "obj_kabutar",
+                "emoji": "⭐",
+                "audio": "vo_w_kabutar",
+                "has": false
+              }
+            ],
+            "spares": [
+              {
+                "word_hi": "आम",
+                "img": "obj_aam",
+                "emoji": "🥭",
+                "audio": "vo_w_aam",
+                "has": false
+              },
+              {
+                "word_hi": "घर",
+                "img": "obj_ghar",
+                "emoji": "🏠",
+                "audio": "vo_w_ghar",
+                "has": false
+              },
+              {
+                "word_hi": "मछली",
+                "img": "obj_machhli",
+                "emoji": "🐟",
+                "audio": "vo_w_machhli",
+                "has": false
+              }
+            ]
           }
         ],
-        "allow_hand": true,
+        "allow_hand": false,
         "signal_name": "balloon_sound_first_try"
       }
     },
@@ -896,7 +1014,10 @@
       "sfx_tap": "assets/Audio/sfx_tap.ogg",
       "sfx_wrong": "assets/Audio/sfx_wrong.ogg",
       "vo_g1_correct": "assets/Audio/vo_g1_correct.ogg",
+      "vo_g1_correct2": "assets/Audio/vo_g1_correct2.ogg",
       "vo_g1_hint": "assets/Audio/vo_g1_hint.ogg",
+      "vo_g1_hint2": "assets/Audio/vo_g1_hint2.ogg",
+      "vo_g1_next": "assets/Audio/vo_g1_next.ogg",
       "vo_g1_prompt": "assets/Audio/vo_g1_prompt.ogg",
       "vo_g2_done": "assets/Audio/vo_g2_done.ogg",
       "vo_g2_hint": "assets/Audio/vo_g2_hint.ogg",
@@ -959,6 +1080,9 @@
       "vo_w_chinti": "assets/Audio/vo_w_chinti.ogg",
       "vo_w_chuha": "assets/Audio/vo_w_chuha.ogg",
       "vo_w_ghar": "assets/Audio/vo_w_ghar.ogg",
+      "vo_w_kabutar": "assets/Audio/vo_w_kabutar.ogg",
+      "vo_w_kamal": "assets/Audio/vo_w_kamal.ogg",
+      "vo_w_kauaa": "assets/Audio/vo_w_kauaa.ogg",
       "vo_w_kela": "assets/Audio/vo_w_kela.ogg",
       "vo_w_laal": "assets/Audio/vo_w_laal.ogg",
       "vo_w_machhli": "assets/Audio/vo_w_machhli.ogg",
@@ -973,7 +1097,10 @@
     },
     "audio_text": {
       "vo_g1_correct": "शाबाश! इसमें प की आवाज़ है।",
+      "vo_g1_correct2": "शाबाश! इसमें च की आवाज़ है।",
       "vo_g1_hint": "ध्यान से सुनिए, इसमें प की आवाज़ नहीं है।",
+      "vo_g1_hint2": "ध्यान से सुनिए, इसमें च की आवाज़ नहीं है।",
+      "vo_g1_next": "अब “च” की आवाज़ वाले चित्रों पर टैप करो।",
       "vo_g1_prompt": "प की आवाज़ वाले चित्र पर टैप कीजिए।",
       "vo_g2_done": "शाबाश! तुमने प की आवाज़ वाले सारे शब्द खोज लिए।",
       "vo_g2_hint": "हर शब्द को ध्यान से देखो और सुनो। किस शब्द में प की आवाज़ आ रही है?",
@@ -1033,6 +1160,9 @@
       "vo_w_chinti": "चींटी",
       "vo_w_chuha": "चूहा",
       "vo_w_ghar": "घर",
+      "vo_w_kabutar": "कबूतर",
+      "vo_w_kamal": "कमल",
+      "vo_w_kauaa": "कौआ",
       "vo_w_kela": "केला",
       "vo_w_laal": "लाल",
       "vo_w_machhli": "मछली",
@@ -1052,6 +1182,8 @@
       "obj_chinti": "assets/Images/obj_chinti.png",
       "obj_chuha": "assets/Images/obj_chuha.png",
       "obj_ghar": "assets/Images/obj_ghar.png",
+      "obj_kabutar": "assets/Images/obj_kabutar.png",
+      "obj_kamal": "assets/Images/obj_kamal.png",
       "obj_kauaa": "assets/Images/obj_kauaa.png",
       "obj_kela": "assets/Images/obj_kela.png",
       "obj_laal": "assets/Images/obj_laal.png",
@@ -1082,6 +1214,20 @@
           2.75
         ]
       ],
+      "vo_g1_correct2": [
+        [
+          0.27,
+          0.97
+        ],
+        [
+          1.38,
+          1.68
+        ],
+        [
+          1.82,
+          2.77
+        ]
+      ],
       "vo_g1_hint": [
         [
           0.14,
@@ -1094,6 +1240,38 @@
         [
           1.61,
           2.77
+        ]
+      ],
+      "vo_g1_hint2": [
+        [
+          0.26,
+          1.17
+        ],
+        [
+          1.55,
+          1.98
+        ],
+        [
+          2.17,
+          3.48
+        ]
+      ],
+      "vo_g1_next": [
+        [
+          0.12,
+          0.31
+        ],
+        [
+          0.57,
+          2.4
+        ],
+        [
+          2.55,
+          2.7
+        ],
+        [
+          2.86,
+          3.1
         ]
       ],
       "vo_g1_prompt": [
@@ -1904,6 +2082,24 @@
           0.83
         ]
       ],
+      "vo_w_kabutar": [
+        [
+          0.26,
+          0.87
+        ]
+      ],
+      "vo_w_kamal": [
+        [
+          0.31,
+          0.67
+        ]
+      ],
+      "vo_w_kauaa": [
+        [
+          0.29,
+          0.9
+        ]
+      ],
       "vo_w_kela": [
         [
           0.3,
@@ -1984,7 +2180,10 @@
       "sfx_tap": 0.1,
       "sfx_wrong": 0.72,
       "vo_g1_correct": 3.01,
+      "vo_g1_correct2": 2.97,
       "vo_g1_hint": 3.09,
+      "vo_g1_hint2": 3.73,
+      "vo_g1_next": 3.29,
       "vo_g1_prompt": 2.93,
       "vo_g2_done": 4.29,
       "vo_g2_hint": 6.17,
@@ -2047,6 +2246,9 @@
       "vo_w_chinti": 1.01,
       "vo_w_chuha": 1.01,
       "vo_w_ghar": 1.21,
+      "vo_w_kabutar": 1.13,
+      "vo_w_kamal": 0.85,
+      "vo_w_kauaa": 1.21,
       "vo_w_kela": 0.97,
       "vo_w_laal": 1.01,
       "vo_w_machhli": 0.69,

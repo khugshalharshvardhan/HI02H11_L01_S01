@@ -1949,3 +1949,129 @@ pass.
 2. **Nobody has heard the five new/changed clips**, `vo_g5_show` among them.
 3. **The demo page has not been watched at full speed** — its beats are verified by polling the DOM,
    and the stills show the finished board, but the flight itself has only been measured, not seen.
+
+---
+
+# r5o — the balloon page gets a second round, and a floor to stand on
+
+Page 14 was a single pass over eight balloons: tap the four with प, and the sky slowly emptied. The
+SME asked for six things on it, and they turn out to be one change — the page had no **state** beyond
+"how many are left".
+
+## 1 · Swiftie was hovering
+
+She was pinned 322px down a field that r5i had lifted by 50px, so she ended up mid-air on the left
+with nothing underneath her. She now sits at **372px**, which leaves her feet **22px** off the stage
+floor while still riding up with the field, so she stays *beside* the balloons rather than behind
+them.
+
+392px was the first attempt and was wrong — it measured **2px** of clearance, which reads as standing
+*on* the frame edge rather than on the ground.
+
+## 2 · The word is named before it is judged
+
+Tapping a balloon used to play the verdict. It now plays **the word first** — पतंग — and the
+correct/incorrect line follows. This is the point of the page: the child has to hear the word to hear
+the sound inside it, and a verdict that arrives before the word teaches nothing about why.
+
+The two clips are chained with `_chainNetMs`, so the gap between them is sized to the first clip's
+actual length rather than a guessed delay.
+
+## 3 · The pop is a balloon popping
+
+The old burst was sparks only, which reads as a firework. Six **torn rubber slivers** are now thrown
+with the sparks, tumbling faster than they do, with a lopsided `border-radius` so each one reads as a
+piece of skin rather than a confetti rectangle.
+
+They are drawn in **the popped balloon's own colour** — `sparkle()` reads it off that `.bal-body`'s
+computed `color` rather than taking a parameter, so a balloon can never pop in someone else's colour.
+
+## 4 · The sky never thins out
+
+Popping a target now **refills** that balloon from a `spares` list instead of leaving a hole. A refill
+is always a **non-target**, so the number still to find stays exactly what the round promised — the
+board gets no easier as it goes, which is the whole difficulty of the exercise.
+
+Measured on round 1: पतंग → माला, पपीता → मूली.
+
+## 5 · Two misses lights the answers, and the hand is gone
+
+The hand nudge is removed from this page (`allow_hand: False`). After **two** incorrect taps every
+*remaining* correct balloon breathes with an amber glow instead.
+
+This is not a smaller version of the hand — it is the thing the hand could not do. A hand points at
+**one** balloon; the question on this page is "which four", and four is what the glow can mark. The
+glow rides on `.bal-lift` rather than `.balloon` so it cannot fight `balFloat` (the r5c lesson), and
+it is dropped on refill, because a refill is never an answer.
+
+## 6 · A second round, on a different sound
+
+`items` became `levels`. Clearing round 1 swaps the whole board for round 2, which hunts **च** against
+**क** distractors — the "words from क and च" that was asked for.
+
+Round 2 cannot share round 1's praise or hint, because both **name the letter out loud**; a per-level
+`audio` block overrides `prompt`/`correct`/`hint`/`done`.
+
+Its four च words and two of its four क words are art and clips this lesson already ships (कौआ is the
+cover crow), so only **कमल** and **कबूतर** are new pictures.
+
+Measured end to end:
+
+```
+vo_g1_prompt → vo_g1_correct ×4 → vo_g1_next → vo_g1_correct2 ×4
+round 2 board: obj_chuha obj_kela obj_chand obj_kauaa obj_chandi obj_kamal obj_chinti obj_kabutar
+glow marks 4 of 4, no hand
+```
+
+**One compromise, and it is visible in the data.** Round 2's three *refill* balloons are words from
+elsewhere in the lesson (आम, घर, मछली) rather than three more क images. Three more pictures did not
+fit under the cap. If the क/च set has to hold through the refills as well, that is three more images
+and a bitrate drop to pay for them.
+
+## 7 · Four images were shipping from the wrong tree
+
+While cross-checking the copies, `dist/` turned out to be shipping **different art** from `build/` for
+four objects — `obj_aam`, `obj_chandi`, `obj_pani`, `obj_payal`. Not a re-encode: different
+generations, different dimensions.
+
+`build/`'s versions **match git `HEAD`**; the factory KG copies did not — the same drift, resolved the
+same way, as the 40 audio clips in r5e.
+
+It also happens that `build/`'s are the right ones on their own merits:
+
+- **house style** — this lesson's objects have faces (`obj_kela`, `obj_laal`, `obj_muli`,
+  `obj_papita`, `obj_patang`, `obj_chand` all do). build's mango and water-glass do; dist's flat
+  bold-outline versions did not.
+- **correctness** — build's `obj_payal` is a pair of anklets with bells. The one that was shipping
+  read as a single bangle.
+
+Both factory trees and `dist/` were re-cut from `build/`. Two of the six that had drifted
+(`obj_champa`, `obj_sapna`) are not referenced by the card and never shipped at all.
+
+Six non-`obj_` files in `build/assets/Images` (`aunt 1.png`, `mama 1.png`, `mouse.png`, `papita.png`,
+`radish.png`, `tamatar 1.png`) are unreferenced legacy leftovers. Left in place — they are not shipped
+and removing them is not this round's call.
+
+## Receipt
+
+- 15 slides (`tutorial 6 · guided 4 · practice 5`); all three guards pass on **all four** trees —
+  `build/`, `dist/`, factory KG, factory dist
+- HTML byte-identical across all four (`1abf3ef95dcc8dfb`)
+- Audio byte-identical across the pairs; images now byte-identical too
+- Six new clips: `vo_g1_next`, `vo_g1_correct2`, `vo_g1_hint2`, `vo_w_kauaa`, `vo_w_kamal`,
+  `vo_w_kabutar`; two new pictures: `obj_kamal`, `obj_kabutar`
+- **dist 9.56 MB — 450 KB under the cap**
+
+## The bitrate question was answered by the work
+
+r5n left the 32k/28k/24k choice open. Round 2's content put dist **14 KB over** at 32k, so all 88
+shipping clips were re-cut at **28k**. That was forced by the request rather than chosen — if 28k is
+audibly worse on any line, say so and the fix is to cut content, not to go back up.
+
+## Still needs a human
+
+1. **Nobody has heard the six new clips.** `vo_g1_hint2` came back on the `wrapped(Kore)` rung of the
+   refuser ladder, so its timbre may not match the rest.
+2. **28k has not been listened to.** See above — it was forced, not chosen.
+3. **The pop has not been watched at full speed.** Shard count, colour inheritance and timing are
+   verified in the DOM; the burst itself has been measured, not seen.
