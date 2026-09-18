@@ -104,7 +104,12 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .meet-pic-box .pic-img{width:220px;height:220px;object-fit:contain;}
 .meet-pic-box .pic-img.fallback{display:none;}
 .meet-pic-box .pic-emoji{font-size:160px;line-height:1;}
-.meet-pic-box .pic-label{font-size:36px;font-weight:800;color:var(--navy);}
+/* [S01r5l] SME: "increase the size of the word चूहा as it feels smaller". It sits beside a
+   200px letter glyph, so 36px read as a caption rather than as the word being taught. 36 -> 52px.
+   Safe to change here: the two-layer overlay that reddens the target letter is built from
+   getComputedStyle(...).fontSize, so it re-cuts itself at the new size instead of landing at the
+   old offsets. */
+.meet-pic-box .pic-label{font-size:52px;font-weight:800;color:var(--navy);}
 .meet-pair{display:flex;gap:80px;align-items:center;justify-content:center;}
 .meet-pair-item{display:flex;align-items:center;gap:32px;}
 
@@ -419,6 +424,16 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .stage.thm-toybox .opt-cell{ background:#FFFDF7; border-color:#F7C24D; border-radius:28px;
    box-shadow:0 10px 22px rgba(214,140,20,.18); }
 .stage.thm-toybox .opt-cell:hover{ transform:translateY(-5px) scale(1.02); }
+/* [S01r5k] A CORRECT TAP HAD NO VISIBLE ANSWER AT ALL. `.opt-cell.correct` paints the card green
+   at line 131, but the toybox rule directly above re-paints every .opt-cell cream — SAME
+   specificity (0,2,0), and it comes LATER, so it won. The tick that used to carry the message on
+   its own was removed by a later SME ruling (`.opt-cell.correct::after{content:none}` below), which
+   left nothing: the card the child got right looked exactly like the two they did not touch. The
+   SME reported it on pages 8 and 11.
+   One class more than the rule it has to beat, so no !important is needed. The wrong states never
+   had this problem — `.crossed` and `.wrong-flash` are both defined after the toybox block. */
+.stage.thm-toybox .opt-cell.correct{ border-color:var(--correct); background:var(--correct-bg);
+   box-shadow:0 0 0 4px rgba(0,177,50,.22), 0 8px 18px rgba(0,177,50,.22); }
 .stage.thm-toybox .opt-cell:has(.cmp-chip-lbl){ min-height:184px; padding:12px 26px; }
 .stage.thm-toybox .opt-cell:has(.cmp-chip-lbl) .pic-img{ width:116px; height:116px; }
 .stage.thm-toybox .opt-cell:has(.cmp-chip-lbl) .cmp-chip-emoji{ font-size:88px; }
@@ -878,6 +893,12 @@ body.loaded .sg-acell{animation-play-state:running;}
 /* start button = provided image (button + tapping hand), transparent bg */
 .sg-btn{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:4;font-family:var(--font-hi);font-weight:800;font-size:32px;color:var(--navy);background:#FCB717;border:4.54px solid #fff;border-radius:44.56px;padding:14px 54px;cursor:pointer;box-shadow:0 6px 6px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);animation:sgBtnPulse 1.4s ease-in-out infinite;}
 .sg-btn img{width:100%;height:auto;display:block;pointer-events:none;}
+/* [S01r5l] SME: drop the "शुरू करें" wording, make it a play button, keep the button itself as it is.
+   So the pill is untouched - same fill, border, radius, shadow and its 186px min-width, which is what
+   stops an icon-only label collapsing it to a circle - and only the content changes. Drawn as a
+   glyph through ::after exactly the way .nav-btn already draws its arrow, so there is no new asset
+   to ship and nothing to go missing. The Hindi stays on the button as aria-label. */
+.sg-btn::after{content:"\25B6";font-size:30px;line-height:1;display:block;transform:translateX(2px);}
 .sg-btn:active{transform:translateX(-50%) translateY(3px);}
 @keyframes sgBtnPulse{0%,100%{transform:translateX(-50%) scale(1);}50%{transform:translateX(-50%) scale(1.03);}}
 /* landing "listen" button — a warm welcome plays on the title screen; tap to replay */
@@ -891,6 +912,13 @@ body.loaded .sg-acell{animation-play-state:running;}
 .nudge-hand{position:absolute;width:96px;height:96px;z-index:55;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22));animation:nudgeMove 1s ease-in-out infinite;display:none;}
 .nudge-hand img{width:100%;height:100%;object-fit:contain;}
 .nudge-hand.show{display:block;}
+/* [S01r5l] the idle hand on the cover's play button has to clear the start gate (z-index 80);
+   scoped to this one use so every in-lesson nudge keeps its normal stacking. */
+.nudge-hand.nh-start{ z-index:90; }
+/* [S01r5n] the tile's own flight on the watch-first sort page. 0.97s matches the window travelNudge
+   spends moving (its 1.8s keyframes travel between 18% and 72%), so the hand and the picture arrive
+   together instead of the hand landing first and the tile trailing after it. */
+.sort-item.demo-fly{ transition:transform .97s cubic-bezier(.32,.78,.3,1); z-index:30; pointer-events:none; }
 @keyframes nudgeMove{0%,100%{transform:translateY(2px);}50%{transform:translateY(-14px);}}  /* [20a] restored — was deleted while .nudge-hand still referenced it -> static nudge */
 
 
@@ -913,6 +941,10 @@ body.is-end .stage-inner{visibility:hidden;}
 @keyframes endPop{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
 .end-text{font-weight:800;font-size:38px;color:var(--navy);text-align:center;background:var(--cream);border:3px solid var(--cream-edge);padding:18px 52px;border-radius:9999px;box-shadow:0 8px 20px rgba(0,47,118,.14);z-index:2;}
 /* "आगे बढ़ें" appears only after the celebration VO finishes */
+/* [S01r5n] the celebration button lost its wording with the rest of them; its arrow used to
+   be a character inside that text, so it comes back here. Written as the glyph itself rather
+   than a CSS escape - the escape form is one stray backslash away from rendering as digits. */
+.end-btn::after{content:"→";font-size:30px;line-height:1;}
 .end-btn{display:none;z-index:3;font-family:var(--font-hi);font-weight:800;font-size:28px;color:var(--navy);background:#FCB717;border:4.54px solid #FFFFFF;border-radius:44.56px;padding:14px 44px;cursor:pointer;box-shadow:0 6px 6px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);}
 .end-btn.show{display:inline-flex;align-items:center;animation:hintPop .4s cubic-bezier(.34,1.5,.6,1);}
 .end-btn:active{transform:translateY(3px);box-shadow:0 3px 3px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);}
@@ -1176,8 +1208,21 @@ body.tut-page{background:#FFFFFF;}
    ✓ on .got STAYS: the ruling removed the wrong-mark, not the right-mark, and TAP_ALL needs a
    persistent tick to show which items are already banked. Lock/dim kept, as with .sentence-word. */
 .tap-all-item.nope{border-color:var(--wrong);background:var(--wrong-bg);opacity:.55;pointer-events:none;animation:buzzShake .4s;box-shadow:0 0 0 3px var(--wrong);}
+/* [S01r5m] a found card leaves play 2s after it turns green. It was already untappable (the
+   click guard returns on .got) but still looked live, so nothing told the child which cards
+   were still in question. pointer-events is belt-and-braces against a stray tap. */
+.tap-all-item.spent{ opacity:.42; pointer-events:none; filter:saturate(.75);
+  transition:opacity .45s ease, filter .45s ease; }
 /* SENTENCE_SOUND / SENTENCE_PICK_PIC: line stimulus + 🔊 replay above the options */
 .sentence-sound-stim{display:flex;flex-direction:column;align-items:center;gap:20px;}
+/* [S01r5k] SME: "move this sentence one box upwards, currently its too close to the च letter which
+   is made just below it". One box of the card's grid paper is 46px (.tut-card background-size).
+   translateY, not margin: a margin would grow the flex block and re-centre it, which moves the
+   LETTER CARD down by half of whatever the sentence moves up — the two would meet in the middle and
+   the gap would only open by half. A transform takes the sentence out of layout, so the letter card
+   stays exactly where it is and the full 46px becomes clearance. The space it moves into is the
+   empty .tut-prompt band (these pages carry no heading), so nothing is displaced. */
+.q-row.ss-teach .sentence-sound-stim{ transform:translateY(-46px); }
 .sentence-sound-stim .sentence-strip{gap:14px;}
 .sentence-sound-stim .sentence-word{font-size:48px;padding:12px 22px;}
 .sentence-sound-stim .sentence-word .sw-text{font-size:48px;}
@@ -1809,7 +1854,16 @@ body.is-start .phase-gate{
 .opt-grid.ss-letter-card .opt-cell{ min-height:0; width:138px; height:138px; padding:6px; flex:0 0 auto; }
 /* [S01r4f] the teach card's emphasis: a warm ring, NO green and NO checkmark. `.correct` carries a
    ✓ badge meaning "you answered correctly", which is a lie on a slide with nothing to answer. */
-.opt-cell.ss-lit{ border-color:var(--tgt-ink); background:#FFF7EC;
+/* [S01r5l] SME: "add pulse effect in the च letter". r4g had dropped `reveal-pulse` from this card
+   for a good reason - that animation pulses a GREEN box-shadow, left over from when the card was
+   `.correct`, and green on an amber teach card reads as "you answered right" when nothing has been
+   answered. So this is its own keyframe in the card's OWN colour, scale only plus an amber ring, and
+   it runs on .ss-lit, which is set only while the letter is being shown on the three teach pages. */
+@keyframes ssLitPulse{
+  0%,100%{ transform:scale(1);        box-shadow:0 0 0 0 rgba(194,89,10,.30), 0 12px 28px rgba(11,61,140,.14); }
+  50%    { transform:scale(1.045);    box-shadow:0 0 0 12px rgba(194,89,10,0), 0 12px 28px rgba(11,61,140,.14); }
+}
+.opt-cell.ss-lit{ animation:ssLitPulse 1.6s ease-in-out infinite; border-color:var(--tgt-ink); background:#FFF7EC;
   box-shadow:0 5px 12px rgba(194,89,10,.16); }
 
 /* ---- MEET_LETTER VO-synced reveal -------------------------------------------------------------- */

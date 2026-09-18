@@ -1500,3 +1500,452 @@ request, and it is one line of card data to re-balance if it reads as too static
 1. **The pause in the middle of the MEET_LETTER line** (see the trade above) is a judgement call.
 2. The captures freeze animation and strip `seq-hidden`, so the static shots show the picture
    already present — that is the capture tool, not the runtime. The timing was checked separately.
+
+---
+
+# r5k — the three teach pages made alike, the picture moved onto the word, and a correct tap answered
+
+Six asks, and three of them turned out to be the same underlying problem: the three teach pages had
+drifted apart from each other.
+
+## 1 · The sentence sits one grid box clear of the letter card
+
+One box of the card's grid paper is **46px** (`.tut-card background-size`).
+
+`transform`, not margin. A margin would grow the flex block, and the block is CENTRED — so the
+letter card would move down by half of whatever the sentence moved up, and the gap would open by
+only half the intended amount. A transform takes the sentence out of layout, so the letter card does
+not move and the full 46px becomes clearance. It moves into the empty `.tut-prompt` band (these
+pages carry no heading), so nothing is displaced.
+
+Measured on all three pages: sentence-bottom to letter-card-top **38px → 84px**.
+
+## 2 · The picture lands on "<letter> से", not after the line
+
+r5j put it after the whole line, which was the ask at the time; this is the correction.
+
+The anchor is the subtle part. **"से" occurs twice** in the spoken line — "अक्षर **से** लिखी" and
+"च **से** चूहा" — and the cue resolver scans FORWARD from the previous cue. A bare `{at:"से"}` would
+therefore resolve to the FIRST one, mid-sentence, which is roughly where the picture already was. A
+`{at:"जैसे"}` cue placed before it moves the scan past the first occurrence; it re-pulses the letter,
+which also gives the middle of the line a beat of its own (the static gap r5j introduced).
+
+Resolved token indices, checked against the real card:
+
+```
+T4  letter -> [4] सुनी।   letter -> [13] जैसे—   pic -> [15] से   label -> [16] चूहा।
+T6  ...                                          pic -> [15] से   label -> [16] मूली।
+T2  ...                                          pic -> [15] से   label -> [16] पपीता।
+```
+
+In the browser the picture now appears **during** the line (T4: +5920ms against a clip ending at
++6513ms) instead of after it. Only the letter-mark still waits for the end.
+
+## 3 + 4 · Pages 1, 3 and 5 are now the same page with different content
+
+Two separate drifts, one per page, both found by diffing the three against each other:
+
+- **Page 3 spoke a clip the others did not.** Its `teach_seq` letter beat carried
+  `{"step":"letter","audio":"vo_snd_m"}` — 2.17s of "म से मछली।" — while pages 1 and 5 have always
+  been `{"silent": true}` on that beat. That is the VO the SME asked to remove. Now silent, like the
+  others.
+- **Page 5's explanation named nothing.** The mark beat lights the four words one at a time, paced by
+  the explain clip, and on pages 1 and 3 that clip NAMES them ("चूहे, चार, चने, चबाए—…"), so each word
+  lights as it is spoken. r4 shortened `vo_t1_explain` to just "इन सब शब्दों में प की आवाज़ बार-बार
+  आई।", leaving page 5 marking four words against a sentence that named none of them. Re-scripted to
+  the page-1 shape and regenerated.
+
+All three pages now play exactly two clips, verified by logging every audio element the page creates:
+
+```
+T3   vo_line_l2.ogg, vo_t3_explain.ogg
+T5   vo_line_l3.ogg, vo_t5_explain.ogg
+T1   vo_line_l1.ogg, vo_t1_explain.ogg
+```
+
+## 5 + 6a · The letter sounds were abrupt because they were cut mid-decay
+
+r5c made the bare sounds by **trimming a carrier phrase** — slicing "च" out of "च से चम्मच।". That
+cuts the waveform while it is still ringing. Measured on the last 12ms, as a share of each clip's own
+peak:
+
+| clip | amplitude at the last sample |
+|---|---|
+| `vo_snd_ch` / `vo_snd_l` / `vo_snd_r` | 6.4% / 4.8% / 6.8% |
+| `vo_ltr_m` | **20.8%** |
+| all six new clips | **0.0%** |
+
+A waveform that stops at a fifth of its peak is a step change, and a step change is what "abrupt"
+sounds like.
+
+The six replacements are cut from a carrier that **repeats the letter** — "च, च, च।" — so each one is
+a complete utterance with its own onset and decay, taken at a silence boundary with 15ms/60ms fades.
+A retry loop rejects any take where the voice ran the repetitions together (one long burst) or
+clipped the letter, requiring at least 2 separated bursts and a letter of 0.18–0.45s. Some letters
+refuse the comma carrier and needed dandas ("ल। ल। ल।") or a wrapped prompt.
+
+`vo_ltr_ch`, `vo_ltr_l`, `vo_ltr_r`, `vo_ltr_p` are new; `vo_ltr_m` and `vo_ltr_n` were remade the
+same way. Final lengths 0.32–0.48s, all within the band the approved clips occupied.
+
+Wiring, which also settles the long-standing page-1-vs-3-and-5 inconsistency: **every** place that
+plays a bare letter now uses `vo_ltr_*` — the three teach pages' letter card, page 8's च/ल/र options,
+page 11's म/ल/न options, and both question pages' `target`.
+
+> **Honest limit.** Isolated consonants cannot be verified by ASR — asked to identify these clips the
+> model returned ट/म/ट for प and claimed a 0.3s clip contained "6 sounds". That is noise, and this
+> bundle already knew open transcription fails on isolated aksharas. What is verified here is
+> structural: separated bursts, a length in the approved band, and a clean decay to silence. Whether
+> they SOUND right is still a human call.
+
+## 5 + 6b · A correct tap had no visible answer at all
+
+`.opt-cell.correct` paints the card green at line 131 of the stylesheet. The toybox theme repaints
+every `.opt-cell` cream at line 418 — **the same specificity (0,2,0), and later in the file, so it
+won**. The tick that used to carry the message by itself was removed by an earlier SME ruling
+(`.opt-cell.correct::after{content:none !important}`), which left nothing at all: the card the child
+got right looked exactly like the two they never touched.
+
+Fixed with one theme-scoped rule carrying one class more, so no `!important` is needed. The wrong
+states never had the problem — `.crossed` and `.wrong-flash` are both defined after the toybox block.
+
+Verified by clicking the correct option in a real browser on both pages:
+
+```
+G3   classes = opt-cell correct ck-correct   background rgb(204,248,216)   border rgb(0,177,50)
+P4   classes = opt-cell correct ck-correct   background rgb(204,248,216)   border rgb(0,177,50)
+```
+
+## Receipt
+
+- All three guards pass on `build/` and `dist/`; the bare-sound guard now covers **9** ids
+- HTML and all audio files identical across `build/`, `dist/` and both factory trees
+- Shippable dist payload **9.90 MB** — but only **99 KB** under the cap now
+- Every change checked against the running page, not by eye: the gap and the green by measuring the
+  DOM, the picture timing by logging the audio element, the clip lists by recording every `new Audio`
+
+## Still needs a human
+
+1. **The six letter sounds have not been heard.** Their construction is measurably better than the
+   trims they replace; the sound itself is unverified (see the limit above).
+2. **`dist/` is at 99 KB of headroom.** The next audio addition will need a lower Opus bitrate.
+3. `vo_snd_l` and `vo_snd_r` are now referenced by nothing and will drop out of the next full dist
+   cut. `vo_snd_ch`, `vo_snd_m`, `vo_snd_p` and `vo_snd_n` are still used by the MEET_LETTER pages'
+   `sound` slot and the practice pages' `target`.
+
+---
+
+# r5l — a play button and a clear sky on the cover, icon-only nav, a pulsing letter, a bigger word
+
+## 1a · The stars were flying through the card, and the geometry says why
+
+The sky layer is the animation toolkit's recipe 1, and its rule is that nothing spawns inside
+`r0 = 22vmax` of centre, so "the card sits in a hole the geometry already leaves". **It does not.**
+`r0` clears a CIRCLE; the start card is a wide RECTANGLE.
+
+The stage is 1333×750 scaled to fit and centred, so the card's half-size in vmax is the same at
+every window size — it is scale-invariant, because the card and `vmax` both track the viewport:
+
+| | half-width | half-height |
+|---|---|---|
+| the card (+ the mascot's overhang) | **43.6 vmax** | 18.0 vmax |
+| where a star starts | 22 vmax | 22 vmax |
+
+So a star on a horizontal lane began its flight **22 vmax inside the card**, and the lanes either
+side of horizontal crossed the card and the mascot on their way out. Vertically 22 already cleared,
+which is why it looked deliberate from some angles and wrong from others.
+
+The start radius is now computed **per lane** — how far along that particular ray the card's edge
+actually is (`min(halfW/|cos|, halfH/|sin|)`, plus a margin), floored at the original 22 so vertical
+lanes are unchanged. Horizontal lanes now start near 47 vmax. The outer radius follows so every lane
+still travels a real distance, and each element keeps its own angle so a resize can recompute.
+
+Measured on the running cover at five window sizes, portrait included: **0 of 87 stars** start
+inside the card, against ~20 before.
+
+> I could not open the repo referred to in the request, so this matches the rule the toolkit's own
+> comments state (clear the card) rather than that repo's motion. If the drift, speed or density
+> should change too, point me at the repo and I will match it properly.
+
+## 1b · A play button instead of the wording
+
+`शुरू करें` is gone; the pill now carries a ▶ glyph, drawn through `::after` exactly the way
+`.nav-btn` already draws its arrow — so there is no new asset to ship and nothing to go missing. The
+button itself is untouched: same fill, border, radius, shadow, and the 186px min-width that stops an
+icon-only label collapsing it to a circle. Measured on the running page: **198×68**, as before. The
+Hindi stays on the element as `aria-label`.
+
+## 1c · An idle hand on the play button after 5s
+
+With the wording gone the cover has no other affordance, so an idle child has nothing telling them
+where to go. The hand appears after 5s and is cancelled by any touch of the cover.
+
+**It has to be INSIDE the gate, not merely above it.** The first build set `z-index:90` on the hand
+and looked correct in the DOM — classes set, z-index applied — and was invisible on screen. The hand
+lives in `.slide-stage`, and z-index resolves against the nearest stacking context, so 90 only ever
+competed with the slide's own children while `.slide-stage` as a whole still painted under the cover
+(z-index 80). Raising `.slide-stage` instead would have lifted the mounted slide over the cover too.
+So for this one nudge the hand is moved into the gate and placed against the gate's box; the disarm
+puts it back where every other nudge expects it.
+
+Verified: appears at **+5.7s**, fingertip lands **on** the button, and an early tap suppresses it.
+
+## 2 · A pulse on the letter card (pages 1, 3, 5)
+
+r4g had deliberately dropped `reveal-pulse` from this card, and was right to: that animation pulses a
+GREEN box-shadow left over from when the card was `.correct`, and green on an amber teach card reads
+as "you answered right" when nothing has been answered.
+
+So this is its own keyframe in the card's own colour — scale plus an amber ring, 1.6s — running on
+`.ss-lit`, which is set only while the letter is being shown on the three teach pages.
+
+## 3 · The picture's word is bigger (pages 2, 4, 6)
+
+`.meet-pic-box .pic-label` **36px → 52px**. It sits beside a 200px letter glyph, so 36px read as a
+caption rather than as the word being taught. Safe to change here: the two-layer overlay that reddens
+the target letter is built from `getComputedStyle(...).fontSize`, so it re-cuts itself at the new
+size instead of landing at the old offsets.
+
+## 4 · The nav button is arrow-only, everywhere
+
+`आगे` removed from the markup; the `::after` arrow it already had is now the whole label. One change
+covers every page, since all of them share the single `#navBtn`. Its design is untouched — same
+170px pill, same states — and the word is kept as `aria-label`.
+
+## Receipt
+
+- All three guards pass on `build/` and `dist/`; HTML identical across `build/`, `dist/` and both
+  factory trees; no audio changed this round
+- Shippable dist payload **9.91 MB**, 91 KB under the cap
+- Everything checked against the running page: star positions against the card's real rect at five
+  window sizes, the nudge by timing it from page load, the button labels and the pulse by reading
+  computed style
+
+## Still needs a human
+
+1. **The celebration's own button still reads "आगे बढ़ें →"** (`#endBtn`, a different element from
+   `#navBtn`). It was left alone because stripping it to an arrow would lose the phrase's meaning on
+   the final screen — say the word and I will make it match.
+2. **The star motion itself is unchanged** — only where each lane begins. See the note in 1a.
+3. **`dist/` is at 91 KB of headroom.** The next audio addition needs a lower Opus bitrate.
+
+---
+
+# r5m — the hunt pages follow through, and the question pages help instead of answering
+
+## 1 · Pages 7, 10 and 12 (the sound hunt)
+
+### The letter is quoted in the instruction panel
+
+`prompt_hi` **is** the VO string on these pages (shown == spoken, by construction), so the quotes go
+in that one string rather than a second copy of the line. They cost nothing spoken — TTS does not
+voice a quotation mark — so the existing clips still match and were not re-recorded. Verified: the
+clip still transcribes at 98% against the quoted text.
+
+### The earned hand sits below the card
+
+`_placeNudge` puts the fingertip ON the target, which is right for a bare letter and wrong for a
+picture card: the hand covered the art or the word. The SME asked for it "just below the text of the
+card (below the पपीता word) so that it does not cover anything".
+
+A card opts in with `data-nudge-below`, so the default placement is untouched everywhere else, and
+the hand is then centred horizontally and dropped just under the card. Measured on all three pages:
+fingertip at y=601 against a word ending at y=576 and a card ending at y=591 — **below both**, and
+**0px** off the card's centre.
+
+### The page asks for the second word
+
+There was nothing said between the first correct tap and the last, so a child who found one word got
+silence exactly where the page should have been asking for the other. New clip per page
+(`vo_g2_more` / `vo_p1_more` / `vo_p7_more`), spoken after a correct find **only while one is still
+missing**. Measured order on a correct tap: `sfx_correct` → the word → `vo_g2_more`.
+
+### A found card leaves play, and a locked card comes back
+
+| | |
+|---|---|
+| on a correct tap | the card is already green (`.got`), and **2s later** it fades to `.spent` — 0.42 opacity, `pointer-events:none` |
+| also on a correct tap | every `.nope` lock is cleared |
+
+The fade matters because the card was *already* untappable — the click guard returns on `.got` — but
+still looked live, so nothing told the child which cards were still in question.
+
+Clearing the lock is the SME's "after one correct if any other element is disabled then enable it so
+user can tap on that too". It clears the LOCK, not the attempt count, so another wrong tap re-locks
+immediately and the scaffold ladder is unchanged.
+
+## 2 · Pages 8 and 11 (the sound question)
+
+### "ध्यान से सुनो" is gone from the panel — and it was the same string as the VO
+
+`prompt_hi` is the VO text here too, so cutting the phrase from that one string removes it from the
+panel **and** from what is spoken, keeping shown == spoken. Both prompt clips were re-recorded.
+
+### The help replays the sentence instead of naming the answer
+
+This one was not where it looked. The SME reported a VO "after 2 wrong attempts", and the obvious
+place to change was the 2nd-wrong rung — but this game sets **`max_attempts: 2`**, so the second
+wrong tap does not reach that rung at all: it lands on **terminal help**, which spoke
+`vo_g3_reveal` — *"ध्यान से देखो, सही जवाब च है।"* That is the line the SME heard.
+
+So terminal help now runs the slide's own hint action when it has one, and these two pages provide
+it: the target akshara is overlaid on each word (the two-layer form, so only the consonant lights and
+never its matra) and the line is replayed with each word lighting as it is spoken — the same beat
+pages 1, 3 and 5 use. The overlay is built at hint time, not at mount, because lighting the answer
+inside the stimulus before the child has tried would hand it to them.
+
+Measured after two wrong taps:
+
+```
+G3   sfx_wrong, vo_ltr_l, vo_g3_try, sfx_wrong, vo_ltr_l, vo_line_l2     overlay 5/5 words, 4 lit
+P4   sfx_wrong, vo_ltr_m, vo_p4_try, sfx_wrong, vo_ltr_m, vo_line_l6     overlay 4/4 words, 3 lit
+```
+
+4 of 5 and 3 of 4 are right: "ने" carries no च and "लाई।" carries no न, and an unlit word is the
+point of the beat.
+
+### No pulse, no green glow on the hint — green is reserved for the child
+
+`.reveal-hold` runs `revealPulse`, which animates a **green** box-shadow — the same green a card gets
+when the child picks it correctly. On the help rung that painted the answer as though it had been
+answered. It is removed; what identifies the answer is now only what terminal help already did — the
+other options fade, and the hand points, now **below** the letter (fingertip y=623 against a cell
+ending at y=613).
+
+A correct tap still turns the card green, on both pages:
+`opt-cell correct` · background `rgb(204,248,216)` · border `rgb(0,177,50)`.
+
+## Receipt
+
+- All three guards pass on `build/` and `dist/`; HTML and all 81 referenced clips identical across
+  `build/`, `dist/` and both factory trees
+- The build's own guard caught the three new ids before they could ship silent
+  (`!! no clip on disk for: vo_g2_more, vo_p1_more, vo_p7_more`)
+- All five new/changed clips transcribe at **98–100%** against their card text
+- Shippable dist payload **9.93 MB**
+
+## Still needs a human
+
+1. **`dist/` is down to 64 KB of headroom.** Three clips were added this round. The next addition
+   needs a lower Opus bitrate — say the word and I will re-cut the whole dist at 24k, which buys
+   roughly 200 KB.
+2. **Nobody has heard the five new clips.**
+3. The hunt pages' `hint` clips still say "ध्यान से…" in their own wording (`vo_g2_hint` etc.). Those
+   were not in scope here — the SME's note was about pages 8 and 11 — but if the phrase should go
+   fleet-wide on this lesson, say so.
+
+---
+
+# r5n — a watch-first sort page, डिब्बे, and the last button loses its wording
+
+## 1 · The celebration's button is an arrow too
+
+r5l stripped `#navBtn`, which is the button on every in-lesson page, but the celebration carries a
+**different element** — `#endBtn`, which read "आगे बढ़ें →". That was left alone at the time and
+flagged; the SME has now said "all the pages (complete game)", so it goes.
+
+Its arrow used to be a character inside the text that was just removed, so it comes back as `::after`
+— written as the glyph itself rather than a CSS escape, because the escape form is one stray
+backslash away from rendering as literal digits. (It did, on the first attempt: `\2192` was parsed
+as an octal escape and the button showed `92`.) Both buttons now read `text=""`, `::after="→"`, with
+the Hindi kept as `aria-label`.
+
+## 2 · The sort page, and a page in front of it that plays itself
+
+### डिब्बे, and the two lines that echo it
+
+`prompt_hi` IS the VO string on this page, so "टोकरी → डिब्बे" changes there. The two lines that
+echo the word back at the child (`vo_g5_try`, `vo_g5_correct`) changed with it — otherwise the page
+would say डिब्बा once and टोकरी twice. All three re-recorded.
+
+`vo_g5_try` came back truncated on the plain rung — it ends in the imperative "…फिर सुनो।", the same
+class of refusal r5e documented — and was recovered on `danda` by the speech-time ladder. It now
+transcribes at 98%.
+
+### The boxes carry the letter and nothing else
+
+`प की आवाज़ वाला` → **`प`**, `च की आवाज़ वाला` → **`च`**. These are read by a pre-reader, and the old
+label was a sentence.
+
+### A new page BEFORE it, where the child watches
+
+The SME asked for a copy of the sort page placed in front of it, with its own two words, on which
+"user won't do anything — we'll just show how to do things".
+
+That is **not** what `drag_demo` did. r4v/r4x had already tried the nearest thing — a hand travelling
+over the live board — and the gesture still read as unclear, because **nothing ever moved except the
+hand**. So the new page is a different mechanism: `auto_demo` locks input entirely and plays the
+whole gesture. Each picture is named, then the hand travels to the right box and **the tile flies
+along with it** and lands, using the same code path a real drop uses — `leaveTrayGhost` to hold the
+tray slot, `.snapped`, appended into `.bin-items` — so the page ends in exactly the state a child's
+own drop would leave, not a lookalike. The tile's 0.97s flight is matched to the window
+`travelNudge` spends moving, so hand and picture arrive together.
+
+Two tiles, one per box: the smallest set that shows "this one goes here, that one goes there". The
+words are **पतंग** and **चाँद**, chosen because their art and clips already ship (pages 7 and 12), so
+the whole page costs **one** new VO line — dist has very little room left.
+
+Measured on the running page:
+
+```
+ + 6s   tiles in tray 2, in boxes 0, आगे disabled
+ +10s   tiles in tray 1, in boxes 1, आगे disabled
+ +14s   tiles in tray 0, in boxes 2, आगे disabled
+ +18s   tiles in tray 0, in boxes 2, आगे ENABLED
+```
+
+Nothing is draggable there: the tile loop returns early on `auto_demo`, so neither the pick-up speech
+nor `makeDraggable` is attached at all — not merely disabled.
+
+### ...and the live page drops its hand
+
+`drag_demo` is off on page 10 now. The page before it teaches the gesture in full, so a hand
+travelling over the live board would repeat a lesson the child has just watched. Verified: no hand
+appears on that page.
+
+## 3 · Page 12 (was 11): the new sentence, and a trap inside it
+
+"ध्यान से सुनो" was already gone from this panel — **r5m** removed it, together with the VO, which is
+why it also stopped being what the 2-wrong hint said.
+
+The sentence is now **"नानी ने नई नाव बनाई।"**, `vo_line_l6` re-recorded to match.
+
+**The new sentence needed one extra guard.** The page asks which sound repeats *at the start of
+words* — and बनाई carries a न in the **middle**. The hint lights every word containing the target, so
+it would have lit बनाई's middle न and quietly answered a different question than the page was
+asking. `mark_initial` restricts the marking to words that BEGIN with the target. Measured on the
+hint:
+
+```
+नानी  marked=True    ने  marked=True    नई  marked=True    नाव  marked=True    बनाई।  marked=False
+```
+
+## Receipt
+
+- 15 slides now (`tutorial 6 · guided 4 · practice 5`); all three guards pass on `build/` and `dist/`
+- HTML and all 82 referenced clips identical across `build/`, `dist/` and both factory trees
+- The build's guard again caught the new id before it could ship silent (`!! no clip on disk for:
+  vo_g5_show`)
+- Five new/changed clips transcribe at **98–100%**
+- Three clips that nothing references any more (`vo_snd_l`, `vo_snd_r`, `vo_snd_n`) were dropped from
+  `dist/` — a full dist re-cut would drop them anyway
+
+## dist is nearly full, and this is now a decision
+
+**9.95 MB shippable — 51 KB under the 10 MB cap.** Measured on the 82 clips that actually ship:
+
+| Opus bitrate | audio total | headroom after |
+|---|---|---|
+| **32k (current)** | 968 KB | 51 KB |
+| 28k | 852 KB | 167 KB |
+| 24k | 734 KB | 285 KB |
+
+I have not re-encoded anything: it changes the quality of every clip in a lesson where VO quality has
+been the running concern, so it is your call, not mine. Say which and I will re-cut `dist/` in one
+pass.
+
+## Still needs a human
+
+1. **The bitrate decision above.** The next addition of any size does not fit at 32k.
+2. **Nobody has heard the five new/changed clips**, `vo_g5_show` among them.
+3. **The demo page has not been watched at full speed** — its beats are verified by polling the DOM,
+   and the stills show the finished board, but the flight itself has only been measured, not seen.

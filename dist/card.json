@@ -67,7 +67,7 @@
       "prompt_hi": "",
       "audio": {
         "prompt": "vo_line_l2",
-        "target": "vo_snd_ch"
+        "target": "vo_ltr_ch"
       },
       "data": {
         "words": [
@@ -92,7 +92,7 @@
         "options": [
           {
             "letter": "च",
-            "audio": "vo_snd_ch"
+            "audio": "vo_ltr_ch"
           }
         ],
         "teach_seq": [
@@ -147,11 +147,21 @@
             {
               "at": "सुनी",
               "do": "letter"
+            },
+            {
+              "at": "जैसे",
+              "do": "letter"
+            },
+            {
+              "at": "से",
+              "do": "pic"
+            },
+            {
+              "at": "चूहा",
+              "do": "label"
             }
           ],
           "after_line": [
-            "pic",
-            "label",
             "mark"
           ]
         }
@@ -165,7 +175,7 @@
       "prompt_hi": "",
       "audio": {
         "prompt": "vo_line_l3",
-        "target": "vo_snd_m"
+        "target": "vo_ltr_m"
       },
       "data": {
         "words": [
@@ -190,7 +200,7 @@
         "options": [
           {
             "letter": "म",
-            "audio": "vo_snd_m"
+            "audio": "vo_ltr_m"
           }
         ],
         "teach_seq": [
@@ -206,7 +216,7 @@
           },
           {
             "step": "letter",
-            "audio": "vo_snd_m"
+            "silent": true
           },
           {
             "step": "mark",
@@ -245,11 +255,21 @@
             {
               "at": "सुनी",
               "do": "letter"
+            },
+            {
+              "at": "जैसे",
+              "do": "letter"
+            },
+            {
+              "at": "से",
+              "do": "pic"
+            },
+            {
+              "at": "मूली",
+              "do": "label"
             }
           ],
           "after_line": [
-            "pic",
-            "label",
             "mark"
           ]
         }
@@ -263,7 +283,7 @@
       "prompt_hi": "",
       "audio": {
         "prompt": "vo_line_l1",
-        "target": "vo_snd_p"
+        "target": "vo_ltr_p"
       },
       "data": {
         "words": [
@@ -291,7 +311,7 @@
         "options": [
           {
             "letter": "प",
-            "audio": "vo_snd_p"
+            "audio": "vo_ltr_p"
           }
         ],
         "teach_seq": [
@@ -346,11 +366,21 @@
             {
               "at": "सुनी",
               "do": "letter"
+            },
+            {
+              "at": "जैसे",
+              "do": "letter"
+            },
+            {
+              "at": "से",
+              "do": "pic"
+            },
+            {
+              "at": "पपीता",
+              "do": "label"
             }
           ],
           "after_line": [
-            "pic",
-            "label",
             "mark"
           ]
         }
@@ -361,14 +391,15 @@
       "phase": "guided",
       "eis": "iconic",
       "type": "TAP_ALL_WITH_SOUND",
-      "prompt_hi": "जिन शब्दों में प की आवाज़ सुनाई दे, उन पर टैप करो।",
+      "prompt_hi": "जिन शब्दों में “प” की आवाज़ सुनाई दे, उन पर टैप करो।",
       "audio": {
         "prompt": "vo_g2_prompt",
         "target": "vo_snd_p",
         "hint": "vo_g2_hint",
         "try_again": "vo_g2_try",
         "reveal": "vo_g2_reveal",
-        "done": "vo_g2_done"
+        "done": "vo_g2_done",
+        "more": "vo_g2_more"
       },
       "data": {
         "target_sound": "प",
@@ -412,10 +443,10 @@
       "phase": "guided",
       "eis": "symbolic",
       "type": "SENTENCE_SOUND",
-      "prompt_hi": "ध्यान से सुनो — इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
+      "prompt_hi": "इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
       "audio": {
         "prompt": "vo_g3_prompt",
-        "target": "vo_snd_ch",
+        "target": "vo_ltr_ch",
         "try_again": "vo_g3_try",
         "reveal": "vo_g3_reveal",
         "correct": "vo_g3_correct"
@@ -443,22 +474,67 @@
         "options": [
           {
             "letter": "च",
-            "audio": "vo_snd_ch"
+            "audio": "vo_ltr_ch"
           },
           {
             "letter": "ल",
-            "audio": "vo_snd_l"
+            "audio": "vo_ltr_l"
           },
           {
             "letter": "र",
-            "audio": "vo_snd_r"
+            "audio": "vo_ltr_r"
           }
         ],
         "signal_name": "sentence_sound_first_try",
         "reveal_seq": true,
         "hide_replay": true,
         "seq_say_whole": true,
-        "fixed_order": true
+        "fixed_order": true,
+        "mark_initial": false
+      }
+    },
+    {
+      "id": "G5D",
+      "phase": "guided",
+      "eis": "enactive",
+      "type": "SORT_VACHAN",
+      "prompt_hi": "देखो, हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
+      "audio": {
+        "prompt": "vo_g5_show",
+        "target": "vo_snd_p",
+        "correct": "vo_g5_correct"
+      },
+      "data": {
+        "bins": [
+          {
+            "gender": "S",
+            "label": "प"
+          },
+          {
+            "gender": "P",
+            "label": "च"
+          }
+        ],
+        "items": [
+          {
+            "word_hi": "पतंग",
+            "img": "obj_patang",
+            "emoji": "🪁",
+            "audio": "vo_w_patang",
+            "gender": "S"
+          },
+          {
+            "word_hi": "चाँद",
+            "img": "obj_chand",
+            "emoji": "🌙",
+            "audio": "vo_w_chand",
+            "gender": "P"
+          }
+        ],
+        "reveal_seq": true,
+        "signal_name": "sound_sort_demo",
+        "drag_demo": false,
+        "auto_demo": true
       }
     },
     {
@@ -466,7 +542,7 @@
       "phase": "guided",
       "eis": "enactive",
       "type": "SORT_VACHAN",
-      "prompt_hi": "हर चित्र का नाम सुनो और उसे सही टोकरी में डालो।",
+      "prompt_hi": "हर चित्र का नाम सुनो और उसे सही डिब्बे में डालो।",
       "audio": {
         "prompt": "vo_g5_prompt",
         "target": "vo_snd_p",
@@ -478,11 +554,11 @@
         "bins": [
           {
             "gender": "S",
-            "label": "प की आवाज़ वाला"
+            "label": "प"
           },
           {
             "gender": "P",
-            "label": "च की आवाज़ वाला"
+            "label": "च"
           }
         ],
         "items": [
@@ -517,7 +593,8 @@
         ],
         "reveal_seq": true,
         "signal_name": "sound_sort_first_try",
-        "drag_demo": true
+        "drag_demo": false,
+        "auto_demo": false
       }
     },
     {
@@ -525,11 +602,12 @@
       "phase": "practice",
       "eis": "iconic",
       "type": "TAP_ALL_WITH_SOUND",
-      "prompt_hi": "जिन शब्दों में म की आवाज़ सुनाई दे, उन पर टैप करो।",
+      "prompt_hi": "जिन शब्दों में “म” की आवाज़ सुनाई दे, उन पर टैप करो।",
       "audio": {
         "prompt": "vo_p1_prompt",
         "target": "vo_snd_m",
         "hint": "vo_p1_hint",
+        "more": "vo_p1_more",
         "try_again": "vo_p1_try",
         "reveal": "vo_p1_reveal",
         "done": "vo_p1_done"
@@ -576,10 +654,10 @@
       "phase": "practice",
       "eis": "symbolic",
       "type": "SENTENCE_SOUND",
-      "prompt_hi": "ध्यान से सुनो — कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
+      "prompt_hi": "कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
       "audio": {
         "prompt": "vo_p4_prompt",
-        "target": "vo_snd_n",
+        "target": "vo_ltr_n",
         "try_again": "vo_p4_try",
         "reveal": "vo_p4_reveal",
         "correct": "vo_p4_correct"
@@ -590,13 +668,16 @@
             "text": "नानी"
           },
           {
+            "text": "ने"
+          },
+          {
             "text": "नई"
           },
           {
             "text": "नाव"
           },
           {
-            "text": "लाई।"
+            "text": "बनाई।"
           }
         ],
         "whole_audio": "vo_line_l6",
@@ -608,7 +689,7 @@
           },
           {
             "letter": "ल",
-            "audio": "vo_snd_l"
+            "audio": "vo_ltr_l"
           },
           {
             "letter": "न",
@@ -619,7 +700,8 @@
         "reveal_seq": true,
         "hide_replay": true,
         "seq_say_whole": true,
-        "fixed_order": true
+        "fixed_order": true,
+        "mark_initial": true
       }
     },
     {
@@ -627,11 +709,12 @@
       "phase": "practice",
       "eis": "iconic",
       "type": "TAP_ALL_WITH_SOUND",
-      "prompt_hi": "जिन शब्दों में च की आवाज़ सुनाई दे, उन पर टैप करो।",
+      "prompt_hi": "जिन शब्दों में “च” की आवाज़ सुनाई दे, उन पर टैप करो।",
       "audio": {
         "prompt": "vo_p7_prompt",
         "target": "vo_snd_ch",
         "hint": "vo_p7_hint",
+        "more": "vo_p7_more",
         "try_again": "vo_p7_try",
         "reveal": "vo_p7_reveal",
         "done": "vo_p7_done"
@@ -763,7 +846,7 @@
   ],
   "phase_distribution": {
     "tutorial": 6,
-    "guided": 3,
+    "guided": 4,
     "practice": 5
   },
   "signals_expected": [
@@ -817,6 +900,7 @@
       "vo_g1_prompt": "assets/Audio/vo_g1_prompt.ogg",
       "vo_g2_done": "assets/Audio/vo_g2_done.ogg",
       "vo_g2_hint": "assets/Audio/vo_g2_hint.ogg",
+      "vo_g2_more": "assets/Audio/vo_g2_more.ogg",
       "vo_g2_prompt": "assets/Audio/vo_g2_prompt.ogg",
       "vo_g2_reveal": "assets/Audio/vo_g2_reveal.ogg",
       "vo_g2_try": "assets/Audio/vo_g2_try.ogg",
@@ -827,16 +911,22 @@
       "vo_g5_correct": "assets/Audio/vo_g5_correct.ogg",
       "vo_g5_hint": "assets/Audio/vo_g5_hint.ogg",
       "vo_g5_prompt": "assets/Audio/vo_g5_prompt.ogg",
+      "vo_g5_show": "assets/Audio/vo_g5_show.ogg",
       "vo_g5_try": "assets/Audio/vo_g5_try.ogg",
       "vo_landing": "assets/Audio/vo_landing.ogg",
       "vo_line_l1": "assets/Audio/vo_line_l1.ogg",
       "vo_line_l2": "assets/Audio/vo_line_l2.ogg",
       "vo_line_l3": "assets/Audio/vo_line_l3.ogg",
       "vo_line_l6": "assets/Audio/vo_line_l6.ogg",
+      "vo_ltr_ch": "assets/Audio/vo_ltr_ch.ogg",
+      "vo_ltr_l": "assets/Audio/vo_ltr_l.ogg",
       "vo_ltr_m": "assets/Audio/vo_ltr_m.ogg",
       "vo_ltr_n": "assets/Audio/vo_ltr_n.ogg",
+      "vo_ltr_p": "assets/Audio/vo_ltr_p.ogg",
+      "vo_ltr_r": "assets/Audio/vo_ltr_r.ogg",
       "vo_p1_done": "assets/Audio/vo_p1_done.ogg",
       "vo_p1_hint": "assets/Audio/vo_p1_hint.ogg",
+      "vo_p1_more": "assets/Audio/vo_p1_more.ogg",
       "vo_p1_prompt": "assets/Audio/vo_p1_prompt.ogg",
       "vo_p1_reveal": "assets/Audio/vo_p1_reveal.ogg",
       "vo_p1_try": "assets/Audio/vo_p1_try.ogg",
@@ -846,6 +936,7 @@
       "vo_p4_try": "assets/Audio/vo_p4_try.ogg",
       "vo_p7_done": "assets/Audio/vo_p7_done.ogg",
       "vo_p7_hint": "assets/Audio/vo_p7_hint.ogg",
+      "vo_p7_more": "assets/Audio/vo_p7_more.ogg",
       "vo_p7_prompt": "assets/Audio/vo_p7_prompt.ogg",
       "vo_p7_reveal": "assets/Audio/vo_p7_reveal.ogg",
       "vo_p7_try": "assets/Audio/vo_p7_try.ogg",
@@ -854,11 +945,8 @@
       "vo_pt_practice": "assets/Audio/vo_pt_practice.ogg",
       "vo_pt_tutorial": "assets/Audio/vo_pt_tutorial.ogg",
       "vo_snd_ch": "assets/Audio/vo_snd_ch.ogg",
-      "vo_snd_l": "assets/Audio/vo_snd_l.ogg",
       "vo_snd_m": "assets/Audio/vo_snd_m.ogg",
-      "vo_snd_n": "assets/Audio/vo_snd_n.ogg",
       "vo_snd_p": "assets/Audio/vo_snd_p.ogg",
-      "vo_snd_r": "assets/Audio/vo_snd_r.ogg",
       "vo_t1_explain": "assets/Audio/vo_t1_explain.ogg",
       "vo_t2_prompt": "assets/Audio/vo_t2_prompt.ogg",
       "vo_t3_explain": "assets/Audio/vo_t3_explain.ogg",
@@ -889,46 +977,51 @@
       "vo_g1_prompt": "प की आवाज़ वाले चित्र पर टैप कीजिए।",
       "vo_g2_done": "शाबाश! तुमने प की आवाज़ वाले सारे शब्द खोज लिए।",
       "vo_g2_hint": "हर शब्द को ध्यान से देखो और सुनो। किस शब्द में प की आवाज़ आ रही है?",
-      "vo_g2_prompt": "जिन शब्दों में प की आवाज़ सुनाई दे, उन पर टैप करो।",
+      "vo_g2_more": "एक और प वाले शब्द पर टैप करो।",
+      "vo_g2_prompt": "जिन शब्दों में “प” की आवाज़ सुनाई दे, उन पर टैप करो।",
       "vo_g2_reveal": "सुनो — इसमें प की आवाज़ है।",
       "vo_g2_try": "इस शब्द की शुरुआत में प की आवाज़ नहीं है। एक बार फिर सुनो।",
       "vo_g3_correct": "चूहे, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।",
-      "vo_g3_prompt": "ध्यान से सुनो — इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
+      "vo_g3_prompt": "इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
       "vo_g3_reveal": "ध्यान से देखो, सही जवाब च है।",
       "vo_g3_try": "यह च की आवाज़ नहीं है।",
-      "vo_g5_correct": "बहुत बढ़िया! सही टोकरी।",
+      "vo_g5_correct": "बहुत बढ़िया! सही डिब्बा।",
       "vo_g5_hint": "शब्द बोलो और सुनो — उसमें प की आवाज़ है या च की?",
-      "vo_g5_prompt": "हर चित्र का नाम सुनो और उसे सही टोकरी में डालो।",
-      "vo_g5_try": "यह टोकरी सही नहीं है। शब्द की आवाज़ फिर सुनो।",
+      "vo_g5_prompt": "हर चित्र का नाम सुनो और उसे सही डिब्बे में डालो।",
+      "vo_g5_show": "देखो, हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
+      "vo_g5_try": "यह डिब्बा सही नहीं है। शब्द की आवाज़ फिर सुनो।",
       "vo_landing": "नमस्ते दोस्त! मैं हूँ Swiftee। आज हम जानेंगे कि वाक्य में कौन-सी ध्वनि बार-बार सुनाई देती है। सुनो—काला कौआ काँव-काँव करता। इस वाक्य में क की ध्वनि यानी आवाज़ बार-बार आ रही है।",
       "vo_line_l1": "पीतल के पतीले में पपीता पीला-पीला।",
       "vo_line_l2": "चूहे ने चार चने चबाए।",
       "vo_line_l3": "मेरे मामा मीठी मलाई लाए।",
-      "vo_line_l6": "नानी नई नाव लाई।",
+      "vo_line_l6": "नानी ने नई नाव बनाई।",
+      "vo_ltr_ch": "च",
+      "vo_ltr_l": "ल",
       "vo_ltr_m": "म",
       "vo_ltr_n": "न",
+      "vo_ltr_p": "प",
+      "vo_ltr_r": "र",
       "vo_p1_done": "शाबाश! म की आवाज़ वाले सारे शब्द मिल गए।",
       "vo_p1_hint": "हर शब्द सुनो — क्या उसमें म की आवाज़ सुनाई देती है?",
-      "vo_p1_prompt": "जिन शब्दों में म की आवाज़ सुनाई दे, उन पर टैप करो।",
+      "vo_p1_more": "एक और म वाले शब्द पर टैप करो।",
+      "vo_p1_prompt": "जिन शब्दों में “म” की आवाज़ सुनाई दे, उन पर टैप करो।",
       "vo_p1_reveal": "सुनो — इसमें म की आवाज़ है।",
       "vo_p1_try": "इस शब्द की शुरुआत में म की आवाज़ नहीं है। एक बार फिर सुनो।",
       "vo_p4_correct": "सही! शुरुआत में न की आवाज़ थी।",
-      "vo_p4_prompt": "ध्यान से सुनो — कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
+      "vo_p4_prompt": "कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
       "vo_p4_reveal": "शुरुआत में न की आवाज़ बार-बार आई।",
       "vo_p4_try": "तुमने आखिरी आवाज़ सुनी। हमें वह आवाज़ ढूँढनी है जो पूरे वाक्य में बार-बार आई है।",
       "vo_p7_done": "वाह! तुमने च की आवाज़ हर जगह पहचान ली।",
       "vo_p7_hint": "च की आवाज़ शुरू में भी हो सकती है और बीच में भी। पूरा शब्द सुनो।",
-      "vo_p7_prompt": "जिन शब्दों में च की आवाज़ सुनाई दे, उन पर टैप करो।",
+      "vo_p7_more": "एक और च वाले शब्द पर टैप करो।",
+      "vo_p7_prompt": "जिन शब्दों में “च” की आवाज़ सुनाई दे, उन पर टैप करो।",
       "vo_p7_reveal": "सुनो — इसमें च की आवाज़ है।",
       "vo_p7_try": "इस शब्द में च की आवाज़ कहीं नहीं है। एक बार फिर सुनो।",
       "vo_p8_prompt": "शाबाश! आज हमने सीखा — वाक्य ध्यान से सुनना, बार-बार आने वाली आवाज़ पहचानना, और प, च और म की आवाज़ ढूँढना।",
       "vo_snd_ch": "च से चम्मच।",
-      "vo_snd_l": "ल से लट्टू।",
       "vo_snd_m": "म से मछली।",
-      "vo_snd_n": "न से नाव।",
       "vo_snd_p": "प से पतंग।",
-      "vo_snd_r": "र से रस्सी।",
-      "vo_t1_explain": "इन सब शब्दों में प की आवाज़ बार-बार आई।",
+      "vo_t1_explain": "पीतल, पतीले, पपीता, पीला-पीला—इन सब शब्दों में प की आवाज़ बार-बार आई।",
       "vo_t2_prompt": "हमने प की आवाज़ सुनी। यह आवाज़ प अक्षर से लिखी जाती है। जैसे—प से पपीता।",
       "vo_t3_explain": "चूहे, चार, चने, चबाए—इन सब शब्दों में च की आवाज़ बार-बार आई।",
       "vo_t4_prompt": "हमने च की आवाज़ सुनी। यह आवाज़ च अक्षर से लिखी जाती है। जैसे—च से चूहा।",
@@ -1049,6 +1142,16 @@
           6.0
         ]
       ],
+      "vo_g2_more": [
+        [
+          0.27,
+          0.78
+        ],
+        [
+          0.96,
+          2.54
+        ]
+      ],
       "vo_g2_prompt": [
         [
           0.3,
@@ -1127,16 +1230,12 @@
       ],
       "vo_g3_prompt": [
         [
-          0.18,
-          1.31
+          0.27,
+          1.15
         ],
         [
-          1.97,
-          2.84
-        ],
-        [
-          3.18,
-          4.82
+          1.31,
+          2.78
         ]
       ],
       "vo_g3_reveal": [
@@ -1161,12 +1260,12 @@
       ],
       "vo_g5_correct": [
         [
-          0.14,
-          0.89
+          0.23,
+          1.2
         ],
         [
-          1.19,
-          1.9
+          1.49,
+          2.26
         ]
       ],
       "vo_g5_hint": [
@@ -1197,30 +1296,36 @@
       ],
       "vo_g5_prompt": [
         [
-          0.25,
-          0.51
+          0.14,
+          1.67
         ],
         [
-          0.61,
-          1.86
+          1.94,
+          3.47
+        ]
+      ],
+      "vo_g5_show": [
+        [
+          0.17,
+          0.69
         ],
         [
-          2.12,
-          3.99
+          0.92,
+          3.86
         ]
       ],
       "vo_g5_try": [
         [
-          0.14,
-          0.37
+          0.11,
+          1.57
         ],
         [
-          0.48,
-          1.79
+          1.85,
+          2.04
         ],
         [
-          2.31,
-          3.84
+          2.14,
+          3.26
         ]
       ],
       "vo_landing": [
@@ -1313,24 +1418,48 @@
       ],
       "vo_line_l6": [
         [
-          0.12,
-          0.69
+          0.26,
+          1.18
         ],
         [
-          0.98,
-          2.08
+          1.36,
+          2.75
+        ]
+      ],
+      "vo_ltr_ch": [
+        [
+          0.04,
+          0.25
+        ]
+      ],
+      "vo_ltr_l": [
+        [
+          0.04,
+          0.19
         ]
       ],
       "vo_ltr_m": [
         [
-          0.02,
-          0.39
+          0.04,
+          0.32
         ]
       ],
       "vo_ltr_n": [
         [
-          0.03,
-          0.42
+          0.04,
+          0.27
+        ]
+      ],
+      "vo_ltr_p": [
+        [
+          0.04,
+          0.09
+        ]
+      ],
+      "vo_ltr_r": [
+        [
+          0.04,
+          0.26
         ]
       ],
       "vo_p1_done": [
@@ -1351,6 +1480,20 @@
         [
           1.54,
           3.8
+        ]
+      ],
+      "vo_p1_more": [
+        [
+          0.33,
+          0.85
+        ],
+        [
+          1.09,
+          2.5
+        ],
+        [
+          2.62,
+          2.88
         ]
       ],
       "vo_p1_prompt": [
@@ -1400,15 +1543,11 @@
       "vo_p4_prompt": [
         [
           0.25,
-          1.16
+          1.27
         ],
         [
-          1.66,
-          3.73
-        ],
-        [
-          3.85,
-          4.78
+          1.42,
+          3.33
         ]
       ],
       "vo_p4_reveal": [
@@ -1457,6 +1596,20 @@
         [
           3.58,
           4.41
+        ]
+      ],
+      "vo_p7_more": [
+        [
+          0.3,
+          0.78
+        ],
+        [
+          0.97,
+          2.27
+        ],
+        [
+          2.4,
+          2.61
         ]
       ],
       "vo_p7_prompt": [
@@ -1549,12 +1702,6 @@
           1.87
         ]
       ],
-      "vo_snd_n": [
-        [
-          0.24,
-          1.23
-        ]
-      ],
       "vo_snd_p": [
         [
           0.28,
@@ -1563,12 +1710,28 @@
       ],
       "vo_t1_explain": [
         [
-          0.26,
-          1.6
+          0.31,
+          0.81
         ],
         [
-          1.87,
-          3.37
+          1.07,
+          1.65
+        ],
+        [
+          2.07,
+          2.64
+        ],
+        [
+          3.11,
+          3.71
+        ],
+        [
+          4.41,
+          5.31
+        ],
+        [
+          5.46,
+          6.83
         ]
       ],
       "vo_t2_prompt": [
@@ -1825,35 +1988,43 @@
       "vo_g1_prompt": 2.93,
       "vo_g2_done": 4.29,
       "vo_g2_hint": 6.17,
+      "vo_g2_more": 2.85,
       "vo_g2_prompt": 4.33,
       "vo_g2_reveal": 3.05,
       "vo_g2_try": 5.25,
       "vo_g3_correct": 6.81,
-      "vo_g3_prompt": 5.05,
+      "vo_g3_prompt": 3.05,
       "vo_g3_reveal": 3.45,
       "vo_g3_try": 1.97,
-      "vo_g5_correct": 2.21,
+      "vo_g5_correct": 2.53,
       "vo_g5_hint": 5.17,
-      "vo_g5_prompt": 4.25,
-      "vo_g5_try": 4.13,
+      "vo_g5_prompt": 3.69,
+      "vo_g5_show": 4.13,
+      "vo_g5_try": 3.45,
       "vo_landing": 14.97,
       "vo_line_l1": 3.61,
       "vo_line_l2": 2.21,
       "vo_line_l3": 2.89,
-      "vo_line_l6": 2.29,
-      "vo_ltr_m": 0.39,
-      "vo_ltr_n": 0.43,
+      "vo_line_l6": 3.01,
+      "vo_ltr_ch": 0.46,
+      "vo_ltr_l": 0.32,
+      "vo_ltr_m": 0.44,
+      "vo_ltr_n": 0.36,
+      "vo_ltr_p": 0.32,
+      "vo_ltr_r": 0.48,
       "vo_p1_done": 3.85,
       "vo_p1_hint": 3.97,
+      "vo_p1_more": 3.17,
       "vo_p1_prompt": 3.85,
       "vo_p1_reveal": 2.93,
       "vo_p1_try": 4.33,
       "vo_p4_correct": 3.29,
-      "vo_p4_prompt": 5.05,
+      "vo_p4_prompt": 3.69,
       "vo_p4_reveal": 2.93,
       "vo_p4_try": 6.01,
       "vo_p7_done": 3.93,
       "vo_p7_hint": 4.57,
+      "vo_p7_more": 2.89,
       "vo_p7_prompt": 4.01,
       "vo_p7_reveal": 3.13,
       "vo_p7_try": 3.97,
@@ -1862,12 +2033,9 @@
       "vo_pt_practice": 2.32,
       "vo_pt_tutorial": 5.12,
       "vo_snd_ch": 0.38,
-      "vo_snd_l": 0.4,
       "vo_snd_m": 2.17,
-      "vo_snd_n": 1.41,
       "vo_snd_p": 1.57,
-      "vo_snd_r": 0.38,
-      "vo_t1_explain": 3.69,
+      "vo_t1_explain": 7.01,
       "vo_t2_prompt": 7.69,
       "vo_t3_explain": 7.57,
       "vo_t4_prompt": 6.33,

@@ -47,14 +47,20 @@ VO = {
     "vo_line_l1": "पीतल के पतीले में पपीता पीला-पीला।",
     "vo_line_l2": "चूहे ने चार चने चबाए।",          # [r4 · row 16] was "चूहा चार चने चबाए"
     "vo_line_l3": "मेरे मामा मीठी मलाई लाए।",        # [r4 · row 30] was "मामा मीठी मलाई लाए"
-    "vo_line_l6": "नानी नई नाव लाई।",                # [r4 · row 99] NEW — replaces the old ल-trap line
+    # [r5n] SME-supplied replacement sentence.
+    "vo_line_l6": "नानी ने नई नाव बनाई।",                # [r4 · row 99] NEW — replaces the old ल-trap line
 
     # ---- teach: sentence pages ----------------------------------------------------------
     # [r4 · rows 46/47] deck page 6 asks for VO 2 and VO 3 as SEPARATE beats, so the old single
     # vo_t1_explain is split: the words are named while प lights up in each of them, and only
     # then does the conclusion play.
     "vo_t1_words":   "पीतल, पतीले, पपीता, पीला।",
-    "vo_t1_explain": "इन सब शब्दों में प की आवाज़ बार-बार आई।",
+    # [r5k] SME: page 5 seems different, the VO and animation should be similar to page 1.
+    # This was the difference. The mark beat lights the four words ONE AT A TIME, paced by this
+    # clip — and on pages 1 and 3 the clip NAMES them ("चूहे, चार, चने, चबाए—..."), so each word
+    # lights as it is spoken. r4 shortened this one to drop the list, leaving page 5 marking four
+    # words against a sentence that names none of them. Restored to the page-1 shape.
+    "vo_t1_explain": "पीतल, पतीले, पपीता, पीला-पीला—इन सब शब्दों में प की आवाज़ बार-बार आई।",
     "vo_t3_explain": "चूहे, चार, चने, चबाए—इन सब शब्दों में च की आवाज़ बार-बार आई।",   # [r4 · row 22]
     "vo_t5_explain": "मेरे, मामा, मीठी, मलाई—इन सब शब्दों में म की आवाज़ बार-बार आई।",  # [r4 · row 36]
 
@@ -74,31 +80,50 @@ VO = {
     "vo_g1_hint":    "ध्यान से सुनिए, इसमें प की आवाज़ नहीं है।",
 
     # ---- guided 2 · tap-all प (deck page 9) ---------------------------------------------
-    "vo_g2_prompt": "जिन शब्दों में प की आवाज़ सुनाई दे, उन पर टैप करो।",
+    # [r5m] SME: put the letter in inverted commas in the instruction panel. prompt_hi IS this
+    # string (shown == spoken, by construction), so the quotes live here rather than in a second
+    # copy of the line. They cost nothing spoken: TTS does not voice a quotation mark, so the
+    # existing clip still matches and does not need re-recording.
+    "vo_g2_prompt": "जिन शब्दों में \u201cप\u201d की आवाज़ सुनाई दे, उन पर टैप करो।",
+    # [r5m] SME: "after first correct selection the VO will play 'एक और प वाले शब्द पर टैप करो'".
+    # The mechanic had nothing to say between the first correct tap and the last one, so a child who
+    # found one word got silence where the page should have asked for the other.
+    "vo_g2_more":   "एक और प वाले शब्द पर टैप करो।",
     "vo_g2_hint":   "हर शब्द को ध्यान से देखो और सुनो। किस शब्द में प की आवाज़ आ रही है?",   # [r4 · row 72]
     "vo_g2_try":    "इस शब्द की शुरुआत में प की आवाज़ नहीं है। एक बार फिर सुनो।",
     "vo_g2_reveal": "सुनो — इसमें प की आवाज़ है।",
     "vo_g2_done":   "शाबाश! तुमने प की आवाज़ वाले सारे शब्द खोज लिए।",
 
     # ---- guided 3 · which sound repeats (deck page 10) ----------------------------------
-    "vo_g3_prompt":  "ध्यान से सुनो — इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
+    # [r5m] SME: "remove 'ध्यान से सुनो' text from instruction panel", and separately that the VO
+    # heard after two wrong attempts ("ध्यान से सुनो…") should be replaced by replaying the SENTENCE
+    # with the letter highlighted. That second VO was this very clip: with no `hint` key authored,
+    # the 2nd-wrong rung fell through to the prompt. Cutting the phrase here fixes both at once and
+    # keeps shown == spoken, which passing a separate display string would have broken.
+    "vo_g3_prompt":  "इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
     "vo_g3_try":     "यह च की आवाज़ नहीं है।",                          # [r4 · row 79] Hint 1, verbatim
     "vo_g3_reveal":  "ध्यान से देखो, सही जवाब च है।",                    # [r4 · row 80] Hint 2, verbatim
     "vo_g3_correct": "चूहे, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।",   # [r4 · row 82]
     "vo_g3_hint":    "हर शब्द की शुरू की आवाज़ पर ध्यान दो।",
 
     # ---- guided 5 · sort प vs च (deck page 12) ------------------------------------------
-    "vo_g5_prompt": "हर चित्र का नाम सुनो और उसे सही टोकरी में डालो।",     # [r4 · row 85]
+    # [r5n] SME: "replace the word टोकरी with डिब्बे" in the instruction panel. prompt_hi IS this
+    # string, so it changes here — and the two lines that echo the word back at the child change
+    # with it, or the page would say डिब्बा once and टोकरी twice.
+    "vo_g5_prompt": "हर चित्र का नाम सुनो और उसे सही डिब्बे में डालो।",     # [r4 · row 85]
     # CONSEQUENCE of row 83: the bins stopped being «प है / प नहीं है» and became «प / च», so a
     # hint that asks a yes-no question about प no longer fits the board it is hinting about.
     # Re-pointed at the two-way choice; logic and progression untouched, per the deck's "keep the
     # existing hint logic". Listed under CHANGED BEYOND THE DECK.
+# [r5n] the watch-first page: the child does nothing here, so the line says so.
+    "vo_g5_show":    "देखो, हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
     "vo_g5_hint":    "शब्द बोलो और सुनो — उसमें प की आवाज़ है या च की?",
-    "vo_g5_try":     "यह टोकरी सही नहीं है। शब्द की आवाज़ फिर सुनो।",
-    "vo_g5_correct": "बहुत बढ़िया! सही टोकरी।",
+    "vo_g5_try":     "यह डिब्बा सही नहीं है। शब्द की आवाज़ फिर सुनो।",
+    "vo_g5_correct": "बहुत बढ़िया! सही डिब्बा।",
 
     # ---- practice 1 · tap-all म (deck page 13) ------------------------------------------
-    "vo_p1_prompt": "जिन शब्दों में म की आवाज़ सुनाई दे, उन पर टैप करो।",
+    "vo_p1_prompt": "जिन शब्दों में \u201cम\u201d की आवाज़ सुनाई दे, उन पर टैप करो।",
+    "vo_p1_more":   "एक और म वाले शब्द पर टैप करो।",
     "vo_p1_hint":   "हर शब्द सुनो — क्या उसमें म की आवाज़ सुनाई देती है?",
     "vo_p1_try":    "इस शब्द की शुरुआत में म की आवाज़ नहीं है। एक बार फिर सुनो।",
     "vo_p1_reveal": "सुनो — इसमें म की आवाज़ है।",
@@ -111,7 +136,7 @@ VO = {
     "vo_p2_correct": "सही! आवाज़ शब्द के अलग-अलग हिस्सों में आ सकती है।",
 
     # ---- practice 4 · which sound starts the words (deck page 16) -----------------------
-    "vo_p4_prompt": "ध्यान से सुनो — कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
+    "vo_p4_prompt": "कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
     "vo_p4_hint":   "शब्द के अंत की आवाज़ नहीं — शुरुआत की आवाज़ सुनो।",
     "vo_p4_try":    "तुमने आखिरी आवाज़ सुनी। हमें वह आवाज़ ढूँढनी है जो पूरे वाक्य में बार-बार आई है।",
     # CONSEQUENCE of row 99: the target sound on this page changed from प to न, so the two clips
@@ -120,7 +145,8 @@ VO = {
     "vo_p4_correct": "सही! शुरुआत में न की आवाज़ थी।",
 
     # ---- practice 7 · tap-all च (deck page 19) ------------------------------------------
-    "vo_p7_prompt": "जिन शब्दों में च की आवाज़ सुनाई दे, उन पर टैप करो।",
+    "vo_p7_prompt": "जिन शब्दों में \u201cच\u201d की आवाज़ सुनाई दे, उन पर टैप करो।",
+    "vo_p7_more":   "एक और च वाले शब्द पर टैप करो।",
     "vo_p7_hint":   "च की आवाज़ शुरू में भी हो सकती है और बीच में भी। पूरा शब्द सुनो।",
     "vo_p7_try":    "इस शब्द में च की आवाज़ कहीं नहीं है। एक बार फिर सुनो।",
     "vo_p7_reveal": "सुनो — इसमें च की आवाज़ है।",
@@ -149,6 +175,16 @@ VO = {
     # the full carrier phrases (vo_snd_m is 2.17s of "म से मछली।"), so it reproduced exactly the
     # behaviour that was rejected. These two ids carry the bare sound for the reveal ONLY —
     # vo_snd_m keeps the carrier phrase because the TEACH page (T5) genuinely teaches "म से मछली".
+    # [r5k] ...and now ALL SIX, because the SME reported the option sounds on pages 8 and 11 as
+    # "not good, it feels abrupt". They were: r5c made them by TRIMMING a carrier phrase, which cuts
+    # the waveform mid-decay — measured, the old clips still sat at 5-21% of their own peak at the
+    # last sample, and that step to silence is the abruptness. These six are cut from a carrier that
+    # REPEATS the letter ("च, च, च।"), so each one is a whole utterance with its own onset and decay,
+    # taken at a silence boundary with 15ms/60ms fades. Every one now ends at 0.0% of peak.
+    "vo_ltr_ch": "च",
+    "vo_ltr_l":  "ल",
+    "vo_ltr_r":  "र",
+    "vo_ltr_p":  "प",
     "vo_ltr_m":  "म",
     "vo_ltr_n":  "न",
 
@@ -254,6 +290,15 @@ def meet_letter(sid, letter, word, img, prompt_clip, word_clip, sound_clip, cue_
                 # without a forced aligner.
                 "cues": [
                     {"at": "सुनी", "do": "letter"},   # "हमने <letter> की आवाज़ सुनी।"
+                    # [r5k] SME: when the VO plays "च से", the image should appear INSTANTLY.
+                    # r5j had put it after the whole line, which was the previous ask; this is the
+                    # correction. The anchor matters: "से" occurs TWICE ("अक्षर से लिखी" and
+                    # "च से चूहा"), and the resolver scans FORWARD from the last cue — so the "जैसे"
+                    # cue below is what makes "से" resolve to the second one. It re-pulses the
+                    # letter, which also gives the middle of the line a beat of its own.
+                    {"at": "जैसे", "do": "letter"},   # "जैसे—<letter> से <word>।"
+                    {"at": "से",   "do": "pic"},      # the picture lands ON "<letter> से"
+                    {"at": cue_word, "do": "label"},  # its name appears as the word is spoken
                 ],
                 # [r5j] THE PICTURE WAITS FOR THE LINE TO FINISH. The SME: "whenever an image comes
                 # ... it will come AFTER the vo is done - 'च से चूहा' then the mouse image comes".
@@ -261,7 +306,8 @@ def meet_letter(sid, letter, word, img, prompt_clip, word_clip, sound_clip, cue_
                 # example word), which put the picture on screen a whole sentence BEFORE the word
                 # naming it was spoken. The example word ends the line, so "after it" cannot be
                 # written as a token cue at all - the engine runs these off the clip's end.
-                "after_line": ["pic", "label", "mark"],
+                # only the letter-mark still waits for the line to finish
+                "after_line": ["mark"],
             },
         },
     }
@@ -280,20 +326,22 @@ def tap_all(sid, phase, sound, prompt, items, clips, allow_hand=False):
     }
 
 
-def sort_two(sid, phase, prompt, bins, items, clips, signal, drag_demo=False):
+def sort_two(sid, phase, prompt, bins, items, clips, signal, drag_demo=False, auto_demo=False):
     return {
         "id": sid, "phase": phase, "eis": "enactive", "type": "SORT_VACHAN",
         "prompt_hi": prompt,
         "audio": clips,
         # [r4v] drag_demo: show the hand travelling from a tile to the middle of the bins row
         # once, so the child sees HOW to drag. Points between the baskets, never at the right one.
+        # [r5n] auto_demo: the page plays the drag itself and takes no input. drag_demo is the
+        # older, weaker thing - a hand travelling over a board the child still has to work.
         "data": {"bins": bins, "items": items, "reveal_seq": True, "signal_name": signal,
-                 "drag_demo": drag_demo},
+                 "drag_demo": drag_demo, "auto_demo": auto_demo},
     }
 
 
 def pick_sound(sid, phase, prompt, words, whole, sound, options, clips,
-               hide_replay=False, seq_say_whole=False, fixed_order=False):
+               hide_replay=False, seq_say_whole=False, fixed_order=False, mark_initial=False):
     """SENTENCE_SOUND as a real question: hear the line, pick the sound that repeats.
     reveal_seq makes the letters arrive one at a time, each speaking itself — the deck asks for
     exactly that on both of these pages ("Letters should appear one by one... play its
@@ -309,6 +357,10 @@ def pick_sound(sid, phase, prompt, words, whole, sound, options, clips,
             "signal_name": "sentence_sound_first_try", "reveal_seq": True,
             "hide_replay": hide_replay, "seq_say_whole": seq_say_whole,
             "fixed_order": fixed_order,
+            # [r5n] mark the target ONLY where it starts a word. P4 asks which sound repeats at
+            # the START of words, and its new sentence carries a न mid-word in बनाई - lighting
+            # that one would answer a different question than the page is asking.
+            "mark_initial": mark_initial,
         },
     }
 
@@ -323,7 +375,7 @@ def build_card():
 
     # new page 2 (was page 4) — च
     slides.append(teach_sentence(
-        "T3", ["चूहे", "ने", "चार", "चने", "चबाए।"], "vo_line_l2", "च", "vo_snd_ch",
+        "T3", ["चूहे", "ने", "चार", "चने", "चबाए।"], "vo_line_l2", "च", "vo_ltr_ch",
         mark_bare=True,      # [r4e] "highlight only च - no matra"
         hide_replay=True,    # [r4f] "remove the फिर सुनो button"
         # [r4f] EXACTLY TWO CLIPS ON THIS PAGE, per review: VO 1 the sentence, a brief pause, VO 2 the
@@ -344,7 +396,7 @@ def build_card():
                               "vo_t4_prompt", "vo_w_chuha", "vo_snd_ch", cue_word="चूहा"))
     # new page 4 (was page 6) — म
     slides.append(teach_sentence(
-        "T5", ["मेरे", "मामा", "मीठी", "मलाई", "लाए।"], "vo_line_l3", "म", "vo_snd_m",
+        "T5", ["मेरे", "मामा", "मीठी", "मलाई", "लाए।"], "vo_line_l3", "म", "vo_ltr_m",
         # [r4j] MATCH THE च PAGE (SME: "page 3 is the same as page 1, match the animation").
         # Row 33 asks to "highlight only म" in the same breath row 20 asks "only च", but this page
         # shipped with the WHOLE AKSHARA lit - capture 04 shows मे, मा, मी amber, matra included -
@@ -356,7 +408,10 @@ def build_card():
             {"step": "sentence"},
             {"step": "clear_words"},
             {"step": "pause", "ms": 900},   # [r4j] the च page pause, so both breathe alike
-            {"step": "letter", "audio": "vo_snd_m"},
+            # [r5k] SME: remove the "म से मछली" VO, this page should be the same as page 1.
+            # It was the ONE teach page that spoke on this beat — pages 1 and 5 have always
+            # been silent here — so the म page alone said a carrier phrase the others never did.
+            {"step": "letter", "silent": True},
             # "लाए" is listed nowhere here, on purpose: "Do not highlight लाए, because it does not
             # contain the target sound म."
             {"step": "mark", "audio": "vo_t5_explain",
@@ -375,7 +430,7 @@ def build_card():
     # before the marking instead of after, so the child sees प while the words light up.
     # Flagged in CHANGES.md against row 45 so the SME can overrule if the deck order was load-bearing.
     slides.append(teach_sentence(
-        "T1", ["पीतल", "के", "पतीले", "में", "पपीता", "पीला-पीला।"], "vo_line_l1", "प", "vo_snd_p",
+        "T1", ["पीतल", "के", "पतीले", "में", "पपीता", "पीला-पीला।"], "vo_line_l1", "प", "vo_ltr_p",
         # [r4j] Row 44 asks to "highlight only प" in the same words rows 20/33 ask "only च" /
         # "only म", and the note below is explicit that only the STEP ORDER differs on this page.
         # It had shipped with the whole akshara lit (पी - matra included). All three teach
@@ -413,39 +468,61 @@ def build_card():
          _item("पतंग",  "obj_patang", "vo_w_patang", has=True),
          _item("आम",    "obj_aam",    "vo_w_aam",    has=False)],
         {"prompt": "vo_g2_prompt", "target": "vo_snd_p", "hint": "vo_g2_hint",
-         "try_again": "vo_g2_try", "reveal": "vo_g2_reveal", "done": "vo_g2_done"}))
+         "try_again": "vo_g2_try", "reveal": "vo_g2_reveal", "done": "vo_g2_done",
+         "more": "vo_g2_more"}))
     # new page 10 (was page 10) — same sentence as the च teach page, now as a question
     slides.append(pick_sound(
         "G3", "guided", VO["vo_g3_prompt"],
         ["चूहे", "ने", "चार", "चने", "चबाए।"], "vo_line_l2", "च",
-        [{"letter": "च", "audio": "vo_snd_ch"},
-         {"letter": "ल", "audio": "vo_snd_l"},
-         {"letter": "र", "audio": "vo_snd_r"}],
+        [{"letter": "च", "audio": "vo_ltr_ch"},
+         {"letter": "ल", "audio": "vo_ltr_l"},
+         {"letter": "र", "audio": "vo_ltr_r"}],
         # [r4p] NO `hint` KEY ON PURPOSE. revealAnswer() speaks
         #   audioFor("hint") || audioFor("reveal") || ...
         # so while a generic `hint` was authored, the 2nd-wrong rung spoke
         # "हर शब्द की शुरू की आवाज़ पर ध्यान दो।" instead of the Hint 2 line the deck asks for.
         # Dropping it lets `reveal` through, which IS that line. The deck specifies exactly two
         # rungs on this page, so the generic third one has nothing to attach to anyway.
-        {"prompt": "vo_g3_prompt", "target": "vo_snd_ch",
+        {"prompt": "vo_g3_prompt", "target": "vo_ltr_ch",
          "try_again": "vo_g3_try", "reveal": "vo_g3_reveal", "correct": "vo_g3_correct"},
         hide_replay=True,      # [r4p] "remove the फिर से सुनो button"
         seq_say_whole=True,    # [r4p] ...so the sentence must play itself, before the letters
         fixed_order=True))     # [r4p] entry order is named in the flow: च -> ल -> र
     # new page 11 (was page 12) — the bins become प vs च, and every option now clearly carries
     # one of the two ("मोती" had neither, so it could not belong in either basket)
+    # [r5n] WATCH FIRST, THEN DO. The SME asked for a copy of the sort page placed BEFORE it, with
+    # its own two words, on which "user won't do anything - we'll just show how to do things".
+    # So this page is not a hand nudge over a live board (that was drag_demo, and it is switched off
+    # below): `auto_demo` locks input and plays the whole gesture - each picture is named, then
+    # travels into its own box by itself, with the hand riding along. Two tiles, one per box, which
+    # is the smallest set that shows "this one goes here, that one goes there".
+    # Words chosen from art and clips this lesson ALREADY ships (पतंग on page 7, चाँद on page 12), so
+    # the demo costs one new VO line and nothing else - dist has little headroom left.
+    slides.append(sort_two(
+        "G5D", "guided", VO["vo_g5_show"],
+        [{"gender": "S", "label": "प"},
+         {"gender": "P", "label": "च"}],
+        [_item("पतंग", "obj_patang", "vo_w_patang", gender="S"),
+         _item("चाँद", "obj_chand",  "vo_w_chand",  gender="P")],
+        {"prompt": "vo_g5_show", "target": "vo_snd_p", "correct": "vo_g5_correct"},
+        "sound_sort_demo",
+        auto_demo=True))
+
     slides.append(sort_two(
         "G5", "guided", VO["vo_g5_prompt"],
-        [{"gender": "S", "label": "प की आवाज़ वाला"},
-         {"gender": "P", "label": "च की आवाज़ वाला"}],
+        # [r5n] SME: "keep only प and च, remove every other word". The boxes are read by a
+        # pre-reader, and "प की आवाज़ वाला" is a sentence; the letter alone is the label.
+        [{"gender": "S", "label": "प"},
+         {"gender": "P", "label": "च"}],
         [_item("पानी",  "obj_pani",   "vo_w_pani",   gender="S"),
          _item("पायल",  "obj_payal",  "vo_w_payal",  gender="S"),
          _item("चूहा",  "obj_chuha",  "vo_w_chuha",  gender="P"),
          _item("चाँदी", "obj_chandi", "vo_w_chandi", gender="P")],
         {"prompt": "vo_g5_prompt", "target": "vo_snd_p", "hint": "vo_g5_hint",
          "try_again": "vo_g5_try", "correct": "vo_g5_correct"},
-        "sound_sort_first_try",
-        drag_demo=True))   # [r4v] page 10 only - the SME asked for a how-to-drag demo here
+        "sound_sort_first_try"))
+        # [r5n] drag_demo is GONE: the page before this one now teaches the gesture in full, so a
+        # hand travelling over the live board would repeat a lesson the child has just watched.
 
     # ══ PRACTICE ═══════════════════════════════════════════════════════════════════════
     # new page 12 (was page 13) — 5 options down to 4; माला leaves this page
@@ -455,7 +532,7 @@ def build_card():
          _item("चींटी", "obj_chinti", "vo_w_chinti", has=False),
          _item("मूली",  "obj_muli",   "vo_w_muli",   has=True),
          _item("लाल",   "obj_laal",   "vo_w_laal",   has=False)],
-        {"prompt": "vo_p1_prompt", "target": "vo_snd_m", "hint": "vo_p1_hint",
+        {"prompt": "vo_p1_prompt", "target": "vo_snd_m", "hint": "vo_p1_hint", "more": "vo_p1_more",
          "try_again": "vo_p1_try", "reveal": "vo_p1_reveal", "done": "vo_p1_done"},
         allow_hand=True))   # [r4u] hand after two wrong taps, as on page 7
     # [r4u] PAGE 11 (P2 — the "शुरुआत में / बीच में" sort) REMOVED on request: "we don't want it
@@ -466,11 +543,11 @@ def build_card():
     # highlighting is required"), so this page carries no teach_seq — it is a plain question.
     slides.append(pick_sound(
         "P4", "practice", VO["vo_p4_prompt"],
-        ["नानी", "नई", "नाव", "लाई।"], "vo_line_l6", "न",
+        ["नानी", "ने", "नई", "नाव", "बनाई।"], "vo_line_l6", "न",
         # [r5c] bare sounds on the reveal — see the vo_ltr_* note in the VO map above.
         # (ल already points at vo_snd_l, which was itself cut to the bare akshara for G3.)
         [{"letter": "म", "audio": "vo_ltr_m"},
-         {"letter": "ल", "audio": "vo_snd_l"},
+         {"letter": "ल", "audio": "vo_ltr_l"},
          {"letter": "न", "audio": "vo_ltr_n"}],
         # [r5b] NO `hint` KEY, for the same reason as G3 above: the reveal path speaks
         #   audioFor("hint") || audioFor("reveal") || ...
@@ -478,8 +555,9 @@ def build_card():
         # ("शुरुआत में न की आवाज़ बार-बार आई।") - it repeated the hint, so this page never actually
         # told the child the answer. vo_p4_hint is retired; vo_p4_try already carries the
         # "you heard the LAST sound, we want the repeated one" steer that it duplicated.
-        {"prompt": "vo_p4_prompt", "target": "vo_snd_n",
+        {"prompt": "vo_p4_prompt", "target": "vo_ltr_n",
          "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct"},
+        mark_initial=True,     # [r5n] "शुरुआत में" - see pick_sound
         hide_replay=True,      # [r5b] page 9's treatment - no «फिर से सुनो» pill
         seq_say_whole=True,    # [r5b] ...so the sentence plays itself, before the letters
         fixed_order=True))     # [r5b] pin the entry order म -> ल -> न
@@ -490,7 +568,7 @@ def build_card():
          _item("माला",  "obj_mala",   "vo_w_mala",   has=False),
          _item("चींटी", "obj_chinti", "vo_w_chinti", has=True),
          _item("लाल",   "obj_laal",   "vo_w_laal",   has=False)],
-        {"prompt": "vo_p7_prompt", "target": "vo_snd_ch", "hint": "vo_p7_hint",
+        {"prompt": "vo_p7_prompt", "target": "vo_snd_ch", "hint": "vo_p7_hint", "more": "vo_p7_more",
          "try_again": "vo_p7_try", "reveal": "vo_p7_reveal", "done": "vo_p7_done"},
         allow_hand=True))   # [r4u] hand after two wrong taps, as on page 7
     # [r5d] MOVED TO THE END (SME: "the balloon page should be the last page"). It used to sit at
@@ -800,7 +878,8 @@ def speech_map(out_dir, audio_ids):
 #  phrase ~1.5s or more, so the two are nearly four times apart and 0.8s sits in open space
 #  between them — wide enough that a slower take or a different voice will not trip it.
 # ══════════════════════════════════════════════════════════════════════════════════════════
-BARE_SOUND_IDS = ("vo_snd_ch", "vo_snd_l", "vo_snd_r", "vo_ltr_m", "vo_ltr_n")
+BARE_SOUND_IDS = ("vo_snd_ch", "vo_snd_l", "vo_snd_r",
+                  "vo_ltr_ch", "vo_ltr_l", "vo_ltr_r", "vo_ltr_p", "vo_ltr_m", "vo_ltr_n")
 BARE_SOUND_MAX_SEC = 0.8
 
 

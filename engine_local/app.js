@@ -384,6 +384,44 @@ function ckCorrect(el, crown){
    Units are vmax because this layer lives OUTSIDE the 1333x750 transform-scaled stage (kit R1).
    r0 is what keeps the centre clear: nothing spawns inside 22vmax, so the start card sits in a hole
    the geometry already leaves and no CSS mask is needed. */
+/* [S01r5l] THE HOLE HAS TO BE THE SHAPE OF THE CARD.
+   r0 clears a CIRCLE of 22vmax, and the comment above says that is what keeps the centre clear. It
+   is not: the start card is a wide RECTANGLE. The stage is 1333x750 scaled to fit and centred, so
+   the card's half-width works out at ~43.6vmax at EVERY window size (it is scale-invariant: both
+   the card and vmax track the viewport) against a half-height of ~18vmax. A star on a horizontal
+   lane therefore starts 22vmax INSIDE the card, and on the lanes either side of horizontal it
+   drifts out across the card and the mascot before it clears them — which is what the SME saw.
+   So the start radius is computed PER LANE: how far along that ray the card's edge actually is.
+   Vertical lanes keep something close to the original 22; horizontal lanes start out near 47. */
+const SKY_CARD = { w: 1114 / 2 + 24, h: 456 / 2 + 12 };   /* + the mascot's overhang, left and below */
+function _skyClearVmax(){
+  const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+  const vmax = Math.max(window.innerWidth, window.innerHeight) / 100 || 1;
+  return { w: SKY_CARD.w * scale / vmax, h: SKY_CARD.h * scale / vmax };
+}
+/* distance from centre to the rectangle's edge along (cos,sin), plus a margin */
+function _skyLaneStart(cos, sin, clear){
+  const ac = Math.abs(cos), as = Math.abs(sin);
+  const tw = ac > 1e-4 ? clear.w / ac : Infinity;
+  const th = as > 1e-4 ? clear.h / as : Infinity;
+  return Math.max(SKY.r0, Math.min(tw, th) * 1.05 + 1.5);
+}
+/* re-apply on resize: the card keeps its vmax size when the stage is width-limited, but a window
+   that is tall and narrow changes which of the two limits binds. */
+function _skyRelayout(){
+  const sky = document.querySelector(".sg-sky");
+  if(!sky) return;
+  const clear = _skyClearVmax();
+  [...sky.children].forEach(n => {
+    const cos = parseFloat(n.dataset.cos), sin = parseFloat(n.dataset.sin);
+    if(isNaN(cos) || isNaN(sin)) return;
+    const r = _skyLaneStart(cos, sin, clear);
+    n.style.setProperty("--x1", (r * cos).toFixed(1) + "vmax");
+    n.style.setProperty("--y1", (r * sin).toFixed(1) + "vmax");
+    n.style.setProperty("--x2", (Math.max(SKY.r1, r + 26) * cos).toFixed(1) + "vmax");
+    n.style.setProperty("--y2", (Math.max(SKY.r1, r + 26) * sin).toFixed(1) + "vmax");
+  });
+}
 const SKY = { lanes: 29, r0: 22, r1: 72,
               layers: [{rot:0, scale:1}, {rot:6.2, scale:0.62}, {rot:-6.2, scale:0.55}],
               size: [0.8, 2.6], dur: [18, 34], glow: [3.0, 4.8], opacity: [0.62, 0.92] };
@@ -441,6 +479,7 @@ function buildSky(){
     const sky = document.createElement("div");
     sky.className = "sg-sky"; sky.setAttribute("aria-hidden", "true");
     const shapes = ["s1","s2","s3","s4","s5"];
+    const clear = _skyClearVmax();
     SKY.layers.forEach((L, li)=>{
       for(let i = 0; i < SKY.lanes; i++){
         const a = ((360 / SKY.lanes) * i + L.rot) * Math.PI / 180;
@@ -449,10 +488,14 @@ function buildSky(){
         const dur = R(SKY.dur[0], SKY.dur[1]);
         const n = document.createElement("i");
         n.className = shapes[(i + li) % shapes.length];
+        /* the lane's own angle is kept so _skyRelayout can recompute after a resize */
+        n.dataset.cos = cos.toFixed(6); n.dataset.sin = sin.toFixed(6);
+        const r0 = _skyLaneStart(cos, sin, clear);          /* clears the CARD, not a circle */
+        const r1 = Math.max(SKY.r1, r0 + 26);               /* always travel a real distance */
         n.style.cssText =
           "--s:" + size.toFixed(2) + "vmax;" +
-          "--x1:" + (SKY.r0 * cos).toFixed(1) + "vmax;--y1:" + (SKY.r0 * sin).toFixed(1) + "vmax;" +
-          "--x2:" + (SKY.r1 * cos).toFixed(1) + "vmax;--y2:" + (SKY.r1 * sin).toFixed(1) + "vmax;" +
+          "--x1:" + (r0 * cos).toFixed(1) + "vmax;--y1:" + (r0 * sin).toFixed(1) + "vmax;" +
+          "--x2:" + (r1 * cos).toFixed(1) + "vmax;--y2:" + (r1 * sin).toFixed(1) + "vmax;" +
           /* a NEGATIVE delay starts each lane mid-flight, so the field is already full on the
              first frame instead of everything launching together from the inner radius */
           "--t:" + dur.toFixed(1) + "s;--d:-" + R(0, dur).toFixed(1) + "s;" +
@@ -462,6 +505,11 @@ function buildSky(){
       }
     });
     bg.parentNode.insertBefore(sky, bg.nextSibling);   // directly above the plate, below the gate
+    if(!window.__skyResize){
+      window.__skyResize = true;
+      let t = 0;
+      window.addEventListener("resize", ()=>{ clearTimeout(t); t = setTimeout(_skyRelayout, 150); });
+    }
   }catch(e){}
 }
 
@@ -643,6 +691,38 @@ function stopNudge(){
    --scale. Kept as ONE WAAPI animation stored on state so stopNudge can cancel it — an infinite
    animation left running would follow the child into the next slide. Falls back to a static point if
    either element is missing or the browser has no .animate(). */
+/* [S01r5n] FLY A TILE INTO ITS BOX. The watch-first sort page has to SHOW the drag, and a
+   travelling hand alone does not: r4v/r4x already tried that (data.drag_demo) and the SME still
+   reported the gesture as unclear, because nothing ever moved except the hand.
+   The tile is translated to the drop zone and then handed over to the SAME code a real drop uses —
+   leaveTrayGhost to hold the tray slot open, `.snapped`, appended into .bin-items — so the page
+   ends in exactly the state a child's own drop would leave it in, not a lookalike.
+   `land` is reachable twice (transitionend AND the fail-safe), hence the guard: a double landing
+   would append the tile a second time and fire the sound twice. */
+function flyTileTo(tile, bin, done){
+  const zone = bin.querySelector(".bin-items") || bin;
+  const from = tile.getBoundingClientRect(), to = zone.getBoundingClientRect();
+  const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+  const dx = ((to.left + to.width / 2) - (from.left + from.width / 2)) / scale;
+  const dy = ((to.top + to.height / 2) - (from.top + from.height / 2)) / scale;
+  let landed = false;
+  const land = ()=>{
+    if(landed) return; landed = true;
+    tile.removeEventListener("transitionend", land);
+    tile.classList.remove("demo-fly"); tile.style.transform = "";
+    try{ leaveTrayGhost(tile); }catch(e){}
+    tile.classList.add("snapped");
+    zone.appendChild(tile);
+    sfxCorrect();
+    if(done) done();
+  };
+  tile.addEventListener("transitionend", land, { once: true });
+  tile.classList.add("demo-fly");
+  requestAnimationFrame(()=>{
+    tile.style.transform = "translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) scale(.86)";
+  });
+  setTimeout(land, 1600);                       /* fail-safe: a dropped transitionend must not stall */
+}
 function travelNudge(fromEl, toEl, slide, loops){
   if(!fromEl) return;
   if(!toEl || typeof $("nudgeHand").animate !== "function"){ handOnAnswer(fromEl, slide); return; }
@@ -846,6 +926,20 @@ function _placeNudge(el, nh){
   const HAND = 96, stageH = sw.height/scale, stageW = sw.width/scale;
   const L = (r.left - sw.left)/scale, T = (r.top - sw.top)/scale;
   const W = r.width/scale, Hh = r.height/scale;
+  /* [S01r5m] BELOW THE CARD, when the card asks for it. The default above puts the fingertip ON
+     the tile, which is right for a bare letter but not for these picture cards: the SME asked for
+     the hand "just below the text of the card (below the पपीता word) so that it does not cover
+     anything". Opted in per element with data-nudge-below, so the default placement is untouched
+     everywhere else. Centred horizontally and dropped just under the card, so it covers neither the
+     picture nor the word and still unmistakably points at that card. */
+  if(el.dataset && el.dataset.nudgeBelow === "1"){
+    let bl = (L + W / 2) - FX, bt = (T + Hh + 10) - FY;
+    bl = Math.max(0, Math.min(bl, stageW - HAND));
+    bt = Math.max(0, Math.min(bt, stageH - HAND));
+    nh.style.left = bl.toFixed(1) + "px";
+    nh.style.top  = bt.toFixed(1) + "px";
+    return;
+  }
   let tipX = L + W * 0.78;
   let tipY = T + Hh * 0.52;                    // above centre: the picture, not the word
   /* on a wide target the 78% point can still sit far from the right edge; keep the finger within
@@ -968,7 +1062,7 @@ function showBox(emoji, text, theme, audioSrc, onEnd){
 }
 
 /* ---------- 8. TAP-OPTION HELPER (shared by 5 slide types) ---------- */
-function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect, optionRenderer, columnsHint, mastery, hintAction, nudgeTarget, shuffle}){
+function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect, optionRenderer, columnsHint, mastery, hintAction, nudgeTarget, shuffle, nudgeBelow}){
   state.attempts = 0; state.selectedKey = null; state.locked = false;
   state.audioReplays = 0; state.hintUsed = false; state.nudgeUsed = false; state.scaffoldLevel = 0; state.helpShown = false;
   // idle hand-nudge target: defaults to the stimulus (re-listen), but a slide can pass
@@ -1004,6 +1098,7 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
   _opts.forEach((opt, i) => {
     const cell = optionRenderer(opt, i);
     cell.classList.add("opt-cell");
+    if(nudgeBelow) cell.dataset.nudgeBelow = "1";   /* [S01r5m] hand under the letter, not on it */
     cell.dataset.key = String(i);
     cell.onclick = ()=>{
       if(state.locked || state.hintActive || _busy || (isPlaying && !_fb) || cell.classList.contains("crossed") || cell.classList.contains("correct") || cell.classList.contains("faded")) return;   /* [25d] .faded = an option disabled by terminal help; refuse it in JS too */
@@ -1136,8 +1231,13 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
       }
     });
     if(el){
-      el.classList.remove("pop-in");        // .pop-in animation outranks the glow, so strip it first
-      el.classList.add("reveal-hold");      // infinite pulse — "keeps breathing until you tap it"
+      el.classList.remove("pop-in");
+      /* [S01r5m] NO GLOW ON THE ANSWER. `.reveal-hold` runs `revealPulse`, which animates a GREEN
+         box-shadow - the same green the card gets when the CHILD picks it correctly. On the hint
+         rung that paints the answer as though it had been answered, and the SME asked for the pulse
+         and the green glow to come off. What identifies the answer is now only what terminal help
+         already did: the other options fade, and the hand points. Green stays reserved for a real
+         correct tap. */
       // [27d] The hand lands on the glowing answer in EVERY phase (Yasir 2026-07-27: "hand nudge in
       // guided ... needs to be all uniform and done and perfected"). 27b gated this to tutorial on
       // his earlier wording; that made guided/practice/independent/mastery reveal the answer with a
@@ -1152,8 +1252,14 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
       handOnAnswer(el, slide);
     }
     SwiftPAL.emit("answer_revealed", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts, reason });
-    // speak hint2 (the rung that NAMES the answer), then wait for the child — no auto-advance.
-    play(audioFor(slide, "hint") || audioFor(slide, "reveal") || audioFor(slide, "correct") || audioFor(slide, "try_again") || null, ()=>{});
+    /* [S01r5m] THE HELP IS THE SLIDE'S OWN HINT WHEN IT HAS ONE. This spoke the reveal clip, and
+       on the two question pages `max_attempts` is 2 — so the SECOND wrong tap lands here, not on
+       the rung below, and what the child got was "ध्यान से देखो, सही जवाब च है।" That is the VO the
+       SME asked to replace with the sentence played again and the letter lit. hintAction is exactly
+       that, already written for the rung below, so terminal help now runs it instead of naming the
+       answer aloud. Slides without one keep the clip ladder they always had. */
+    if(runHint) runHint();
+    else play(audioFor(slide, "hint") || audioFor(slide, "reveal") || audioFor(slide, "correct") || audioFor(slide, "try_again") || null, ()=>{});
   }
   $("hintBtn").onclick = ()=>{ if(state.locked || state.hintActive) return;
     state.hintUsed = true; if(state.attempts < 1) state.attempts = 1;
@@ -4548,6 +4654,44 @@ const SlideModules = {
          hints carrying the ANSWER; this one carries the MECHANIC and deliberately points nowhere
          useful. Flagged in CHANGES.md so the SME can overrule. It waits out the one-by-one reveal and
          the prompt VO, then stops on the very first press and never comes back. */
+      /* [S01r5n] WATCH FIRST. The SME asked for a page before the sort where "user won't do
+         anything - we'll just show how to do things". So this one narrates itself: it waits out the
+         tray reveal and the instruction, then for each tile names the picture, sends the hand
+         travelling to the right box and flies the tile along with it. Input is off throughout (see
+         the auto_demo return in the tile loop above), and आगे unlocks once the board is full. */
+      if(slide.data.auto_demo){
+        state.ownsAudio = true; state.demoRunning = true; setNavActive(false);
+        let di = 0, demoEnded = false;
+        const demoTiles = [...tray.children];
+        const endDemo = ()=>{
+          if(demoEnded) return; demoEnded = true;
+          stopNudge(); state.demoRunning = false; state.locked = true;   /* stays locked: nothing to do here */
+          setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true);
+        };
+        const flyNext = ()=>{
+          if(CARD.slides[state.idx] !== slide) return;
+          if(di >= demoTiles.length){
+            play(audioFor(slide, "correct") || null, ()=> setTimeout(endDemo, 500));
+            return;
+          }
+          const t = demoTiles[di++];
+          const goal = [...binsRow.children].find(b => b.dataset.gender === t.dataset.gender) || binsRow;
+          speakNoLock(t.dataset.audio);                       /* name it, without taking the VO lock */
+          setTimeout(()=>{
+            if(CARD.slides[state.idx] !== slide) return;
+            travelNudge(t, goal, slide, 1);                   /* the hand leads... */
+            setTimeout(()=> flyTileTo(t, goal, ()=> setTimeout(flyNext, 600)), 320);  /* ...the tile follows */
+          }, 950);
+        };
+        const armAuto = ()=>{
+          if(CARD.slides[state.idx] !== slide) return;
+          if(state.revealing || isPlaying){ setTimeout(armAuto, 300); return; }
+          state.locked = true;                                 /* belt and braces over the tile guard */
+          flyNext();
+        };
+        setTimeout(armAuto, 600);
+        setTimeout(()=>{ if(CARD.slides[state.idx] === slide) endDemo(); }, 26000);   /* never a dead आगे */
+      }
       if(slide.data.drag_demo){
         const _demoOff = ()=>{ stopNudge(); document.removeEventListener("pointerdown", _demoOff, true); };
         const _armDemo = ()=>{
@@ -4568,6 +4712,8 @@ const SlideModules = {
         setTimeout(_armDemo, 600);
       }
       [...tray.children].forEach(tile => {
+        /* [S01r5n] the watch-first page takes no input at all - no pick-up speech, no drag. */
+        if(slide.data.auto_demo) return;
         /* [S01r4s] SPEAK ON PICK-UP - "when the child taps or picks up an image, play its name",
            so the child can decide which basket BEFORE dragging. makeDraggable exposes opts.onTap for
            a tap but nothing for a grab, and this mechanic passed no opts at all: the only places the
@@ -5557,6 +5703,7 @@ const SlideModules = {
       const chips = [];
       items.forEach(it => {
         const chip = document.createElement("div"); chip.className = "tap-all-item";
+        chip.dataset.nudgeBelow = "1";   /* [S01r5m] the earned hand sits under the word, not on it */
         chip.innerHTML = imgOrEmoji(it.img, it.emoji, "img", "emoji") + `<span class="lbl">${it.word_hi}</span>`;
         const src = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
         chip.onclick = ()=>{
@@ -5568,8 +5715,26 @@ const SlideModules = {
           const after = (cb)=>{ if(src) play(src, cb); else cb(); };
           if(it.has === true){
             chip.classList.add("got"); sfxCorrect(); found++;
+            /* [S01r5m] A CORRECT FIND REOPENS THE BOARD. A wrong tap locks that card from the 2nd
+               attempt (.nope), and the lock used to outlive the rest of the round - so a child who
+               mis-tapped early and then found a correct word was left with a dead card they could
+               never revisit. The SME: "after one correct if any other element is disabled then
+               enable it so user can tap on that too". Clearing the lock, not the attempt count:
+               another wrong tap re-locks immediately, so the scaffold ladder is unchanged. */
+            chips.forEach(c => c.classList.remove("nope", "wrong-flash"));
+            /* [S01r5m] ...and this card leaves play. It was already untappable (the guard above
+               returns on .got), but it still LOOKED live, so the child had no way to tell which
+               cards were still in question. Two seconds is long enough for the green to register as
+               feedback before it fades back. */
+            setTimeout(()=>{ if(CARD.slides[state.idx] === slide) chip.classList.add("spent"); }, 2000);
             SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, word: it.word_hi });
             after(()=>{
+              /* [S01r5m] "after first correct selection the VO will play एक और … पर टैप करो".
+                 Nothing was said between the first find and the last, so the page went quiet
+                 exactly when it should have been asking for the other one. */
+              if(found < need && CARD.slides[state.idx] === slide){
+                play(audioFor(slide, "more") || null, ()=>{});
+              }
               if(found >= need){
                 state.locked = true; setSwMood("celebrate"); confettiCannon();
                 if(slide.phase === "mastery"){ state.masteryAttempts++; if(state.attempts === 0) state.masteryHits++; }
@@ -5704,7 +5869,9 @@ const SlideModules = {
              {step:"pause", ms:n}         the SME's "brief pause ... so the child gets a moment"
            Absent => the legacy d.auto reveal below is untouched. */
         state.ownsAudio = true; state.demoRunning = true; setNavActive(false);
-        const qrow = document.createElement("div"); qrow.className = "q-row"; qrow.appendChild(stim);
+        /* [S01r5k] ss-teach: the hook the stylesheet needs to lift the sentence clear of the
+           letter card on the three teach pages, without touching the question pages. */
+        const qrow = document.createElement("div"); qrow.className = "q-row ss-teach"; qrow.appendChild(stim);
         const grid = document.createElement("div");
         grid.className = "opt-grid ss-letter-card cols-" + ((d.options || []).length || 1);
         const cells = (d.options || []).map(opt => {
@@ -5891,6 +6058,45 @@ const SlideModules = {
         play(whole, ()=> setTimeout(reveal, 400));
         return;
       }
+      /* [S01r5m] THE HINT IS THE SENTENCE AGAIN, WITH THE LETTER LIT.
+         With no `hint` id authored on these two pages the 2nd-wrong rung fell through to the PROMPT
+         clip, so the help a struggling child got was the question re-read at them — the SME heard it
+         as "ध्यान से सुनो…" and asked for it to be replaced by "play the sentence again and highlight
+         the च letter just like we did in pages 1, 3 and 5".
+         So it now does what those teach pages do: the target akshara is overlaid on each word (the
+         two-layer form, so only the consonant lights and never its matra), and the line is replayed
+         with each word lighting as it is spoken. The overlay is built HERE rather than at mount
+         because this is a question — lighting the answer inside the stimulus before the child has
+         tried would hand it to them. */
+      const _hintReplay = (done)=>{
+        const chips = [...stim.querySelectorAll(".sentence-word")];
+        const texts = (d.words || []).map(w => (typeof w === "string") ? w : w.text);
+        const tgt = d.target_sound || "";
+        chips.forEach((c, i)=>{
+          const t = c.querySelector(".sw-text");
+          if(!t || t.classList.contains("sound-layered")) return;
+          t.classList.add("sound-layered");
+          t.dataset.swWord = texts[i]; t.dataset.swTarget = tgt;
+          t.innerHTML = soundWordHTML(texts[i], tgt, parseFloat(getComputedStyle(t).fontSize) || 48);
+          c.classList.add("bare-mark");
+        });
+        chips.forEach(c => c.classList.remove("marked", "said", "saying"));
+        const wholeSrc = d.whole_audio ? ("assets/Audio/" + d.whole_audio + "." + AUDIO_EXT) : null;
+        karaokePlay(wholeSrc, texts, (k)=>{
+          chips.forEach((c, j)=>{
+            c.classList.toggle("saying", j === k);
+            if(j <= k){ c.classList.add("said");
+              /* [S01r5n] `mark_initial` marks ONLY a word that BEGINS with the target. P4's new
+                 sentence is "नानी ने नई नाव बनाई।" and its question is about the sound at the START
+                 of words - but बनाई carries a न in the MIDDLE, so the plain contains-the-letter rule
+                 would light it and quietly contradict the question being asked. */
+              const _hit = d.mark_initial
+                ? (splitAksharas(texts[j])[0] || "")[0] === tgt
+                : wordHasSound(texts[j], tgt);
+              if(_hit) c.classList.add("marked"); }
+          });
+        }, ()=>{ chips.forEach(c => c.classList.remove("saying")); if(done) done(); });
+      };
       mountTapOptions({
         slide, host, signalName: d.signal_name || "sentence_sound_first_try",
         stimulus: stim, columnsHint: (d.options || []).length,
@@ -5899,6 +6105,8 @@ const SlideModules = {
         optionRenderer: (opt)=> letterCell(opt.letter),
         mastery: slide.phase === "mastery",
         nudgeTarget: null,
+        hintAction: _hintReplay,
+        nudgeBelow: true,
         /* [S01r4p] data.fixed_order pins the authored option order. mountTapOptions shuffles by
            default, on purpose, so the answer is never pinned to one position — keep that everywhere
            it is not explicitly overridden. This page's flow names the entry order literally
@@ -6728,7 +6936,57 @@ function boot(){
     const _audible = _a && !_a.paused && !_a.ended && _a.currentTime > 0;
     if(!_audible) playLanding(); }, { once:true });
 
+  /* [S01r5l] SME: "if user remains inactive for more than 5 seconds then add hand nudge on the play
+     button". The cover has no other affordance now that the wording is gone, so an idle child has
+     nothing telling them the pill is the way in.
+     The hand lives inside .slide-stage at z-index 55 and the start gate is 80, so it would be drawn
+     BEHIND the cover — `nh-start` lifts it over the gate for this one use and is taken off again by
+     the disarm, so nothing else that nudges is affected. */
+  let _startNudgeT = 0;
+  const _onLandingNow = ()=>{ const sg = $("startGate"); return sg && !sg.classList.contains("hidden"); };
+  const disarmStartNudge = ()=>{
+    clearTimeout(_startNudgeT); _startNudgeT = 0;
+    const nh = $("nudgeHand");
+    if(!nh) return;
+    nh.classList.remove("show", "hint-glow", "nh-start");
+    /* put it back where every other nudge expects to find it */
+    const home = document.querySelector(".slide-stage");
+    if(home && nh.parentNode !== home) home.appendChild(nh);
+  };
+  const armStartNudge = ()=>{
+    clearTimeout(_startNudgeT);
+    _startNudgeT = setTimeout(()=>{
+      if(!_onLandingNow()) return;
+      const btn = $("sgBtn"), nh = $("nudgeHand"), gate = $("startGate");
+      if(!btn || !nh || !gate) return;
+      /* [S01r5l] IT HAS TO BE INSIDE THE GATE, not merely above it in z-index.
+         The hand normally lives in .slide-stage, and z-index is resolved against the nearest
+         stacking context — so `z-index:90` on the hand only ever competed with the slide's own
+         children, while .slide-stage AS A WHOLE still painted under the cover (z-index 80). The
+         first build of this looked correct in the DOM (classes set, z-index 90) and was invisible
+         on screen. Raising .slide-stage instead would lift the mounted slide over the cover too.
+         So for this one nudge the hand is moved INTO the gate and placed against the gate's own
+         box; disarmStartNudge puts it back. */
+      gate.appendChild(nh);
+      const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+      const g = gate.getBoundingClientRect(), b = btn.getBoundingClientRect();
+      const FX = 39.93, FY = 6.38;                    /* fingertip inside the 96x96 hand box */
+      const tipX = (b.left + b.width * 0.72 - g.left) / scale;
+      const tipY = (b.top + b.height * 0.50 - g.top) / scale;
+      nh.style.left = (tipX - FX).toFixed(1) + "px";
+      nh.style.top  = (tipY - FY).toFixed(1) + "px";
+      nh.classList.add("nh-start", "show", "hint-glow");
+    }, 5000);
+  };
+  window.__armStartNudge = armStartNudge;
+  window.__disarmStartNudge = disarmStartNudge;
+  /* any touch of the cover counts as activity */
+  { const sg = $("startGate");
+    if(sg) sg.addEventListener("pointerdown", disarmStartNudge, true); }
+  armStartNudge();
+
   $("sgBtn").onclick = ()=>{
+    disarmStartNudge();
     stopAudio();          // silence the landing greeting BEFORE slide 0 speaks (no VO overlap)
     _ac();                // unlock/resume WebAudio on the start gesture so the first clip never clips
     // [engine JS] r4/P1: peek gate into the tutorial. The landing stays visible-and-BLURRED behind the
@@ -6777,7 +7035,7 @@ function buildDevNav(){
   const sync = ()=>{ const i = cur(); const s = CARD.slides[i]; if(document.activeElement !== sel) sel.value = i;
     lbl.textContent = (i+1) + "/" + CARD.slides.length + (s ? " · " + s.id : ""); };
   const go = (i)=>{ i = Math.max(0, Math.min(i, CARD.slides.length - 1)); leaveStart(); mountSlide(i); sync(); };
-  land.onclick = ()=>{ const sg = $("startGate"); if(sg){ sg.classList.remove("hidden"); document.body.classList.add("is-start"); } };
+  land.onclick = ()=>{ const sg = $("startGate"); if(sg){ sg.classList.remove("hidden"); document.body.classList.add("is-start"); } if(window.__armStartNudge) window.__armStartNudge(); };
   first.onclick = ()=> go(0); prev.onclick = ()=> go(cur() - 1); next.onclick = ()=> go(cur() + 1); last.onclick = ()=> go(CARD.slides.length - 1);
   sel.onchange = ()=> go(parseInt(sel.value, 10));
   bar.append(land, first, prev, sel, lbl, next, last);

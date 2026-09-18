@@ -115,7 +115,12 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .meet-pic-box .pic-img{width:220px;height:220px;object-fit:contain;}
 .meet-pic-box .pic-img.fallback{display:none;}
 .meet-pic-box .pic-emoji{font-size:160px;line-height:1;}
-.meet-pic-box .pic-label{font-size:36px;font-weight:800;color:var(--navy);}
+/* [S01r5l] SME: "increase the size of the word चूहा as it feels smaller". It sits beside a
+   200px letter glyph, so 36px read as a caption rather than as the word being taught. 36 -> 52px.
+   Safe to change here: the two-layer overlay that reddens the target letter is built from
+   getComputedStyle(...).fontSize, so it re-cuts itself at the new size instead of landing at the
+   old offsets. */
+.meet-pic-box .pic-label{font-size:52px;font-weight:800;color:var(--navy);}
 .meet-pair{display:flex;gap:80px;align-items:center;justify-content:center;}
 .meet-pair-item{display:flex;align-items:center;gap:32px;}
 
@@ -430,6 +435,16 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 .stage.thm-toybox .opt-cell{ background:#FFFDF7; border-color:#F7C24D; border-radius:28px;
    box-shadow:0 10px 22px rgba(214,140,20,.18); }
 .stage.thm-toybox .opt-cell:hover{ transform:translateY(-5px) scale(1.02); }
+/* [S01r5k] A CORRECT TAP HAD NO VISIBLE ANSWER AT ALL. `.opt-cell.correct` paints the card green
+   at line 131, but the toybox rule directly above re-paints every .opt-cell cream — SAME
+   specificity (0,2,0), and it comes LATER, so it won. The tick that used to carry the message on
+   its own was removed by a later SME ruling (`.opt-cell.correct::after{content:none}` below), which
+   left nothing: the card the child got right looked exactly like the two they did not touch. The
+   SME reported it on pages 8 and 11.
+   One class more than the rule it has to beat, so no !important is needed. The wrong states never
+   had this problem — `.crossed` and `.wrong-flash` are both defined after the toybox block. */
+.stage.thm-toybox .opt-cell.correct{ border-color:var(--correct); background:var(--correct-bg);
+   box-shadow:0 0 0 4px rgba(0,177,50,.22), 0 8px 18px rgba(0,177,50,.22); }
 .stage.thm-toybox .opt-cell:has(.cmp-chip-lbl){ min-height:184px; padding:12px 26px; }
 .stage.thm-toybox .opt-cell:has(.cmp-chip-lbl) .pic-img{ width:116px; height:116px; }
 .stage.thm-toybox .opt-cell:has(.cmp-chip-lbl) .cmp-chip-emoji{ font-size:88px; }
@@ -889,6 +904,12 @@ body.loaded .sg-acell{animation-play-state:running;}
 /* start button = provided image (button + tapping hand), transparent bg */
 .sg-btn{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:4;font-family:var(--font-hi);font-weight:800;font-size:32px;color:var(--navy);background:#FCB717;border:4.54px solid #fff;border-radius:44.56px;padding:14px 54px;cursor:pointer;box-shadow:0 6px 6px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);animation:sgBtnPulse 1.4s ease-in-out infinite;}
 .sg-btn img{width:100%;height:auto;display:block;pointer-events:none;}
+/* [S01r5l] SME: drop the "शुरू करें" wording, make it a play button, keep the button itself as it is.
+   So the pill is untouched - same fill, border, radius, shadow and its 186px min-width, which is what
+   stops an icon-only label collapsing it to a circle - and only the content changes. Drawn as a
+   glyph through ::after exactly the way .nav-btn already draws its arrow, so there is no new asset
+   to ship and nothing to go missing. The Hindi stays on the button as aria-label. */
+.sg-btn::after{content:"\25B6";font-size:30px;line-height:1;display:block;transform:translateX(2px);}
 .sg-btn:active{transform:translateX(-50%) translateY(3px);}
 @keyframes sgBtnPulse{0%,100%{transform:translateX(-50%) scale(1);}50%{transform:translateX(-50%) scale(1.03);}}
 /* landing "listen" button — a warm welcome plays on the title screen; tap to replay */
@@ -902,6 +923,13 @@ body.loaded .sg-acell{animation-play-state:running;}
 .nudge-hand{position:absolute;width:96px;height:96px;z-index:55;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22));animation:nudgeMove 1s ease-in-out infinite;display:none;}
 .nudge-hand img{width:100%;height:100%;object-fit:contain;}
 .nudge-hand.show{display:block;}
+/* [S01r5l] the idle hand on the cover's play button has to clear the start gate (z-index 80);
+   scoped to this one use so every in-lesson nudge keeps its normal stacking. */
+.nudge-hand.nh-start{ z-index:90; }
+/* [S01r5n] the tile's own flight on the watch-first sort page. 0.97s matches the window travelNudge
+   spends moving (its 1.8s keyframes travel between 18% and 72%), so the hand and the picture arrive
+   together instead of the hand landing first and the tile trailing after it. */
+.sort-item.demo-fly{ transition:transform .97s cubic-bezier(.32,.78,.3,1); z-index:30; pointer-events:none; }
 @keyframes nudgeMove{0%,100%{transform:translateY(2px);}50%{transform:translateY(-14px);}}  /* [20a] restored — was deleted while .nudge-hand still referenced it -> static nudge */
 
 
@@ -924,6 +952,10 @@ body.is-end .stage-inner{visibility:hidden;}
 @keyframes endPop{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
 .end-text{font-weight:800;font-size:38px;color:var(--navy);text-align:center;background:var(--cream);border:3px solid var(--cream-edge);padding:18px 52px;border-radius:9999px;box-shadow:0 8px 20px rgba(0,47,118,.14);z-index:2;}
 /* "आगे बढ़ें" appears only after the celebration VO finishes */
+/* [S01r5n] the celebration button lost its wording with the rest of them; its arrow used to
+   be a character inside that text, so it comes back here. Written as the glyph itself rather
+   than a CSS escape - the escape form is one stray backslash away from rendering as digits. */
+.end-btn::after{content:"→";font-size:30px;line-height:1;}
 .end-btn{display:none;z-index:3;font-family:var(--font-hi);font-weight:800;font-size:28px;color:var(--navy);background:#FCB717;border:4.54px solid #FFFFFF;border-radius:44.56px;padding:14px 44px;cursor:pointer;box-shadow:0 6px 6px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);}
 .end-btn.show{display:inline-flex;align-items:center;animation:hintPop .4s cubic-bezier(.34,1.5,.6,1);}
 .end-btn:active{transform:translateY(3px);box-shadow:0 3px 3px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);}
@@ -1187,8 +1219,21 @@ body.tut-page{background:#FFFFFF;}
    ✓ on .got STAYS: the ruling removed the wrong-mark, not the right-mark, and TAP_ALL needs a
    persistent tick to show which items are already banked. Lock/dim kept, as with .sentence-word. */
 .tap-all-item.nope{border-color:var(--wrong);background:var(--wrong-bg);opacity:.55;pointer-events:none;animation:buzzShake .4s;box-shadow:0 0 0 3px var(--wrong);}
+/* [S01r5m] a found card leaves play 2s after it turns green. It was already untappable (the
+   click guard returns on .got) but still looked live, so nothing told the child which cards
+   were still in question. pointer-events is belt-and-braces against a stray tap. */
+.tap-all-item.spent{ opacity:.42; pointer-events:none; filter:saturate(.75);
+  transition:opacity .45s ease, filter .45s ease; }
 /* SENTENCE_SOUND / SENTENCE_PICK_PIC: line stimulus + 🔊 replay above the options */
 .sentence-sound-stim{display:flex;flex-direction:column;align-items:center;gap:20px;}
+/* [S01r5k] SME: "move this sentence one box upwards, currently its too close to the च letter which
+   is made just below it". One box of the card's grid paper is 46px (.tut-card background-size).
+   translateY, not margin: a margin would grow the flex block and re-centre it, which moves the
+   LETTER CARD down by half of whatever the sentence moves up — the two would meet in the middle and
+   the gap would only open by half. A transform takes the sentence out of layout, so the letter card
+   stays exactly where it is and the full 46px becomes clearance. The space it moves into is the
+   empty .tut-prompt band (these pages carry no heading), so nothing is displaced. */
+.q-row.ss-teach .sentence-sound-stim{ transform:translateY(-46px); }
 .sentence-sound-stim .sentence-strip{gap:14px;}
 .sentence-sound-stim .sentence-word{font-size:48px;padding:12px 22px;}
 .sentence-sound-stim .sentence-word .sw-text{font-size:48px;}
@@ -1820,7 +1865,16 @@ body.is-start .phase-gate{
 .opt-grid.ss-letter-card .opt-cell{ min-height:0; width:138px; height:138px; padding:6px; flex:0 0 auto; }
 /* [S01r4f] the teach card's emphasis: a warm ring, NO green and NO checkmark. `.correct` carries a
    ✓ badge meaning "you answered correctly", which is a lie on a slide with nothing to answer. */
-.opt-cell.ss-lit{ border-color:var(--tgt-ink); background:#FFF7EC;
+/* [S01r5l] SME: "add pulse effect in the च letter". r4g had dropped `reveal-pulse` from this card
+   for a good reason - that animation pulses a GREEN box-shadow, left over from when the card was
+   `.correct`, and green on an amber teach card reads as "you answered right" when nothing has been
+   answered. So this is its own keyframe in the card's OWN colour, scale only plus an amber ring, and
+   it runs on .ss-lit, which is set only while the letter is being shown on the three teach pages. */
+@keyframes ssLitPulse{
+  0%,100%{ transform:scale(1);        box-shadow:0 0 0 0 rgba(194,89,10,.30), 0 12px 28px rgba(11,61,140,.14); }
+  50%    { transform:scale(1.045);    box-shadow:0 0 0 12px rgba(194,89,10,0), 0 12px 28px rgba(11,61,140,.14); }
+}
+.opt-cell.ss-lit{ animation:ssLitPulse 1.6s ease-in-out infinite; border-color:var(--tgt-ink); background:#FFF7EC;
   box-shadow:0 5px 12px rgba(194,89,10,.16); }
 
 /* ---- MEET_LETTER VO-synced reveal -------------------------------------------------------------- */
@@ -2430,7 +2484,7 @@ html.no-anim .wg-fx{display:none;}
     <div class="mascot-wrap" id="swBuddy"><div class="mascot-circle"><img class="mascot-img" id="swBuddyImg" src="assets/UI/sw_head_talking.webp" alt=""></div></div>
 
     <!-- Nav button — kit-style pill, floats bottom-right -->
-    <button class="nav-btn" id="navBtn" disabled>आगे</button>
+    <button class="nav-btn" id="navBtn" disabled aria-label="आगे"></button>
   </div>
 
   <!-- FEEDBACK OVERLAY — kit-style card + clean Swiftee large -->
@@ -2459,7 +2513,7 @@ html.no-anim .wg-fx{display:none;}
         <div class="sg-art" id="sgHero"></div>
       </div>
       <button class="sg-vo" id="sgVo" type="button" aria-label="सुनो"><svg viewBox="0 0 62 60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Audio"><g filter="url(#sgChipShadow)"><rect x="8" y="4" width="46" height="44" rx="22" fill="url(#sgChipGrad)"/><rect x="6" y="2" width="50" height="48" rx="24" stroke="white" stroke-width="4"/><path d="M29.8466 19.0574C29.8804 19.0524 29.9145 19.0496 29.9487 19.0488C30.6094 19.0317 31.0021 19.5124 31.0015 20.1414C31.0008 20.9661 31.0003 21.7911 31.0005 22.6158L31.001 27.7212L31.0009 30.5591C31.0009 31.0364 31.0122 31.5472 30.9863 32.0228C30.9662 32.2709 30.902 32.4608 30.7251 32.643C30.3831 32.9952 29.8337 33.0842 29.4386 32.7671C29.0784 32.4781 28.7473 32.1159 28.4181 31.7862L26.4414 29.8087C26.1771 29.5426 25.9071 29.2636 25.6339 29.0081C25.0227 28.9649 24.3645 29.017 23.7487 28.9979C23.445 28.9885 23.1625 29.0211 22.8589 28.9606C22.3751 28.8616 22.0618 28.4823 22.0642 27.9824C22.0706 26.5937 22.0287 25.1949 22.0828 23.8081C22.0884 23.6626 22.2302 23.4334 22.3309 23.3252C22.454 23.1907 22.6146 23.0963 22.792 23.0543C23.0567 22.9904 23.5328 23.016 23.8224 23.0128C24.4143 23.0063 25.0171 23.0277 25.609 23.0073C25.6794 22.9529 25.8505 22.7743 25.919 22.706L26.5305 22.0945L28.5396 20.0838C28.9157 19.7059 29.3217 19.1749 29.8466 19.0574Z" fill="white"/><path class="wv wv2" d="M36.2367 18.6905C36.8783 18.6449 37.3041 19.231 37.6725 19.6829C38.7675 21.0046 39.4982 22.5894 39.7923 24.2804C40.2503 26.8763 39.6548 29.5478 38.1378 31.7035C37.8393 32.1274 37.508 32.5324 37.149 32.9063C36.9404 33.1236 36.7646 33.2558 36.4622 33.3081C36.2013 33.3412 35.9378 33.2717 35.7272 33.1144C35.5185 32.9615 35.3816 32.7298 35.3483 32.4733C35.2786 31.9235 35.5696 31.6821 35.8914 31.3297C36.0448 31.1639 36.1901 30.9908 36.3269 30.811C38.3669 28.136 38.4986 24.4654 36.6555 21.6511C36.4826 21.3899 36.2966 21.1376 36.0984 20.8951C35.8252 20.5652 35.3947 20.2691 35.3472 19.8184C35.2845 19.2225 35.6439 18.768 36.2367 18.6905Z" fill="white"/><path class="wv wv1" d="M33.3868 21.5044C33.9769 21.4549 34.2563 21.7845 34.5981 22.1981C35.1982 22.924 35.6149 23.7691 35.8211 24.6886C36.171 26.2384 35.8867 27.8637 35.0314 29.2026C34.7421 29.6568 34.2333 30.3745 33.6937 30.4946C33.1633 30.5437 32.6759 30.2927 32.5495 29.7376C32.3921 29.0462 32.9849 28.6956 33.3274 28.1763C34.2088 26.833 34.1932 25.0908 33.288 23.7635C33.0747 23.4522 32.6159 23.0564 32.5518 22.7133C32.4377 22.1027 32.7745 21.619 33.3868 21.5044Z" fill="white"/></g><defs><filter id="sgChipShadow" x="0" y="0" width="62" height="60" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dy="4"/><feGaussianBlur stdDeviation="2"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/><feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/><feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/></filter><linearGradient id="sgChipGrad" x1="8" y1="26" x2="54" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#1987FC"/><stop offset="1" stop-color="#1565F4"/></linearGradient></defs></svg></button>
-      <button class="sg-btn" id="sgBtn">शुरू करें</button>
+      <button class="sg-btn" id="sgBtn" aria-label="शुरू करें"></button>
     </div>
   </div>
 
@@ -2470,7 +2524,7 @@ html.no-anim .wg-fx{display:none;}
     <div class="end-subtitle" id="endSubtitle"></div>
     <img class="end-mascot" src="assets/UI/sw_lg_celebrating_anim.webp" alt="Swiftee"
          onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'end-mascot',textContent:'🎉'}))">
-    <button class="end-btn" id="endBtn">आगे बढ़ें →</button>
+    <button class="end-btn" id="endBtn" aria-label="आगे बढ़ें"></button>
   </div>
 
   <!-- DEV VALIDATOR BANNER -->
@@ -2489,7 +2543,7 @@ html.no-anim .wg-fx{display:none;}
 
 <!-- ============ CARD DATA (embedded; in prod the compiler does this) ============ -->
 <script type="application/json" id="cardData">
-{"version": "0.1", "skill_code": "HI02H11_L01_S01", "lo_code": "HI02H11_L01", "grade": "02", "attribute": "H11", "skill_type": "CORE", "part_label": "", "medium": "hi", "title": {"hi": "बार-बार आने वाली ध्वनि", "en": "Recognise the repeated letter-sound in a line"}, "subtitle_hi": "", "theme": "toybox", "skill_description_hi": "सुनी या पढ़ी गई पंक्ति/वाक्य में बार-बार आने वाले वर्ण या ध्वनि को पहचानता है — जैसे 'पीतल के पतीले में पपीता पीला-पीला'।", "landing_audio": "vo_landing", "landing_hero": {"kind": "sentence_sound", "hide_title": true, "words": ["काला", "कौआ", "काँव-काँव", "करता।"], "target_sound": "क", "mark_bare": true, "sync_audio": "vo_landing", "cues": [{"at": "क", "do": "light"}, {"at": "ध्वनि", "do": "crow"}], "picture_img": "obj_kauaa", "picture_emoji": "🐦‍⬛", "picture_sfx": "sfx_kanv"}, "phase_transition_audio": {"tutorial": "vo_pt_tutorial", "guided": "vo_pt_guided", "practice": "vo_pt_practice"}, "phase_transition_title": {"tutorial": "चलो, शुरू करें!", "guided": "साथ में करें।", "practice": "अब तुम्हारी बारी।"}, "scaffold_rules": {"nudge_timeout_ms": {"guided": 6000, "practice": 8000}, "max_attempts": 2}, "slides": [{"id": "T3", "phase": "tutorial", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "", "audio": {"prompt": "vo_line_l2", "target": "vo_snd_ch"}, "data": {"words": [{"text": "चूहे"}, {"text": "ने"}, {"text": "चार"}, {"text": "चने"}, {"text": "चबाए।"}], "whole_audio": "vo_line_l2", "target_sound": "च", "options": [{"letter": "च", "audio": "vo_snd_ch"}], "teach_seq": [{"step": "sentence"}, {"step": "clear_words"}, {"step": "pause", "ms": 900}, {"step": "letter", "silent": true}, {"step": "mark", "audio": "vo_t3_explain", "words": ["चूहे", "चार", "चने", "चबाए।"]}], "mark_bare": true, "hide_replay": true, "signal_name": "sentence_sound_first_try"}}, {"id": "T4", "phase": "tutorial", "eis": "iconic", "type": "MEET_LETTER", "prompt_hi": "", "audio": {"prompt": "vo_t4_prompt", "word_name": "vo_w_chuha", "sound": "vo_snd_ch"}, "data": {"letter": "च", "picture_img": "obj_chuha", "picture_emoji": "🐭", "word_hi": "चूहा", "reveal_flow": {"cues": [{"at": "सुनी", "do": "letter"}], "after_line": ["pic", "label", "mark"]}}}, {"id": "T5", "phase": "tutorial", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "", "audio": {"prompt": "vo_line_l3", "target": "vo_snd_m"}, "data": {"words": [{"text": "मेरे"}, {"text": "मामा"}, {"text": "मीठी"}, {"text": "मलाई"}, {"text": "लाए।"}], "whole_audio": "vo_line_l3", "target_sound": "म", "options": [{"letter": "म", "audio": "vo_snd_m"}], "teach_seq": [{"step": "sentence"}, {"step": "clear_words"}, {"step": "pause", "ms": 900}, {"step": "letter", "audio": "vo_snd_m"}, {"step": "mark", "audio": "vo_t5_explain", "words": ["मेरे", "मामा", "मीठी", "मलाई"]}], "mark_bare": true, "hide_replay": true, "signal_name": "sentence_sound_first_try"}}, {"id": "T6", "phase": "tutorial", "eis": "iconic", "type": "MEET_LETTER", "prompt_hi": "", "audio": {"prompt": "vo_t6_prompt", "word_name": "vo_w_muli", "sound": "vo_snd_m"}, "data": {"letter": "म", "picture_img": "obj_muli", "picture_emoji": "🥕", "word_hi": "मूली", "reveal_flow": {"cues": [{"at": "सुनी", "do": "letter"}], "after_line": ["pic", "label", "mark"]}}}, {"id": "T1", "phase": "tutorial", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "", "audio": {"prompt": "vo_line_l1", "target": "vo_snd_p"}, "data": {"words": [{"text": "पीतल"}, {"text": "के"}, {"text": "पतीले"}, {"text": "में"}, {"text": "पपीता"}, {"text": "पीला-पीला।"}], "whole_audio": "vo_line_l1", "target_sound": "प", "options": [{"letter": "प", "audio": "vo_snd_p"}], "teach_seq": [{"step": "sentence"}, {"step": "clear_words"}, {"step": "pause", "ms": 900}, {"step": "letter", "silent": true}, {"step": "mark", "audio": "vo_t1_explain", "words": ["पीतल", "पतीले", "पपीता", "पीला-पीला।"]}], "mark_bare": true, "hide_replay": true, "signal_name": "sentence_sound_first_try"}}, {"id": "T2", "phase": "tutorial", "eis": "iconic", "type": "MEET_LETTER", "prompt_hi": "", "audio": {"prompt": "vo_t2_prompt", "word_name": "vo_w_papita", "sound": "vo_snd_p"}, "data": {"letter": "प", "picture_img": "obj_papita", "picture_emoji": "🍈", "word_hi": "पपीता", "reveal_flow": {"cues": [{"at": "सुनी", "do": "letter"}], "after_line": ["pic", "label", "mark"]}}}, {"id": "G2", "phase": "guided", "eis": "iconic", "type": "TAP_ALL_WITH_SOUND", "prompt_hi": "जिन शब्दों में प की आवाज़ सुनाई दे, उन पर टैप करो।", "audio": {"prompt": "vo_g2_prompt", "target": "vo_snd_p", "hint": "vo_g2_hint", "try_again": "vo_g2_try", "reveal": "vo_g2_reveal", "done": "vo_g2_done"}, "data": {"target_sound": "प", "items": [{"word_hi": "पपीता", "img": "obj_papita", "emoji": "🍈", "audio": "vo_w_papita", "has": true}, {"word_hi": "केला", "img": "obj_kela", "emoji": "🍌", "audio": "vo_w_kela", "has": false}, {"word_hi": "पतंग", "img": "obj_patang", "emoji": "🪁", "audio": "vo_w_patang", "has": true}, {"word_hi": "आम", "img": "obj_aam", "emoji": "🥭", "audio": "vo_w_aam", "has": false}], "allow_hand": false, "reveal_seq": true, "signal_name": "tap_all_sound_first_try"}}, {"id": "G3", "phase": "guided", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "ध्यान से सुनो — इस वाक्य में कौन-सी आवाज़ बार-बार आई?", "audio": {"prompt": "vo_g3_prompt", "target": "vo_snd_ch", "try_again": "vo_g3_try", "reveal": "vo_g3_reveal", "correct": "vo_g3_correct"}, "data": {"words": [{"text": "चूहे"}, {"text": "ने"}, {"text": "चार"}, {"text": "चने"}, {"text": "चबाए।"}], "whole_audio": "vo_line_l2", "target_sound": "च", "options": [{"letter": "च", "audio": "vo_snd_ch"}, {"letter": "ल", "audio": "vo_snd_l"}, {"letter": "र", "audio": "vo_snd_r"}], "signal_name": "sentence_sound_first_try", "reveal_seq": true, "hide_replay": true, "seq_say_whole": true, "fixed_order": true}}, {"id": "G5", "phase": "guided", "eis": "enactive", "type": "SORT_VACHAN", "prompt_hi": "हर चित्र का नाम सुनो और उसे सही टोकरी में डालो।", "audio": {"prompt": "vo_g5_prompt", "target": "vo_snd_p", "hint": "vo_g5_hint", "try_again": "vo_g5_try", "correct": "vo_g5_correct"}, "data": {"bins": [{"gender": "S", "label": "प की आवाज़ वाला"}, {"gender": "P", "label": "च की आवाज़ वाला"}], "items": [{"word_hi": "पानी", "img": "obj_pani", "emoji": "💧", "audio": "vo_w_pani", "gender": "S"}, {"word_hi": "पायल", "img": "obj_payal", "emoji": "💍", "audio": "vo_w_payal", "gender": "S"}, {"word_hi": "चूहा", "img": "obj_chuha", "emoji": "🐭", "audio": "vo_w_chuha", "gender": "P"}, {"word_hi": "चाँदी", "img": "obj_chandi", "emoji": "🪙", "audio": "vo_w_chandi", "gender": "P"}], "reveal_seq": true, "signal_name": "sound_sort_first_try", "drag_demo": true}}, {"id": "P1", "phase": "practice", "eis": "iconic", "type": "TAP_ALL_WITH_SOUND", "prompt_hi": "जिन शब्दों में म की आवाज़ सुनाई दे, उन पर टैप करो।", "audio": {"prompt": "vo_p1_prompt", "target": "vo_snd_m", "hint": "vo_p1_hint", "try_again": "vo_p1_try", "reveal": "vo_p1_reveal", "done": "vo_p1_done"}, "data": {"target_sound": "म", "items": [{"word_hi": "मामा", "img": "obj_mama", "emoji": "👨", "audio": "vo_w_mama", "has": true}, {"word_hi": "चींटी", "img": "obj_chinti", "emoji": "🐜", "audio": "vo_w_chinti", "has": false}, {"word_hi": "मूली", "img": "obj_muli", "emoji": "🥕", "audio": "vo_w_muli", "has": true}, {"word_hi": "लाल", "img": "obj_laal", "emoji": "🔴", "audio": "vo_w_laal", "has": false}], "allow_hand": true, "reveal_seq": true, "signal_name": "tap_all_sound_first_try"}}, {"id": "P4", "phase": "practice", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "ध्यान से सुनो — कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?", "audio": {"prompt": "vo_p4_prompt", "target": "vo_snd_n", "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct"}, "data": {"words": [{"text": "नानी"}, {"text": "नई"}, {"text": "नाव"}, {"text": "लाई।"}], "whole_audio": "vo_line_l6", "target_sound": "न", "options": [{"letter": "म", "audio": "vo_ltr_m"}, {"letter": "ल", "audio": "vo_snd_l"}, {"letter": "न", "audio": "vo_ltr_n"}], "signal_name": "sentence_sound_first_try", "reveal_seq": true, "hide_replay": true, "seq_say_whole": true, "fixed_order": true}}, {"id": "P7", "phase": "practice", "eis": "iconic", "type": "TAP_ALL_WITH_SOUND", "prompt_hi": "जिन शब्दों में च की आवाज़ सुनाई दे, उन पर टैप करो।", "audio": {"prompt": "vo_p7_prompt", "target": "vo_snd_ch", "hint": "vo_p7_hint", "try_again": "vo_p7_try", "reveal": "vo_p7_reveal", "done": "vo_p7_done"}, "data": {"target_sound": "च", "items": [{"word_hi": "चाँद", "img": "obj_chand", "emoji": "🌙", "audio": "vo_w_chand", "has": true}, {"word_hi": "माला", "img": "obj_mala", "emoji": "📿", "audio": "vo_w_mala", "has": false}, {"word_hi": "चींटी", "img": "obj_chinti", "emoji": "🐜", "audio": "vo_w_chinti", "has": true}, {"word_hi": "लाल", "img": "obj_laal", "emoji": "🔴", "audio": "vo_w_laal", "has": false}], "allow_hand": true, "reveal_seq": true, "signal_name": "tap_all_sound_first_try"}}, {"id": "G1", "phase": "practice", "eis": "iconic", "type": "TAP_BALLOON_SOUND", "prompt_hi": "", "audio": {"prompt": "vo_g1_prompt", "target": "vo_snd_p", "correct": "vo_g1_correct", "hint": "vo_g1_hint"}, "data": {"target_sound": "प", "items": [{"word_hi": "पतंग", "img": "obj_patang", "emoji": "🪁", "audio": "vo_w_patang", "has": true}, {"word_hi": "आम", "img": "obj_aam", "emoji": "🥭", "audio": "vo_w_aam", "has": false}, {"word_hi": "पपीता", "img": "obj_papita", "emoji": "🍈", "audio": "vo_w_papita", "has": true}, {"word_hi": "केला", "img": "obj_kela", "emoji": "🍌", "audio": "vo_w_kela", "has": false}, {"word_hi": "पत्ता", "img": "obj_patta", "emoji": "🍃", "audio": "vo_w_patta", "has": true}, {"word_hi": "घर", "img": "obj_ghar", "emoji": "🏠", "audio": "vo_w_ghar", "has": false}, {"word_hi": "पानी", "img": "obj_pani", "emoji": "💧", "audio": "vo_w_pani", "has": true}, {"word_hi": "मछली", "img": "obj_machhli", "emoji": "🐟", "audio": "vo_w_machhli", "has": false}], "allow_hand": true, "signal_name": "balloon_sound_first_try"}}, {"id": "P8", "phase": "practice", "eis": "iconic", "type": "CELEBRATION", "prompt_hi": "शाबाश! आज हमने सीखा — वाक्य ध्यान से सुनना, बार-बार आने वाली आवाज़ पहचानना, और प, च और म की आवाज़ ढूँढना।", "audio": {"prompt": "vo_p8_prompt"}, "data": {}}], "phase_distribution": {"tutorial": 6, "guided": 3, "practice": 5}, "signals_expected": ["slide_entered", "slide_completed", "sound_found", "tap_all_sound_first_try", "sentence_sound_first_try", "sentence_sound_demo", "sound_sort_first_try", "sound_position_first_try", "balloon_sound_first_try", "answer_wrong", "hint_shown", "answer_revealed", "phase_transition", "mastery_score", "lesson_completed"], "_emoji_fallback": {"obj_aam": "🥭", "obj_chand": "🌙", "obj_chandi": "🪙", "obj_chinti": "🐜", "obj_chuha": "🐭", "obj_ghar": "🏠", "obj_kauaa": "🐦‍⬛", "obj_kela": "🍌", "obj_laal": "🔴", "obj_machhli": "🐟", "obj_mala": "📿", "obj_mama": "👨", "obj_muli": "🥕", "obj_pani": "💧", "obj_papita": "🍈", "obj_patang": "🪁", "obj_patta": "🍃", "obj_payal": "💍"}, "assets": {"audio": {"sfx_bal_pop": "assets/Audio/sfx_bal_pop.ogg", "sfx_celebrate": "assets/Audio/sfx_celebrate.ogg", "sfx_correct": "assets/Audio/sfx_correct.ogg", "sfx_kanv": "assets/Audio/sfx_kanv.ogg", "sfx_pop": "assets/Audio/sfx_pop.ogg", "sfx_tap": "assets/Audio/sfx_tap.ogg", "sfx_wrong": "assets/Audio/sfx_wrong.ogg", "vo_g1_correct": "assets/Audio/vo_g1_correct.ogg", "vo_g1_hint": "assets/Audio/vo_g1_hint.ogg", "vo_g1_prompt": "assets/Audio/vo_g1_prompt.ogg", "vo_g2_done": "assets/Audio/vo_g2_done.ogg", "vo_g2_hint": "assets/Audio/vo_g2_hint.ogg", "vo_g2_prompt": "assets/Audio/vo_g2_prompt.ogg", "vo_g2_reveal": "assets/Audio/vo_g2_reveal.ogg", "vo_g2_try": "assets/Audio/vo_g2_try.ogg", "vo_g3_correct": "assets/Audio/vo_g3_correct.ogg", "vo_g3_prompt": "assets/Audio/vo_g3_prompt.ogg", "vo_g3_reveal": "assets/Audio/vo_g3_reveal.ogg", "vo_g3_try": "assets/Audio/vo_g3_try.ogg", "vo_g5_correct": "assets/Audio/vo_g5_correct.ogg", "vo_g5_hint": "assets/Audio/vo_g5_hint.ogg", "vo_g5_prompt": "assets/Audio/vo_g5_prompt.ogg", "vo_g5_try": "assets/Audio/vo_g5_try.ogg", "vo_landing": "assets/Audio/vo_landing.ogg", "vo_line_l1": "assets/Audio/vo_line_l1.ogg", "vo_line_l2": "assets/Audio/vo_line_l2.ogg", "vo_line_l3": "assets/Audio/vo_line_l3.ogg", "vo_line_l6": "assets/Audio/vo_line_l6.ogg", "vo_ltr_m": "assets/Audio/vo_ltr_m.ogg", "vo_ltr_n": "assets/Audio/vo_ltr_n.ogg", "vo_p1_done": "assets/Audio/vo_p1_done.ogg", "vo_p1_hint": "assets/Audio/vo_p1_hint.ogg", "vo_p1_prompt": "assets/Audio/vo_p1_prompt.ogg", "vo_p1_reveal": "assets/Audio/vo_p1_reveal.ogg", "vo_p1_try": "assets/Audio/vo_p1_try.ogg", "vo_p4_correct": "assets/Audio/vo_p4_correct.ogg", "vo_p4_prompt": "assets/Audio/vo_p4_prompt.ogg", "vo_p4_reveal": "assets/Audio/vo_p4_reveal.ogg", "vo_p4_try": "assets/Audio/vo_p4_try.ogg", "vo_p7_done": "assets/Audio/vo_p7_done.ogg", "vo_p7_hint": "assets/Audio/vo_p7_hint.ogg", "vo_p7_prompt": "assets/Audio/vo_p7_prompt.ogg", "vo_p7_reveal": "assets/Audio/vo_p7_reveal.ogg", "vo_p7_try": "assets/Audio/vo_p7_try.ogg", "vo_p8_prompt": "assets/Audio/vo_p8_prompt.ogg", "vo_pt_guided": "assets/Audio/vo_pt_guided.ogg", "vo_pt_practice": "assets/Audio/vo_pt_practice.ogg", "vo_pt_tutorial": "assets/Audio/vo_pt_tutorial.ogg", "vo_snd_ch": "assets/Audio/vo_snd_ch.ogg", "vo_snd_l": "assets/Audio/vo_snd_l.ogg", "vo_snd_m": "assets/Audio/vo_snd_m.ogg", "vo_snd_n": "assets/Audio/vo_snd_n.ogg", "vo_snd_p": "assets/Audio/vo_snd_p.ogg", "vo_snd_r": "assets/Audio/vo_snd_r.ogg", "vo_t1_explain": "assets/Audio/vo_t1_explain.ogg", "vo_t2_prompt": "assets/Audio/vo_t2_prompt.ogg", "vo_t3_explain": "assets/Audio/vo_t3_explain.ogg", "vo_t4_prompt": "assets/Audio/vo_t4_prompt.ogg", "vo_t5_explain": "assets/Audio/vo_t5_explain.ogg", "vo_t6_prompt": "assets/Audio/vo_t6_prompt.ogg", "vo_w_aam": "assets/Audio/vo_w_aam.ogg", "vo_w_chand": "assets/Audio/vo_w_chand.ogg", "vo_w_chandi": "assets/Audio/vo_w_chandi.ogg", "vo_w_chinti": "assets/Audio/vo_w_chinti.ogg", "vo_w_chuha": "assets/Audio/vo_w_chuha.ogg", "vo_w_ghar": "assets/Audio/vo_w_ghar.ogg", "vo_w_kela": "assets/Audio/vo_w_kela.ogg", "vo_w_laal": "assets/Audio/vo_w_laal.ogg", "vo_w_machhli": "assets/Audio/vo_w_machhli.ogg", "vo_w_mala": "assets/Audio/vo_w_mala.ogg", "vo_w_mama": "assets/Audio/vo_w_mama.ogg", "vo_w_muli": "assets/Audio/vo_w_muli.ogg", "vo_w_pani": "assets/Audio/vo_w_pani.ogg", "vo_w_papita": "assets/Audio/vo_w_papita.ogg", "vo_w_patang": "assets/Audio/vo_w_patang.ogg", "vo_w_patta": "assets/Audio/vo_w_patta.ogg", "vo_w_payal": "assets/Audio/vo_w_payal.ogg"}, "audio_text": {"vo_g1_correct": "शाबाश! इसमें प की आवाज़ है।", "vo_g1_hint": "ध्यान से सुनिए, इसमें प की आवाज़ नहीं है।", "vo_g1_prompt": "प की आवाज़ वाले चित्र पर टैप कीजिए।", "vo_g2_done": "शाबाश! तुमने प की आवाज़ वाले सारे शब्द खोज लिए।", "vo_g2_hint": "हर शब्द को ध्यान से देखो और सुनो। किस शब्द में प की आवाज़ आ रही है?", "vo_g2_prompt": "जिन शब्दों में प की आवाज़ सुनाई दे, उन पर टैप करो।", "vo_g2_reveal": "सुनो — इसमें प की आवाज़ है।", "vo_g2_try": "इस शब्द की शुरुआत में प की आवाज़ नहीं है। एक बार फिर सुनो।", "vo_g3_correct": "चूहे, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।", "vo_g3_prompt": "ध्यान से सुनो — इस वाक्य में कौन-सी आवाज़ बार-बार आई?", "vo_g3_reveal": "ध्यान से देखो, सही जवाब च है।", "vo_g3_try": "यह च की आवाज़ नहीं है।", "vo_g5_correct": "बहुत बढ़िया! सही टोकरी।", "vo_g5_hint": "शब्द बोलो और सुनो — उसमें प की आवाज़ है या च की?", "vo_g5_prompt": "हर चित्र का नाम सुनो और उसे सही टोकरी में डालो।", "vo_g5_try": "यह टोकरी सही नहीं है। शब्द की आवाज़ फिर सुनो।", "vo_landing": "नमस्ते दोस्त! मैं हूँ Swiftee। आज हम जानेंगे कि वाक्य में कौन-सी ध्वनि बार-बार सुनाई देती है। सुनो—काला कौआ काँव-काँव करता। इस वाक्य में क की ध्वनि यानी आवाज़ बार-बार आ रही है।", "vo_line_l1": "पीतल के पतीले में पपीता पीला-पीला।", "vo_line_l2": "चूहे ने चार चने चबाए।", "vo_line_l3": "मेरे मामा मीठी मलाई लाए।", "vo_line_l6": "नानी नई नाव लाई।", "vo_ltr_m": "म", "vo_ltr_n": "न", "vo_p1_done": "शाबाश! म की आवाज़ वाले सारे शब्द मिल गए।", "vo_p1_hint": "हर शब्द सुनो — क्या उसमें म की आवाज़ सुनाई देती है?", "vo_p1_prompt": "जिन शब्दों में म की आवाज़ सुनाई दे, उन पर टैप करो।", "vo_p1_reveal": "सुनो — इसमें म की आवाज़ है।", "vo_p1_try": "इस शब्द की शुरुआत में म की आवाज़ नहीं है। एक बार फिर सुनो।", "vo_p4_correct": "सही! शुरुआत में न की आवाज़ थी।", "vo_p4_prompt": "ध्यान से सुनो — कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?", "vo_p4_reveal": "शुरुआत में न की आवाज़ बार-बार आई।", "vo_p4_try": "तुमने आखिरी आवाज़ सुनी। हमें वह आवाज़ ढूँढनी है जो पूरे वाक्य में बार-बार आई है।", "vo_p7_done": "वाह! तुमने च की आवाज़ हर जगह पहचान ली।", "vo_p7_hint": "च की आवाज़ शुरू में भी हो सकती है और बीच में भी। पूरा शब्द सुनो।", "vo_p7_prompt": "जिन शब्दों में च की आवाज़ सुनाई दे, उन पर टैप करो।", "vo_p7_reveal": "सुनो — इसमें च की आवाज़ है।", "vo_p7_try": "इस शब्द में च की आवाज़ कहीं नहीं है। एक बार फिर सुनो।", "vo_p8_prompt": "शाबाश! आज हमने सीखा — वाक्य ध्यान से सुनना, बार-बार आने वाली आवाज़ पहचानना, और प, च और म की आवाज़ ढूँढना।", "vo_snd_ch": "च से चम्मच।", "vo_snd_l": "ल से लट्टू।", "vo_snd_m": "म से मछली।", "vo_snd_n": "न से नाव।", "vo_snd_p": "प से पतंग।", "vo_snd_r": "र से रस्सी।", "vo_t1_explain": "इन सब शब्दों में प की आवाज़ बार-बार आई।", "vo_t2_prompt": "हमने प की आवाज़ सुनी। यह आवाज़ प अक्षर से लिखी जाती है। जैसे—प से पपीता।", "vo_t3_explain": "चूहे, चार, चने, चबाए—इन सब शब्दों में च की आवाज़ बार-बार आई।", "vo_t4_prompt": "हमने च की आवाज़ सुनी। यह आवाज़ च अक्षर से लिखी जाती है। जैसे—च से चूहा।", "vo_t5_explain": "मेरे, मामा, मीठी, मलाई—इन सब शब्दों में म की आवाज़ बार-बार आई।", "vo_t6_prompt": "हमने म की आवाज़ सुनी। यह आवाज़ म अक्षर से लिखी जाती है। जैसे—म से मूली।", "vo_w_aam": "आम", "vo_w_chand": "चाँद", "vo_w_chandi": "चाँदी", "vo_w_chinti": "चींटी", "vo_w_chuha": "चूहा", "vo_w_ghar": "घर", "vo_w_kela": "केला", "vo_w_laal": "लाल", "vo_w_machhli": "मछली", "vo_w_mala": "माला", "vo_w_mama": "मामा", "vo_w_muli": "मूली", "vo_w_pani": "पानी", "vo_w_papita": "पपीता", "vo_w_patang": "पतंग", "vo_w_patta": "पत्ता", "vo_w_payal": "पायल"}, "image": {"obj_aam": "assets/Images/obj_aam.png", "obj_chand": "assets/Images/obj_chand.png", "obj_chandi": "assets/Images/obj_chandi.png", "obj_chinti": "assets/Images/obj_chinti.png", "obj_chuha": "assets/Images/obj_chuha.png", "obj_ghar": "assets/Images/obj_ghar.png", "obj_kauaa": "assets/Images/obj_kauaa.png", "obj_kela": "assets/Images/obj_kela.png", "obj_laal": "assets/Images/obj_laal.png", "obj_machhli": "assets/Images/obj_machhli.png", "obj_mala": "assets/Images/obj_mala.png", "obj_mama": "assets/Images/obj_mama.png", "obj_muli": "assets/Images/obj_muli.png", "obj_pani": "assets/Images/obj_pani.png", "obj_papita": "assets/Images/obj_papita.png", "obj_patang": "assets/Images/obj_patang.png", "obj_patta": "assets/Images/obj_patta.png", "obj_payal": "assets/Images/obj_payal.png"}, "audio_ext": "ogg", "img_ext": "png", "audio_speech": {"vo_g1_correct": [[0.22, 1.01], [1.27, 1.63], [1.8, 2.75]], "vo_g1_hint": [[0.14, 0.98], [1.18, 1.49], [1.61, 2.77]], "vo_g1_prompt": [[0.29, 2.18], [2.29, 2.69]], "vo_g2_done": [[0.27, 0.97], [1.27, 1.54], [1.71, 3.99]], "vo_g2_hint": [[0.29, 1.3], [1.43, 2.47], [2.69, 3.21], [3.74, 4.5], [4.67, 6.0]], "vo_g2_prompt": [[0.3, 1.27], [1.6, 2.88], [3.21, 3.69], [3.81, 4.05]], "vo_g2_reveal": [[0.33, 0.83], [1.17, 1.57], [1.72, 2.74]], "vo_g2_try": [[0.28, 1.5], [1.62, 1.85], [2.27, 3.66], [4.1, 5.13]], "vo_g3_correct": [[0.12, 0.78], [1.06, 1.54], [1.89, 2.34], [2.63, 3.14], [3.78, 4.82], [4.97, 6.56]], "vo_g3_prompt": [[0.18, 1.31], [1.97, 2.84], [3.18, 4.82]], "vo_g3_reveal": [[0.25, 1.29], [1.53, 2.38], [2.71, 3.19]], "vo_g3_try": [[0.12, 1.8]], "vo_g5_correct": [[0.14, 0.89], [1.19, 1.9]], "vo_g5_hint": [[0.27, 1.16], [1.44, 1.94], [2.59, 2.91], [3.04, 3.99], [4.27, 4.46], [4.56, 4.97]], "vo_g5_prompt": [[0.25, 0.51], [0.61, 1.86], [2.12, 3.99]], "vo_g5_try": [[0.14, 0.37], [0.48, 1.79], [2.31, 3.84]], "vo_landing": [[0.15, 0.89], [1.21, 2.13], [2.7, 4.45], [4.67, 6.76], [7.12, 7.45], [8.09, 8.94], [9.14, 9.95], [10.05, 10.16], [10.56, 10.63], [10.8, 11.6], [11.81, 12.63], [12.77, 13.64], [13.8, 14.85]], "vo_line_l1": [[0.27, 1.73], [1.97, 2.52], [2.67, 3.37]], "vo_line_l2": [[0.15, 0.77], [0.91, 2.01]], "vo_line_l3": [[0.3, 1.22], [1.4, 2.63]], "vo_line_l6": [[0.12, 0.69], [0.98, 2.08]], "vo_ltr_m": [[0.02, 0.39]], "vo_ltr_n": [[0.03, 0.42]], "vo_p1_done": [[0.31, 1.06], [1.31, 3.59]], "vo_p1_hint": [[0.15, 1.18], [1.54, 3.8]], "vo_p1_prompt": [[0.22, 2.55], [2.83, 3.31], [3.42, 3.64]], "vo_p1_reveal": [[0.18, 0.52], [1.07, 2.68]], "vo_p1_try": [[0.13, 2.9], [3.27, 4.12]], "vo_p4_correct": [[0.12, 0.52], [0.97, 2.93]], "vo_p4_prompt": [[0.25, 1.16], [1.66, 3.73], [3.85, 4.78]], "vo_p4_reveal": [[0.31, 2.71]], "vo_p4_try": [[0.14, 1.66], [2.04, 3.62], [3.87, 5.89]], "vo_p7_done": [[0.24, 0.8], [1.18, 3.62]], "vo_p7_hint": [[0.19, 2.01], [2.13, 2.39], [2.55, 3.34], [3.58, 4.41]], "vo_p7_prompt": [[0.27, 1.26], [1.36, 2.72], [2.95, 3.46], [3.58, 3.79]], "vo_p7_reveal": [[0.11, 0.58], [1.12, 1.55], [1.78, 2.83]], "vo_p7_try": [[0.26, 1.02], [1.14, 2.64], [2.93, 3.78]], "vo_p8_prompt": [[0.2, 0.94], [1.26, 2.22], [2.55, 3.92], [4.26, 6.33], [6.67, 6.84], [6.97, 7.22], [7.5, 7.82], [8.05, 9.45]], "vo_snd_m": [[0.26, 0.98], [1.26, 1.87]], "vo_snd_n": [[0.24, 1.23]], "vo_snd_p": [[0.28, 1.26]], "vo_t1_explain": [[0.26, 1.6], [1.87, 3.37]], "vo_t2_prompt": [[0.29, 0.66], [0.83, 1.98], [2.43, 3.07], [3.45, 5.03], [5.39, 5.81], [6.22, 6.64], [6.95, 7.46]], "vo_t3_explain": [[0.24, 0.82], [1.22, 1.73], [2.14, 2.63], [3.02, 3.54], [4.23, 5.34], [5.66, 7.34]], "vo_t4_prompt": [[0.24, 0.56], [0.7, 1.68], [2.05, 2.61], [2.95, 4.4], [4.75, 5.09], [5.4, 6.17]], "vo_t5_explain": [[0.3, 0.91], [1.28, 1.87], [2.27, 2.9], [3.26, 3.84], [4.35, 5.35], [5.63, 6.58], [6.68, 7.33]], "vo_t6_prompt": [[0.28, 1.89], [2.27, 2.94], [3.18, 4.78], [5.16, 5.59], [5.95, 6.86]], "vo_w_aam": [[0.25, 0.61]], "vo_w_chand": [[0.28, 0.83]], "vo_w_chandi": [[0.27, 0.71]], "vo_w_chinti": [[0.27, 0.77]], "vo_w_chuha": [[0.26, 0.81]], "vo_w_ghar": [[0.27, 0.83]], "vo_w_kela": [[0.3, 0.75]], "vo_w_laal": [[0.28, 0.76]], "vo_w_machhli": [[0.04, 0.57]], "vo_w_mala": [[0.3, 0.7]], "vo_w_mama": [[0.3, 0.72]], "vo_w_muli": [[0.26, 0.74]], "vo_w_pani": [[0.29, 0.63]], "vo_w_papita": [[0.24, 0.8]], "vo_w_patang": [[0.25, 0.82]], "vo_w_patta": [[0.31, 0.42], [0.55, 0.72]], "vo_w_payal": [[0.29, 0.72]]}, "audio_dur": {"sfx_bal_pop": 0.2, "sfx_celebrate": 1.09, "sfx_correct": 0.85, "sfx_kanv": 0.56, "sfx_pop": 0.37, "sfx_tap": 0.1, "sfx_wrong": 0.72, "vo_g1_correct": 3.01, "vo_g1_hint": 3.09, "vo_g1_prompt": 2.93, "vo_g2_done": 4.29, "vo_g2_hint": 6.17, "vo_g2_prompt": 4.33, "vo_g2_reveal": 3.05, "vo_g2_try": 5.25, "vo_g3_correct": 6.81, "vo_g3_prompt": 5.05, "vo_g3_reveal": 3.45, "vo_g3_try": 1.97, "vo_g5_correct": 2.21, "vo_g5_hint": 5.17, "vo_g5_prompt": 4.25, "vo_g5_try": 4.13, "vo_landing": 14.97, "vo_line_l1": 3.61, "vo_line_l2": 2.21, "vo_line_l3": 2.89, "vo_line_l6": 2.29, "vo_ltr_m": 0.39, "vo_ltr_n": 0.43, "vo_p1_done": 3.85, "vo_p1_hint": 3.97, "vo_p1_prompt": 3.85, "vo_p1_reveal": 2.93, "vo_p1_try": 4.33, "vo_p4_correct": 3.29, "vo_p4_prompt": 5.05, "vo_p4_reveal": 2.93, "vo_p4_try": 6.01, "vo_p7_done": 3.93, "vo_p7_hint": 4.57, "vo_p7_prompt": 4.01, "vo_p7_reveal": 3.13, "vo_p7_try": 3.97, "vo_p8_prompt": 9.57, "vo_pt_guided": 5.6, "vo_pt_practice": 2.32, "vo_pt_tutorial": 5.12, "vo_snd_ch": 0.38, "vo_snd_l": 0.4, "vo_snd_m": 2.17, "vo_snd_n": 1.41, "vo_snd_p": 1.57, "vo_snd_r": 0.38, "vo_t1_explain": 3.69, "vo_t2_prompt": 7.69, "vo_t3_explain": 7.57, "vo_t4_prompt": 6.33, "vo_t5_explain": 7.53, "vo_t6_prompt": 7.17, "vo_w_aam": 0.85, "vo_w_chand": 1.05, "vo_w_chandi": 0.97, "vo_w_chinti": 1.01, "vo_w_chuha": 1.01, "vo_w_ghar": 1.21, "vo_w_kela": 0.97, "vo_w_laal": 1.01, "vo_w_machhli": 0.69, "vo_w_mala": 1.01, "vo_w_mama": 1.01, "vo_w_muli": 0.93, "vo_w_pani": 0.85, "vo_w_papita": 0.97, "vo_w_patang": 1.09, "vo_w_patta": 0.93, "vo_w_payal": 0.97}}}
+{"version": "0.1", "skill_code": "HI02H11_L01_S01", "lo_code": "HI02H11_L01", "grade": "02", "attribute": "H11", "skill_type": "CORE", "part_label": "", "medium": "hi", "title": {"hi": "बार-बार आने वाली ध्वनि", "en": "Recognise the repeated letter-sound in a line"}, "subtitle_hi": "", "theme": "toybox", "skill_description_hi": "सुनी या पढ़ी गई पंक्ति/वाक्य में बार-बार आने वाले वर्ण या ध्वनि को पहचानता है — जैसे 'पीतल के पतीले में पपीता पीला-पीला'।", "landing_audio": "vo_landing", "landing_hero": {"kind": "sentence_sound", "hide_title": true, "words": ["काला", "कौआ", "काँव-काँव", "करता।"], "target_sound": "क", "mark_bare": true, "sync_audio": "vo_landing", "cues": [{"at": "क", "do": "light"}, {"at": "ध्वनि", "do": "crow"}], "picture_img": "obj_kauaa", "picture_emoji": "🐦‍⬛", "picture_sfx": "sfx_kanv"}, "phase_transition_audio": {"tutorial": "vo_pt_tutorial", "guided": "vo_pt_guided", "practice": "vo_pt_practice"}, "phase_transition_title": {"tutorial": "चलो, शुरू करें!", "guided": "साथ में करें।", "practice": "अब तुम्हारी बारी।"}, "scaffold_rules": {"nudge_timeout_ms": {"guided": 6000, "practice": 8000}, "max_attempts": 2}, "slides": [{"id": "T3", "phase": "tutorial", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "", "audio": {"prompt": "vo_line_l2", "target": "vo_ltr_ch"}, "data": {"words": [{"text": "चूहे"}, {"text": "ने"}, {"text": "चार"}, {"text": "चने"}, {"text": "चबाए।"}], "whole_audio": "vo_line_l2", "target_sound": "च", "options": [{"letter": "च", "audio": "vo_ltr_ch"}], "teach_seq": [{"step": "sentence"}, {"step": "clear_words"}, {"step": "pause", "ms": 900}, {"step": "letter", "silent": true}, {"step": "mark", "audio": "vo_t3_explain", "words": ["चूहे", "चार", "चने", "चबाए।"]}], "mark_bare": true, "hide_replay": true, "signal_name": "sentence_sound_first_try"}}, {"id": "T4", "phase": "tutorial", "eis": "iconic", "type": "MEET_LETTER", "prompt_hi": "", "audio": {"prompt": "vo_t4_prompt", "word_name": "vo_w_chuha", "sound": "vo_snd_ch"}, "data": {"letter": "च", "picture_img": "obj_chuha", "picture_emoji": "🐭", "word_hi": "चूहा", "reveal_flow": {"cues": [{"at": "सुनी", "do": "letter"}, {"at": "जैसे", "do": "letter"}, {"at": "से", "do": "pic"}, {"at": "चूहा", "do": "label"}], "after_line": ["mark"]}}}, {"id": "T5", "phase": "tutorial", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "", "audio": {"prompt": "vo_line_l3", "target": "vo_ltr_m"}, "data": {"words": [{"text": "मेरे"}, {"text": "मामा"}, {"text": "मीठी"}, {"text": "मलाई"}, {"text": "लाए।"}], "whole_audio": "vo_line_l3", "target_sound": "म", "options": [{"letter": "म", "audio": "vo_ltr_m"}], "teach_seq": [{"step": "sentence"}, {"step": "clear_words"}, {"step": "pause", "ms": 900}, {"step": "letter", "silent": true}, {"step": "mark", "audio": "vo_t5_explain", "words": ["मेरे", "मामा", "मीठी", "मलाई"]}], "mark_bare": true, "hide_replay": true, "signal_name": "sentence_sound_first_try"}}, {"id": "T6", "phase": "tutorial", "eis": "iconic", "type": "MEET_LETTER", "prompt_hi": "", "audio": {"prompt": "vo_t6_prompt", "word_name": "vo_w_muli", "sound": "vo_snd_m"}, "data": {"letter": "म", "picture_img": "obj_muli", "picture_emoji": "🥕", "word_hi": "मूली", "reveal_flow": {"cues": [{"at": "सुनी", "do": "letter"}, {"at": "जैसे", "do": "letter"}, {"at": "से", "do": "pic"}, {"at": "मूली", "do": "label"}], "after_line": ["mark"]}}}, {"id": "T1", "phase": "tutorial", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "", "audio": {"prompt": "vo_line_l1", "target": "vo_ltr_p"}, "data": {"words": [{"text": "पीतल"}, {"text": "के"}, {"text": "पतीले"}, {"text": "में"}, {"text": "पपीता"}, {"text": "पीला-पीला।"}], "whole_audio": "vo_line_l1", "target_sound": "प", "options": [{"letter": "प", "audio": "vo_ltr_p"}], "teach_seq": [{"step": "sentence"}, {"step": "clear_words"}, {"step": "pause", "ms": 900}, {"step": "letter", "silent": true}, {"step": "mark", "audio": "vo_t1_explain", "words": ["पीतल", "पतीले", "पपीता", "पीला-पीला।"]}], "mark_bare": true, "hide_replay": true, "signal_name": "sentence_sound_first_try"}}, {"id": "T2", "phase": "tutorial", "eis": "iconic", "type": "MEET_LETTER", "prompt_hi": "", "audio": {"prompt": "vo_t2_prompt", "word_name": "vo_w_papita", "sound": "vo_snd_p"}, "data": {"letter": "प", "picture_img": "obj_papita", "picture_emoji": "🍈", "word_hi": "पपीता", "reveal_flow": {"cues": [{"at": "सुनी", "do": "letter"}, {"at": "जैसे", "do": "letter"}, {"at": "से", "do": "pic"}, {"at": "पपीता", "do": "label"}], "after_line": ["mark"]}}}, {"id": "G2", "phase": "guided", "eis": "iconic", "type": "TAP_ALL_WITH_SOUND", "prompt_hi": "जिन शब्दों में “प” की आवाज़ सुनाई दे, उन पर टैप करो।", "audio": {"prompt": "vo_g2_prompt", "target": "vo_snd_p", "hint": "vo_g2_hint", "try_again": "vo_g2_try", "reveal": "vo_g2_reveal", "done": "vo_g2_done", "more": "vo_g2_more"}, "data": {"target_sound": "प", "items": [{"word_hi": "पपीता", "img": "obj_papita", "emoji": "🍈", "audio": "vo_w_papita", "has": true}, {"word_hi": "केला", "img": "obj_kela", "emoji": "🍌", "audio": "vo_w_kela", "has": false}, {"word_hi": "पतंग", "img": "obj_patang", "emoji": "🪁", "audio": "vo_w_patang", "has": true}, {"word_hi": "आम", "img": "obj_aam", "emoji": "🥭", "audio": "vo_w_aam", "has": false}], "allow_hand": false, "reveal_seq": true, "signal_name": "tap_all_sound_first_try"}}, {"id": "G3", "phase": "guided", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "इस वाक्य में कौन-सी आवाज़ बार-बार आई?", "audio": {"prompt": "vo_g3_prompt", "target": "vo_ltr_ch", "try_again": "vo_g3_try", "reveal": "vo_g3_reveal", "correct": "vo_g3_correct"}, "data": {"words": [{"text": "चूहे"}, {"text": "ने"}, {"text": "चार"}, {"text": "चने"}, {"text": "चबाए।"}], "whole_audio": "vo_line_l2", "target_sound": "च", "options": [{"letter": "च", "audio": "vo_ltr_ch"}, {"letter": "ल", "audio": "vo_ltr_l"}, {"letter": "र", "audio": "vo_ltr_r"}], "signal_name": "sentence_sound_first_try", "reveal_seq": true, "hide_replay": true, "seq_say_whole": true, "fixed_order": true, "mark_initial": false}}, {"id": "G5D", "phase": "guided", "eis": "enactive", "type": "SORT_VACHAN", "prompt_hi": "देखो, हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।", "audio": {"prompt": "vo_g5_show", "target": "vo_snd_p", "correct": "vo_g5_correct"}, "data": {"bins": [{"gender": "S", "label": "प"}, {"gender": "P", "label": "च"}], "items": [{"word_hi": "पतंग", "img": "obj_patang", "emoji": "🪁", "audio": "vo_w_patang", "gender": "S"}, {"word_hi": "चाँद", "img": "obj_chand", "emoji": "🌙", "audio": "vo_w_chand", "gender": "P"}], "reveal_seq": true, "signal_name": "sound_sort_demo", "drag_demo": false, "auto_demo": true}}, {"id": "G5", "phase": "guided", "eis": "enactive", "type": "SORT_VACHAN", "prompt_hi": "हर चित्र का नाम सुनो और उसे सही डिब्बे में डालो।", "audio": {"prompt": "vo_g5_prompt", "target": "vo_snd_p", "hint": "vo_g5_hint", "try_again": "vo_g5_try", "correct": "vo_g5_correct"}, "data": {"bins": [{"gender": "S", "label": "प"}, {"gender": "P", "label": "च"}], "items": [{"word_hi": "पानी", "img": "obj_pani", "emoji": "💧", "audio": "vo_w_pani", "gender": "S"}, {"word_hi": "पायल", "img": "obj_payal", "emoji": "💍", "audio": "vo_w_payal", "gender": "S"}, {"word_hi": "चूहा", "img": "obj_chuha", "emoji": "🐭", "audio": "vo_w_chuha", "gender": "P"}, {"word_hi": "चाँदी", "img": "obj_chandi", "emoji": "🪙", "audio": "vo_w_chandi", "gender": "P"}], "reveal_seq": true, "signal_name": "sound_sort_first_try", "drag_demo": false, "auto_demo": false}}, {"id": "P1", "phase": "practice", "eis": "iconic", "type": "TAP_ALL_WITH_SOUND", "prompt_hi": "जिन शब्दों में “म” की आवाज़ सुनाई दे, उन पर टैप करो।", "audio": {"prompt": "vo_p1_prompt", "target": "vo_snd_m", "hint": "vo_p1_hint", "more": "vo_p1_more", "try_again": "vo_p1_try", "reveal": "vo_p1_reveal", "done": "vo_p1_done"}, "data": {"target_sound": "म", "items": [{"word_hi": "मामा", "img": "obj_mama", "emoji": "👨", "audio": "vo_w_mama", "has": true}, {"word_hi": "चींटी", "img": "obj_chinti", "emoji": "🐜", "audio": "vo_w_chinti", "has": false}, {"word_hi": "मूली", "img": "obj_muli", "emoji": "🥕", "audio": "vo_w_muli", "has": true}, {"word_hi": "लाल", "img": "obj_laal", "emoji": "🔴", "audio": "vo_w_laal", "has": false}], "allow_hand": true, "reveal_seq": true, "signal_name": "tap_all_sound_first_try"}}, {"id": "P4", "phase": "practice", "eis": "symbolic", "type": "SENTENCE_SOUND", "prompt_hi": "कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?", "audio": {"prompt": "vo_p4_prompt", "target": "vo_ltr_n", "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct"}, "data": {"words": [{"text": "नानी"}, {"text": "ने"}, {"text": "नई"}, {"text": "नाव"}, {"text": "बनाई।"}], "whole_audio": "vo_line_l6", "target_sound": "न", "options": [{"letter": "म", "audio": "vo_ltr_m"}, {"letter": "ल", "audio": "vo_ltr_l"}, {"letter": "न", "audio": "vo_ltr_n"}], "signal_name": "sentence_sound_first_try", "reveal_seq": true, "hide_replay": true, "seq_say_whole": true, "fixed_order": true, "mark_initial": true}}, {"id": "P7", "phase": "practice", "eis": "iconic", "type": "TAP_ALL_WITH_SOUND", "prompt_hi": "जिन शब्दों में “च” की आवाज़ सुनाई दे, उन पर टैप करो।", "audio": {"prompt": "vo_p7_prompt", "target": "vo_snd_ch", "hint": "vo_p7_hint", "more": "vo_p7_more", "try_again": "vo_p7_try", "reveal": "vo_p7_reveal", "done": "vo_p7_done"}, "data": {"target_sound": "च", "items": [{"word_hi": "चाँद", "img": "obj_chand", "emoji": "🌙", "audio": "vo_w_chand", "has": true}, {"word_hi": "माला", "img": "obj_mala", "emoji": "📿", "audio": "vo_w_mala", "has": false}, {"word_hi": "चींटी", "img": "obj_chinti", "emoji": "🐜", "audio": "vo_w_chinti", "has": true}, {"word_hi": "लाल", "img": "obj_laal", "emoji": "🔴", "audio": "vo_w_laal", "has": false}], "allow_hand": true, "reveal_seq": true, "signal_name": "tap_all_sound_first_try"}}, {"id": "G1", "phase": "practice", "eis": "iconic", "type": "TAP_BALLOON_SOUND", "prompt_hi": "", "audio": {"prompt": "vo_g1_prompt", "target": "vo_snd_p", "correct": "vo_g1_correct", "hint": "vo_g1_hint"}, "data": {"target_sound": "प", "items": [{"word_hi": "पतंग", "img": "obj_patang", "emoji": "🪁", "audio": "vo_w_patang", "has": true}, {"word_hi": "आम", "img": "obj_aam", "emoji": "🥭", "audio": "vo_w_aam", "has": false}, {"word_hi": "पपीता", "img": "obj_papita", "emoji": "🍈", "audio": "vo_w_papita", "has": true}, {"word_hi": "केला", "img": "obj_kela", "emoji": "🍌", "audio": "vo_w_kela", "has": false}, {"word_hi": "पत्ता", "img": "obj_patta", "emoji": "🍃", "audio": "vo_w_patta", "has": true}, {"word_hi": "घर", "img": "obj_ghar", "emoji": "🏠", "audio": "vo_w_ghar", "has": false}, {"word_hi": "पानी", "img": "obj_pani", "emoji": "💧", "audio": "vo_w_pani", "has": true}, {"word_hi": "मछली", "img": "obj_machhli", "emoji": "🐟", "audio": "vo_w_machhli", "has": false}], "allow_hand": true, "signal_name": "balloon_sound_first_try"}}, {"id": "P8", "phase": "practice", "eis": "iconic", "type": "CELEBRATION", "prompt_hi": "शाबाश! आज हमने सीखा — वाक्य ध्यान से सुनना, बार-बार आने वाली आवाज़ पहचानना, और प, च और म की आवाज़ ढूँढना।", "audio": {"prompt": "vo_p8_prompt"}, "data": {}}], "phase_distribution": {"tutorial": 6, "guided": 4, "practice": 5}, "signals_expected": ["slide_entered", "slide_completed", "sound_found", "tap_all_sound_first_try", "sentence_sound_first_try", "sentence_sound_demo", "sound_sort_first_try", "sound_position_first_try", "balloon_sound_first_try", "answer_wrong", "hint_shown", "answer_revealed", "phase_transition", "mastery_score", "lesson_completed"], "_emoji_fallback": {"obj_aam": "🥭", "obj_chand": "🌙", "obj_chandi": "🪙", "obj_chinti": "🐜", "obj_chuha": "🐭", "obj_ghar": "🏠", "obj_kauaa": "🐦‍⬛", "obj_kela": "🍌", "obj_laal": "🔴", "obj_machhli": "🐟", "obj_mala": "📿", "obj_mama": "👨", "obj_muli": "🥕", "obj_pani": "💧", "obj_papita": "🍈", "obj_patang": "🪁", "obj_patta": "🍃", "obj_payal": "💍"}, "assets": {"audio": {"sfx_bal_pop": "assets/Audio/sfx_bal_pop.ogg", "sfx_celebrate": "assets/Audio/sfx_celebrate.ogg", "sfx_correct": "assets/Audio/sfx_correct.ogg", "sfx_kanv": "assets/Audio/sfx_kanv.ogg", "sfx_pop": "assets/Audio/sfx_pop.ogg", "sfx_tap": "assets/Audio/sfx_tap.ogg", "sfx_wrong": "assets/Audio/sfx_wrong.ogg", "vo_g1_correct": "assets/Audio/vo_g1_correct.ogg", "vo_g1_hint": "assets/Audio/vo_g1_hint.ogg", "vo_g1_prompt": "assets/Audio/vo_g1_prompt.ogg", "vo_g2_done": "assets/Audio/vo_g2_done.ogg", "vo_g2_hint": "assets/Audio/vo_g2_hint.ogg", "vo_g2_more": "assets/Audio/vo_g2_more.ogg", "vo_g2_prompt": "assets/Audio/vo_g2_prompt.ogg", "vo_g2_reveal": "assets/Audio/vo_g2_reveal.ogg", "vo_g2_try": "assets/Audio/vo_g2_try.ogg", "vo_g3_correct": "assets/Audio/vo_g3_correct.ogg", "vo_g3_prompt": "assets/Audio/vo_g3_prompt.ogg", "vo_g3_reveal": "assets/Audio/vo_g3_reveal.ogg", "vo_g3_try": "assets/Audio/vo_g3_try.ogg", "vo_g5_correct": "assets/Audio/vo_g5_correct.ogg", "vo_g5_hint": "assets/Audio/vo_g5_hint.ogg", "vo_g5_prompt": "assets/Audio/vo_g5_prompt.ogg", "vo_g5_show": "assets/Audio/vo_g5_show.ogg", "vo_g5_try": "assets/Audio/vo_g5_try.ogg", "vo_landing": "assets/Audio/vo_landing.ogg", "vo_line_l1": "assets/Audio/vo_line_l1.ogg", "vo_line_l2": "assets/Audio/vo_line_l2.ogg", "vo_line_l3": "assets/Audio/vo_line_l3.ogg", "vo_line_l6": "assets/Audio/vo_line_l6.ogg", "vo_ltr_ch": "assets/Audio/vo_ltr_ch.ogg", "vo_ltr_l": "assets/Audio/vo_ltr_l.ogg", "vo_ltr_m": "assets/Audio/vo_ltr_m.ogg", "vo_ltr_n": "assets/Audio/vo_ltr_n.ogg", "vo_ltr_p": "assets/Audio/vo_ltr_p.ogg", "vo_ltr_r": "assets/Audio/vo_ltr_r.ogg", "vo_p1_done": "assets/Audio/vo_p1_done.ogg", "vo_p1_hint": "assets/Audio/vo_p1_hint.ogg", "vo_p1_more": "assets/Audio/vo_p1_more.ogg", "vo_p1_prompt": "assets/Audio/vo_p1_prompt.ogg", "vo_p1_reveal": "assets/Audio/vo_p1_reveal.ogg", "vo_p1_try": "assets/Audio/vo_p1_try.ogg", "vo_p4_correct": "assets/Audio/vo_p4_correct.ogg", "vo_p4_prompt": "assets/Audio/vo_p4_prompt.ogg", "vo_p4_reveal": "assets/Audio/vo_p4_reveal.ogg", "vo_p4_try": "assets/Audio/vo_p4_try.ogg", "vo_p7_done": "assets/Audio/vo_p7_done.ogg", "vo_p7_hint": "assets/Audio/vo_p7_hint.ogg", "vo_p7_more": "assets/Audio/vo_p7_more.ogg", "vo_p7_prompt": "assets/Audio/vo_p7_prompt.ogg", "vo_p7_reveal": "assets/Audio/vo_p7_reveal.ogg", "vo_p7_try": "assets/Audio/vo_p7_try.ogg", "vo_p8_prompt": "assets/Audio/vo_p8_prompt.ogg", "vo_pt_guided": "assets/Audio/vo_pt_guided.ogg", "vo_pt_practice": "assets/Audio/vo_pt_practice.ogg", "vo_pt_tutorial": "assets/Audio/vo_pt_tutorial.ogg", "vo_snd_ch": "assets/Audio/vo_snd_ch.ogg", "vo_snd_m": "assets/Audio/vo_snd_m.ogg", "vo_snd_p": "assets/Audio/vo_snd_p.ogg", "vo_t1_explain": "assets/Audio/vo_t1_explain.ogg", "vo_t2_prompt": "assets/Audio/vo_t2_prompt.ogg", "vo_t3_explain": "assets/Audio/vo_t3_explain.ogg", "vo_t4_prompt": "assets/Audio/vo_t4_prompt.ogg", "vo_t5_explain": "assets/Audio/vo_t5_explain.ogg", "vo_t6_prompt": "assets/Audio/vo_t6_prompt.ogg", "vo_w_aam": "assets/Audio/vo_w_aam.ogg", "vo_w_chand": "assets/Audio/vo_w_chand.ogg", "vo_w_chandi": "assets/Audio/vo_w_chandi.ogg", "vo_w_chinti": "assets/Audio/vo_w_chinti.ogg", "vo_w_chuha": "assets/Audio/vo_w_chuha.ogg", "vo_w_ghar": "assets/Audio/vo_w_ghar.ogg", "vo_w_kela": "assets/Audio/vo_w_kela.ogg", "vo_w_laal": "assets/Audio/vo_w_laal.ogg", "vo_w_machhli": "assets/Audio/vo_w_machhli.ogg", "vo_w_mala": "assets/Audio/vo_w_mala.ogg", "vo_w_mama": "assets/Audio/vo_w_mama.ogg", "vo_w_muli": "assets/Audio/vo_w_muli.ogg", "vo_w_pani": "assets/Audio/vo_w_pani.ogg", "vo_w_papita": "assets/Audio/vo_w_papita.ogg", "vo_w_patang": "assets/Audio/vo_w_patang.ogg", "vo_w_patta": "assets/Audio/vo_w_patta.ogg", "vo_w_payal": "assets/Audio/vo_w_payal.ogg"}, "audio_text": {"vo_g1_correct": "शाबाश! इसमें प की आवाज़ है।", "vo_g1_hint": "ध्यान से सुनिए, इसमें प की आवाज़ नहीं है।", "vo_g1_prompt": "प की आवाज़ वाले चित्र पर टैप कीजिए।", "vo_g2_done": "शाबाश! तुमने प की आवाज़ वाले सारे शब्द खोज लिए।", "vo_g2_hint": "हर शब्द को ध्यान से देखो और सुनो। किस शब्द में प की आवाज़ आ रही है?", "vo_g2_more": "एक और प वाले शब्द पर टैप करो।", "vo_g2_prompt": "जिन शब्दों में “प” की आवाज़ सुनाई दे, उन पर टैप करो।", "vo_g2_reveal": "सुनो — इसमें प की आवाज़ है।", "vo_g2_try": "इस शब्द की शुरुआत में प की आवाज़ नहीं है। एक बार फिर सुनो।", "vo_g3_correct": "चूहे, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।", "vo_g3_prompt": "इस वाक्य में कौन-सी आवाज़ बार-बार आई?", "vo_g3_reveal": "ध्यान से देखो, सही जवाब च है।", "vo_g3_try": "यह च की आवाज़ नहीं है।", "vo_g5_correct": "बहुत बढ़िया! सही डिब्बा।", "vo_g5_hint": "शब्द बोलो और सुनो — उसमें प की आवाज़ है या च की?", "vo_g5_prompt": "हर चित्र का नाम सुनो और उसे सही डिब्बे में डालो।", "vo_g5_show": "देखो, हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।", "vo_g5_try": "यह डिब्बा सही नहीं है। शब्द की आवाज़ फिर सुनो।", "vo_landing": "नमस्ते दोस्त! मैं हूँ Swiftee। आज हम जानेंगे कि वाक्य में कौन-सी ध्वनि बार-बार सुनाई देती है। सुनो—काला कौआ काँव-काँव करता। इस वाक्य में क की ध्वनि यानी आवाज़ बार-बार आ रही है।", "vo_line_l1": "पीतल के पतीले में पपीता पीला-पीला।", "vo_line_l2": "चूहे ने चार चने चबाए।", "vo_line_l3": "मेरे मामा मीठी मलाई लाए।", "vo_line_l6": "नानी ने नई नाव बनाई।", "vo_ltr_ch": "च", "vo_ltr_l": "ल", "vo_ltr_m": "म", "vo_ltr_n": "न", "vo_ltr_p": "प", "vo_ltr_r": "र", "vo_p1_done": "शाबाश! म की आवाज़ वाले सारे शब्द मिल गए।", "vo_p1_hint": "हर शब्द सुनो — क्या उसमें म की आवाज़ सुनाई देती है?", "vo_p1_more": "एक और म वाले शब्द पर टैप करो।", "vo_p1_prompt": "जिन शब्दों में “म” की आवाज़ सुनाई दे, उन पर टैप करो।", "vo_p1_reveal": "सुनो — इसमें म की आवाज़ है।", "vo_p1_try": "इस शब्द की शुरुआत में म की आवाज़ नहीं है। एक बार फिर सुनो।", "vo_p4_correct": "सही! शुरुआत में न की आवाज़ थी।", "vo_p4_prompt": "कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?", "vo_p4_reveal": "शुरुआत में न की आवाज़ बार-बार आई।", "vo_p4_try": "तुमने आखिरी आवाज़ सुनी। हमें वह आवाज़ ढूँढनी है जो पूरे वाक्य में बार-बार आई है।", "vo_p7_done": "वाह! तुमने च की आवाज़ हर जगह पहचान ली।", "vo_p7_hint": "च की आवाज़ शुरू में भी हो सकती है और बीच में भी। पूरा शब्द सुनो।", "vo_p7_more": "एक और च वाले शब्द पर टैप करो।", "vo_p7_prompt": "जिन शब्दों में “च” की आवाज़ सुनाई दे, उन पर टैप करो।", "vo_p7_reveal": "सुनो — इसमें च की आवाज़ है।", "vo_p7_try": "इस शब्द में च की आवाज़ कहीं नहीं है। एक बार फिर सुनो।", "vo_p8_prompt": "शाबाश! आज हमने सीखा — वाक्य ध्यान से सुनना, बार-बार आने वाली आवाज़ पहचानना, और प, च और म की आवाज़ ढूँढना।", "vo_snd_ch": "च से चम्मच।", "vo_snd_m": "म से मछली।", "vo_snd_p": "प से पतंग।", "vo_t1_explain": "पीतल, पतीले, पपीता, पीला-पीला—इन सब शब्दों में प की आवाज़ बार-बार आई।", "vo_t2_prompt": "हमने प की आवाज़ सुनी। यह आवाज़ प अक्षर से लिखी जाती है। जैसे—प से पपीता।", "vo_t3_explain": "चूहे, चार, चने, चबाए—इन सब शब्दों में च की आवाज़ बार-बार आई।", "vo_t4_prompt": "हमने च की आवाज़ सुनी। यह आवाज़ च अक्षर से लिखी जाती है। जैसे—च से चूहा।", "vo_t5_explain": "मेरे, मामा, मीठी, मलाई—इन सब शब्दों में म की आवाज़ बार-बार आई।", "vo_t6_prompt": "हमने म की आवाज़ सुनी। यह आवाज़ म अक्षर से लिखी जाती है। जैसे—म से मूली।", "vo_w_aam": "आम", "vo_w_chand": "चाँद", "vo_w_chandi": "चाँदी", "vo_w_chinti": "चींटी", "vo_w_chuha": "चूहा", "vo_w_ghar": "घर", "vo_w_kela": "केला", "vo_w_laal": "लाल", "vo_w_machhli": "मछली", "vo_w_mala": "माला", "vo_w_mama": "मामा", "vo_w_muli": "मूली", "vo_w_pani": "पानी", "vo_w_papita": "पपीता", "vo_w_patang": "पतंग", "vo_w_patta": "पत्ता", "vo_w_payal": "पायल"}, "image": {"obj_aam": "assets/Images/obj_aam.png", "obj_chand": "assets/Images/obj_chand.png", "obj_chandi": "assets/Images/obj_chandi.png", "obj_chinti": "assets/Images/obj_chinti.png", "obj_chuha": "assets/Images/obj_chuha.png", "obj_ghar": "assets/Images/obj_ghar.png", "obj_kauaa": "assets/Images/obj_kauaa.png", "obj_kela": "assets/Images/obj_kela.png", "obj_laal": "assets/Images/obj_laal.png", "obj_machhli": "assets/Images/obj_machhli.png", "obj_mala": "assets/Images/obj_mala.png", "obj_mama": "assets/Images/obj_mama.png", "obj_muli": "assets/Images/obj_muli.png", "obj_pani": "assets/Images/obj_pani.png", "obj_papita": "assets/Images/obj_papita.png", "obj_patang": "assets/Images/obj_patang.png", "obj_patta": "assets/Images/obj_patta.png", "obj_payal": "assets/Images/obj_payal.png"}, "audio_ext": "ogg", "img_ext": "png", "audio_speech": {"vo_g1_correct": [[0.22, 1.01], [1.27, 1.63], [1.8, 2.75]], "vo_g1_hint": [[0.14, 0.98], [1.18, 1.49], [1.61, 2.77]], "vo_g1_prompt": [[0.29, 2.18], [2.29, 2.69]], "vo_g2_done": [[0.27, 0.97], [1.27, 1.54], [1.71, 3.99]], "vo_g2_hint": [[0.29, 1.3], [1.43, 2.47], [2.69, 3.21], [3.74, 4.5], [4.67, 6.0]], "vo_g2_more": [[0.27, 0.78], [0.96, 2.54]], "vo_g2_prompt": [[0.3, 1.27], [1.6, 2.88], [3.21, 3.69], [3.81, 4.05]], "vo_g2_reveal": [[0.33, 0.83], [1.17, 1.57], [1.72, 2.74]], "vo_g2_try": [[0.28, 1.5], [1.62, 1.85], [2.27, 3.66], [4.1, 5.13]], "vo_g3_correct": [[0.12, 0.78], [1.06, 1.54], [1.89, 2.34], [2.63, 3.14], [3.78, 4.82], [4.97, 6.56]], "vo_g3_prompt": [[0.27, 1.15], [1.31, 2.78]], "vo_g3_reveal": [[0.25, 1.29], [1.53, 2.38], [2.71, 3.19]], "vo_g3_try": [[0.12, 1.8]], "vo_g5_correct": [[0.23, 1.2], [1.49, 2.26]], "vo_g5_hint": [[0.27, 1.16], [1.44, 1.94], [2.59, 2.91], [3.04, 3.99], [4.27, 4.46], [4.56, 4.97]], "vo_g5_prompt": [[0.14, 1.67], [1.94, 3.47]], "vo_g5_show": [[0.17, 0.69], [0.92, 3.86]], "vo_g5_try": [[0.11, 1.57], [1.85, 2.04], [2.14, 3.26]], "vo_landing": [[0.15, 0.89], [1.21, 2.13], [2.7, 4.45], [4.67, 6.76], [7.12, 7.45], [8.09, 8.94], [9.14, 9.95], [10.05, 10.16], [10.56, 10.63], [10.8, 11.6], [11.81, 12.63], [12.77, 13.64], [13.8, 14.85]], "vo_line_l1": [[0.27, 1.73], [1.97, 2.52], [2.67, 3.37]], "vo_line_l2": [[0.15, 0.77], [0.91, 2.01]], "vo_line_l3": [[0.3, 1.22], [1.4, 2.63]], "vo_line_l6": [[0.26, 1.18], [1.36, 2.75]], "vo_ltr_ch": [[0.04, 0.25]], "vo_ltr_l": [[0.04, 0.19]], "vo_ltr_m": [[0.04, 0.32]], "vo_ltr_n": [[0.04, 0.27]], "vo_ltr_p": [[0.04, 0.09]], "vo_ltr_r": [[0.04, 0.26]], "vo_p1_done": [[0.31, 1.06], [1.31, 3.59]], "vo_p1_hint": [[0.15, 1.18], [1.54, 3.8]], "vo_p1_more": [[0.33, 0.85], [1.09, 2.5], [2.62, 2.88]], "vo_p1_prompt": [[0.22, 2.55], [2.83, 3.31], [3.42, 3.64]], "vo_p1_reveal": [[0.18, 0.52], [1.07, 2.68]], "vo_p1_try": [[0.13, 2.9], [3.27, 4.12]], "vo_p4_correct": [[0.12, 0.52], [0.97, 2.93]], "vo_p4_prompt": [[0.25, 1.27], [1.42, 3.33]], "vo_p4_reveal": [[0.31, 2.71]], "vo_p4_try": [[0.14, 1.66], [2.04, 3.62], [3.87, 5.89]], "vo_p7_done": [[0.24, 0.8], [1.18, 3.62]], "vo_p7_hint": [[0.19, 2.01], [2.13, 2.39], [2.55, 3.34], [3.58, 4.41]], "vo_p7_more": [[0.3, 0.78], [0.97, 2.27], [2.4, 2.61]], "vo_p7_prompt": [[0.27, 1.26], [1.36, 2.72], [2.95, 3.46], [3.58, 3.79]], "vo_p7_reveal": [[0.11, 0.58], [1.12, 1.55], [1.78, 2.83]], "vo_p7_try": [[0.26, 1.02], [1.14, 2.64], [2.93, 3.78]], "vo_p8_prompt": [[0.2, 0.94], [1.26, 2.22], [2.55, 3.92], [4.26, 6.33], [6.67, 6.84], [6.97, 7.22], [7.5, 7.82], [8.05, 9.45]], "vo_snd_m": [[0.26, 0.98], [1.26, 1.87]], "vo_snd_p": [[0.28, 1.26]], "vo_t1_explain": [[0.31, 0.81], [1.07, 1.65], [2.07, 2.64], [3.11, 3.71], [4.41, 5.31], [5.46, 6.83]], "vo_t2_prompt": [[0.29, 0.66], [0.83, 1.98], [2.43, 3.07], [3.45, 5.03], [5.39, 5.81], [6.22, 6.64], [6.95, 7.46]], "vo_t3_explain": [[0.24, 0.82], [1.22, 1.73], [2.14, 2.63], [3.02, 3.54], [4.23, 5.34], [5.66, 7.34]], "vo_t4_prompt": [[0.24, 0.56], [0.7, 1.68], [2.05, 2.61], [2.95, 4.4], [4.75, 5.09], [5.4, 6.17]], "vo_t5_explain": [[0.3, 0.91], [1.28, 1.87], [2.27, 2.9], [3.26, 3.84], [4.35, 5.35], [5.63, 6.58], [6.68, 7.33]], "vo_t6_prompt": [[0.28, 1.89], [2.27, 2.94], [3.18, 4.78], [5.16, 5.59], [5.95, 6.86]], "vo_w_aam": [[0.25, 0.61]], "vo_w_chand": [[0.28, 0.83]], "vo_w_chandi": [[0.27, 0.71]], "vo_w_chinti": [[0.27, 0.77]], "vo_w_chuha": [[0.26, 0.81]], "vo_w_ghar": [[0.27, 0.83]], "vo_w_kela": [[0.3, 0.75]], "vo_w_laal": [[0.28, 0.76]], "vo_w_machhli": [[0.04, 0.57]], "vo_w_mala": [[0.3, 0.7]], "vo_w_mama": [[0.3, 0.72]], "vo_w_muli": [[0.26, 0.74]], "vo_w_pani": [[0.29, 0.63]], "vo_w_papita": [[0.24, 0.8]], "vo_w_patang": [[0.25, 0.82]], "vo_w_patta": [[0.31, 0.42], [0.55, 0.72]], "vo_w_payal": [[0.29, 0.72]]}, "audio_dur": {"sfx_bal_pop": 0.2, "sfx_celebrate": 1.09, "sfx_correct": 0.85, "sfx_kanv": 0.56, "sfx_pop": 0.37, "sfx_tap": 0.1, "sfx_wrong": 0.72, "vo_g1_correct": 3.01, "vo_g1_hint": 3.09, "vo_g1_prompt": 2.93, "vo_g2_done": 4.29, "vo_g2_hint": 6.17, "vo_g2_more": 2.85, "vo_g2_prompt": 4.33, "vo_g2_reveal": 3.05, "vo_g2_try": 5.25, "vo_g3_correct": 6.81, "vo_g3_prompt": 3.05, "vo_g3_reveal": 3.45, "vo_g3_try": 1.97, "vo_g5_correct": 2.53, "vo_g5_hint": 5.17, "vo_g5_prompt": 3.69, "vo_g5_show": 4.13, "vo_g5_try": 3.45, "vo_landing": 14.97, "vo_line_l1": 3.61, "vo_line_l2": 2.21, "vo_line_l3": 2.89, "vo_line_l6": 3.01, "vo_ltr_ch": 0.46, "vo_ltr_l": 0.32, "vo_ltr_m": 0.44, "vo_ltr_n": 0.36, "vo_ltr_p": 0.32, "vo_ltr_r": 0.48, "vo_p1_done": 3.85, "vo_p1_hint": 3.97, "vo_p1_more": 3.17, "vo_p1_prompt": 3.85, "vo_p1_reveal": 2.93, "vo_p1_try": 4.33, "vo_p4_correct": 3.29, "vo_p4_prompt": 3.69, "vo_p4_reveal": 2.93, "vo_p4_try": 6.01, "vo_p7_done": 3.93, "vo_p7_hint": 4.57, "vo_p7_more": 2.89, "vo_p7_prompt": 4.01, "vo_p7_reveal": 3.13, "vo_p7_try": 3.97, "vo_p8_prompt": 9.57, "vo_pt_guided": 5.6, "vo_pt_practice": 2.32, "vo_pt_tutorial": 5.12, "vo_snd_ch": 0.38, "vo_snd_m": 2.17, "vo_snd_p": 1.57, "vo_t1_explain": 7.01, "vo_t2_prompt": 7.69, "vo_t3_explain": 7.57, "vo_t4_prompt": 6.33, "vo_t5_explain": 7.53, "vo_t6_prompt": 7.17, "vo_w_aam": 0.85, "vo_w_chand": 1.05, "vo_w_chandi": 0.97, "vo_w_chinti": 1.01, "vo_w_chuha": 1.01, "vo_w_ghar": 1.21, "vo_w_kela": 0.97, "vo_w_laal": 1.01, "vo_w_machhli": 0.69, "vo_w_mala": 1.01, "vo_w_mama": 1.01, "vo_w_muli": 0.93, "vo_w_pani": 0.85, "vo_w_papita": 0.97, "vo_w_patang": 1.09, "vo_w_patta": 0.93, "vo_w_payal": 0.97}}}
 </script>
 
 <!-- ============ ENGINE ============ -->
@@ -2880,6 +2934,44 @@ function ckCorrect(el, crown){
    Units are vmax because this layer lives OUTSIDE the 1333x750 transform-scaled stage (kit R1).
    r0 is what keeps the centre clear: nothing spawns inside 22vmax, so the start card sits in a hole
    the geometry already leaves and no CSS mask is needed. */
+/* [S01r5l] THE HOLE HAS TO BE THE SHAPE OF THE CARD.
+   r0 clears a CIRCLE of 22vmax, and the comment above says that is what keeps the centre clear. It
+   is not: the start card is a wide RECTANGLE. The stage is 1333x750 scaled to fit and centred, so
+   the card's half-width works out at ~43.6vmax at EVERY window size (it is scale-invariant: both
+   the card and vmax track the viewport) against a half-height of ~18vmax. A star on a horizontal
+   lane therefore starts 22vmax INSIDE the card, and on the lanes either side of horizontal it
+   drifts out across the card and the mascot before it clears them — which is what the SME saw.
+   So the start radius is computed PER LANE: how far along that ray the card's edge actually is.
+   Vertical lanes keep something close to the original 22; horizontal lanes start out near 47. */
+const SKY_CARD = { w: 1114 / 2 + 24, h: 456 / 2 + 12 };   /* + the mascot's overhang, left and below */
+function _skyClearVmax(){
+  const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+  const vmax = Math.max(window.innerWidth, window.innerHeight) / 100 || 1;
+  return { w: SKY_CARD.w * scale / vmax, h: SKY_CARD.h * scale / vmax };
+}
+/* distance from centre to the rectangle's edge along (cos,sin), plus a margin */
+function _skyLaneStart(cos, sin, clear){
+  const ac = Math.abs(cos), as = Math.abs(sin);
+  const tw = ac > 1e-4 ? clear.w / ac : Infinity;
+  const th = as > 1e-4 ? clear.h / as : Infinity;
+  return Math.max(SKY.r0, Math.min(tw, th) * 1.05 + 1.5);
+}
+/* re-apply on resize: the card keeps its vmax size when the stage is width-limited, but a window
+   that is tall and narrow changes which of the two limits binds. */
+function _skyRelayout(){
+  const sky = document.querySelector(".sg-sky");
+  if(!sky) return;
+  const clear = _skyClearVmax();
+  [...sky.children].forEach(n => {
+    const cos = parseFloat(n.dataset.cos), sin = parseFloat(n.dataset.sin);
+    if(isNaN(cos) || isNaN(sin)) return;
+    const r = _skyLaneStart(cos, sin, clear);
+    n.style.setProperty("--x1", (r * cos).toFixed(1) + "vmax");
+    n.style.setProperty("--y1", (r * sin).toFixed(1) + "vmax");
+    n.style.setProperty("--x2", (Math.max(SKY.r1, r + 26) * cos).toFixed(1) + "vmax");
+    n.style.setProperty("--y2", (Math.max(SKY.r1, r + 26) * sin).toFixed(1) + "vmax");
+  });
+}
 const SKY = { lanes: 29, r0: 22, r1: 72,
               layers: [{rot:0, scale:1}, {rot:6.2, scale:0.62}, {rot:-6.2, scale:0.55}],
               size: [0.8, 2.6], dur: [18, 34], glow: [3.0, 4.8], opacity: [0.62, 0.92] };
@@ -2937,6 +3029,7 @@ function buildSky(){
     const sky = document.createElement("div");
     sky.className = "sg-sky"; sky.setAttribute("aria-hidden", "true");
     const shapes = ["s1","s2","s3","s4","s5"];
+    const clear = _skyClearVmax();
     SKY.layers.forEach((L, li)=>{
       for(let i = 0; i < SKY.lanes; i++){
         const a = ((360 / SKY.lanes) * i + L.rot) * Math.PI / 180;
@@ -2945,10 +3038,14 @@ function buildSky(){
         const dur = R(SKY.dur[0], SKY.dur[1]);
         const n = document.createElement("i");
         n.className = shapes[(i + li) % shapes.length];
+        /* the lane's own angle is kept so _skyRelayout can recompute after a resize */
+        n.dataset.cos = cos.toFixed(6); n.dataset.sin = sin.toFixed(6);
+        const r0 = _skyLaneStart(cos, sin, clear);          /* clears the CARD, not a circle */
+        const r1 = Math.max(SKY.r1, r0 + 26);               /* always travel a real distance */
         n.style.cssText =
           "--s:" + size.toFixed(2) + "vmax;" +
-          "--x1:" + (SKY.r0 * cos).toFixed(1) + "vmax;--y1:" + (SKY.r0 * sin).toFixed(1) + "vmax;" +
-          "--x2:" + (SKY.r1 * cos).toFixed(1) + "vmax;--y2:" + (SKY.r1 * sin).toFixed(1) + "vmax;" +
+          "--x1:" + (r0 * cos).toFixed(1) + "vmax;--y1:" + (r0 * sin).toFixed(1) + "vmax;" +
+          "--x2:" + (r1 * cos).toFixed(1) + "vmax;--y2:" + (r1 * sin).toFixed(1) + "vmax;" +
           /* a NEGATIVE delay starts each lane mid-flight, so the field is already full on the
              first frame instead of everything launching together from the inner radius */
           "--t:" + dur.toFixed(1) + "s;--d:-" + R(0, dur).toFixed(1) + "s;" +
@@ -2958,6 +3055,11 @@ function buildSky(){
       }
     });
     bg.parentNode.insertBefore(sky, bg.nextSibling);   // directly above the plate, below the gate
+    if(!window.__skyResize){
+      window.__skyResize = true;
+      let t = 0;
+      window.addEventListener("resize", ()=>{ clearTimeout(t); t = setTimeout(_skyRelayout, 150); });
+    }
   }catch(e){}
 }
 
@@ -3139,6 +3241,38 @@ function stopNudge(){
    --scale. Kept as ONE WAAPI animation stored on state so stopNudge can cancel it — an infinite
    animation left running would follow the child into the next slide. Falls back to a static point if
    either element is missing or the browser has no .animate(). */
+/* [S01r5n] FLY A TILE INTO ITS BOX. The watch-first sort page has to SHOW the drag, and a
+   travelling hand alone does not: r4v/r4x already tried that (data.drag_demo) and the SME still
+   reported the gesture as unclear, because nothing ever moved except the hand.
+   The tile is translated to the drop zone and then handed over to the SAME code a real drop uses —
+   leaveTrayGhost to hold the tray slot open, `.snapped`, appended into .bin-items — so the page
+   ends in exactly the state a child's own drop would leave it in, not a lookalike.
+   `land` is reachable twice (transitionend AND the fail-safe), hence the guard: a double landing
+   would append the tile a second time and fire the sound twice. */
+function flyTileTo(tile, bin, done){
+  const zone = bin.querySelector(".bin-items") || bin;
+  const from = tile.getBoundingClientRect(), to = zone.getBoundingClientRect();
+  const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+  const dx = ((to.left + to.width / 2) - (from.left + from.width / 2)) / scale;
+  const dy = ((to.top + to.height / 2) - (from.top + from.height / 2)) / scale;
+  let landed = false;
+  const land = ()=>{
+    if(landed) return; landed = true;
+    tile.removeEventListener("transitionend", land);
+    tile.classList.remove("demo-fly"); tile.style.transform = "";
+    try{ leaveTrayGhost(tile); }catch(e){}
+    tile.classList.add("snapped");
+    zone.appendChild(tile);
+    sfxCorrect();
+    if(done) done();
+  };
+  tile.addEventListener("transitionend", land, { once: true });
+  tile.classList.add("demo-fly");
+  requestAnimationFrame(()=>{
+    tile.style.transform = "translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) scale(.86)";
+  });
+  setTimeout(land, 1600);                       /* fail-safe: a dropped transitionend must not stall */
+}
 function travelNudge(fromEl, toEl, slide, loops){
   if(!fromEl) return;
   if(!toEl || typeof $("nudgeHand").animate !== "function"){ handOnAnswer(fromEl, slide); return; }
@@ -3342,6 +3476,20 @@ function _placeNudge(el, nh){
   const HAND = 96, stageH = sw.height/scale, stageW = sw.width/scale;
   const L = (r.left - sw.left)/scale, T = (r.top - sw.top)/scale;
   const W = r.width/scale, Hh = r.height/scale;
+  /* [S01r5m] BELOW THE CARD, when the card asks for it. The default above puts the fingertip ON
+     the tile, which is right for a bare letter but not for these picture cards: the SME asked for
+     the hand "just below the text of the card (below the पपीता word) so that it does not cover
+     anything". Opted in per element with data-nudge-below, so the default placement is untouched
+     everywhere else. Centred horizontally and dropped just under the card, so it covers neither the
+     picture nor the word and still unmistakably points at that card. */
+  if(el.dataset && el.dataset.nudgeBelow === "1"){
+    let bl = (L + W / 2) - FX, bt = (T + Hh + 10) - FY;
+    bl = Math.max(0, Math.min(bl, stageW - HAND));
+    bt = Math.max(0, Math.min(bt, stageH - HAND));
+    nh.style.left = bl.toFixed(1) + "px";
+    nh.style.top  = bt.toFixed(1) + "px";
+    return;
+  }
   let tipX = L + W * 0.78;
   let tipY = T + Hh * 0.52;                    // above centre: the picture, not the word
   /* on a wide target the 78% point can still sit far from the right edge; keep the finger within
@@ -3464,7 +3612,7 @@ function showBox(emoji, text, theme, audioSrc, onEnd){
 }
 
 /* ---------- 8. TAP-OPTION HELPER (shared by 5 slide types) ---------- */
-function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect, optionRenderer, columnsHint, mastery, hintAction, nudgeTarget, shuffle}){
+function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect, optionRenderer, columnsHint, mastery, hintAction, nudgeTarget, shuffle, nudgeBelow}){
   state.attempts = 0; state.selectedKey = null; state.locked = false;
   state.audioReplays = 0; state.hintUsed = false; state.nudgeUsed = false; state.scaffoldLevel = 0; state.helpShown = false;
   // idle hand-nudge target: defaults to the stimulus (re-listen), but a slide can pass
@@ -3500,6 +3648,7 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
   _opts.forEach((opt, i) => {
     const cell = optionRenderer(opt, i);
     cell.classList.add("opt-cell");
+    if(nudgeBelow) cell.dataset.nudgeBelow = "1";   /* [S01r5m] hand under the letter, not on it */
     cell.dataset.key = String(i);
     cell.onclick = ()=>{
       if(state.locked || state.hintActive || _busy || (isPlaying && !_fb) || cell.classList.contains("crossed") || cell.classList.contains("correct") || cell.classList.contains("faded")) return;   /* [25d] .faded = an option disabled by terminal help; refuse it in JS too */
@@ -3632,8 +3781,13 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
       }
     });
     if(el){
-      el.classList.remove("pop-in");        // .pop-in animation outranks the glow, so strip it first
-      el.classList.add("reveal-hold");      // infinite pulse — "keeps breathing until you tap it"
+      el.classList.remove("pop-in");
+      /* [S01r5m] NO GLOW ON THE ANSWER. `.reveal-hold` runs `revealPulse`, which animates a GREEN
+         box-shadow - the same green the card gets when the CHILD picks it correctly. On the hint
+         rung that paints the answer as though it had been answered, and the SME asked for the pulse
+         and the green glow to come off. What identifies the answer is now only what terminal help
+         already did: the other options fade, and the hand points. Green stays reserved for a real
+         correct tap. */
       // [27d] The hand lands on the glowing answer in EVERY phase (Yasir 2026-07-27: "hand nudge in
       // guided ... needs to be all uniform and done and perfected"). 27b gated this to tutorial on
       // his earlier wording; that made guided/practice/independent/mastery reveal the answer with a
@@ -3648,8 +3802,14 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
       handOnAnswer(el, slide);
     }
     SwiftPAL.emit("answer_revealed", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts, reason });
-    // speak hint2 (the rung that NAMES the answer), then wait for the child — no auto-advance.
-    play(audioFor(slide, "hint") || audioFor(slide, "reveal") || audioFor(slide, "correct") || audioFor(slide, "try_again") || null, ()=>{});
+    /* [S01r5m] THE HELP IS THE SLIDE'S OWN HINT WHEN IT HAS ONE. This spoke the reveal clip, and
+       on the two question pages `max_attempts` is 2 — so the SECOND wrong tap lands here, not on
+       the rung below, and what the child got was "ध्यान से देखो, सही जवाब च है।" That is the VO the
+       SME asked to replace with the sentence played again and the letter lit. hintAction is exactly
+       that, already written for the rung below, so terminal help now runs it instead of naming the
+       answer aloud. Slides without one keep the clip ladder they always had. */
+    if(runHint) runHint();
+    else play(audioFor(slide, "hint") || audioFor(slide, "reveal") || audioFor(slide, "correct") || audioFor(slide, "try_again") || null, ()=>{});
   }
   $("hintBtn").onclick = ()=>{ if(state.locked || state.hintActive) return;
     state.hintUsed = true; if(state.attempts < 1) state.attempts = 1;
@@ -7044,6 +7204,44 @@ const SlideModules = {
          hints carrying the ANSWER; this one carries the MECHANIC and deliberately points nowhere
          useful. Flagged in CHANGES.md so the SME can overrule. It waits out the one-by-one reveal and
          the prompt VO, then stops on the very first press and never comes back. */
+      /* [S01r5n] WATCH FIRST. The SME asked for a page before the sort where "user won't do
+         anything - we'll just show how to do things". So this one narrates itself: it waits out the
+         tray reveal and the instruction, then for each tile names the picture, sends the hand
+         travelling to the right box and flies the tile along with it. Input is off throughout (see
+         the auto_demo return in the tile loop above), and आगे unlocks once the board is full. */
+      if(slide.data.auto_demo){
+        state.ownsAudio = true; state.demoRunning = true; setNavActive(false);
+        let di = 0, demoEnded = false;
+        const demoTiles = [...tray.children];
+        const endDemo = ()=>{
+          if(demoEnded) return; demoEnded = true;
+          stopNudge(); state.demoRunning = false; state.locked = true;   /* stays locked: nothing to do here */
+          setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true);
+        };
+        const flyNext = ()=>{
+          if(CARD.slides[state.idx] !== slide) return;
+          if(di >= demoTiles.length){
+            play(audioFor(slide, "correct") || null, ()=> setTimeout(endDemo, 500));
+            return;
+          }
+          const t = demoTiles[di++];
+          const goal = [...binsRow.children].find(b => b.dataset.gender === t.dataset.gender) || binsRow;
+          speakNoLock(t.dataset.audio);                       /* name it, without taking the VO lock */
+          setTimeout(()=>{
+            if(CARD.slides[state.idx] !== slide) return;
+            travelNudge(t, goal, slide, 1);                   /* the hand leads... */
+            setTimeout(()=> flyTileTo(t, goal, ()=> setTimeout(flyNext, 600)), 320);  /* ...the tile follows */
+          }, 950);
+        };
+        const armAuto = ()=>{
+          if(CARD.slides[state.idx] !== slide) return;
+          if(state.revealing || isPlaying){ setTimeout(armAuto, 300); return; }
+          state.locked = true;                                 /* belt and braces over the tile guard */
+          flyNext();
+        };
+        setTimeout(armAuto, 600);
+        setTimeout(()=>{ if(CARD.slides[state.idx] === slide) endDemo(); }, 26000);   /* never a dead आगे */
+      }
       if(slide.data.drag_demo){
         const _demoOff = ()=>{ stopNudge(); document.removeEventListener("pointerdown", _demoOff, true); };
         const _armDemo = ()=>{
@@ -7064,6 +7262,8 @@ const SlideModules = {
         setTimeout(_armDemo, 600);
       }
       [...tray.children].forEach(tile => {
+        /* [S01r5n] the watch-first page takes no input at all - no pick-up speech, no drag. */
+        if(slide.data.auto_demo) return;
         /* [S01r4s] SPEAK ON PICK-UP - "when the child taps or picks up an image, play its name",
            so the child can decide which basket BEFORE dragging. makeDraggable exposes opts.onTap for
            a tap but nothing for a grab, and this mechanic passed no opts at all: the only places the
@@ -8053,6 +8253,7 @@ const SlideModules = {
       const chips = [];
       items.forEach(it => {
         const chip = document.createElement("div"); chip.className = "tap-all-item";
+        chip.dataset.nudgeBelow = "1";   /* [S01r5m] the earned hand sits under the word, not on it */
         chip.innerHTML = imgOrEmoji(it.img, it.emoji, "img", "emoji") + `<span class="lbl">${it.word_hi}</span>`;
         const src = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
         chip.onclick = ()=>{
@@ -8064,8 +8265,26 @@ const SlideModules = {
           const after = (cb)=>{ if(src) play(src, cb); else cb(); };
           if(it.has === true){
             chip.classList.add("got"); sfxCorrect(); found++;
+            /* [S01r5m] A CORRECT FIND REOPENS THE BOARD. A wrong tap locks that card from the 2nd
+               attempt (.nope), and the lock used to outlive the rest of the round - so a child who
+               mis-tapped early and then found a correct word was left with a dead card they could
+               never revisit. The SME: "after one correct if any other element is disabled then
+               enable it so user can tap on that too". Clearing the lock, not the attempt count:
+               another wrong tap re-locks immediately, so the scaffold ladder is unchanged. */
+            chips.forEach(c => c.classList.remove("nope", "wrong-flash"));
+            /* [S01r5m] ...and this card leaves play. It was already untappable (the guard above
+               returns on .got), but it still LOOKED live, so the child had no way to tell which
+               cards were still in question. Two seconds is long enough for the green to register as
+               feedback before it fades back. */
+            setTimeout(()=>{ if(CARD.slides[state.idx] === slide) chip.classList.add("spent"); }, 2000);
             SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, word: it.word_hi });
             after(()=>{
+              /* [S01r5m] "after first correct selection the VO will play एक और … पर टैप करो".
+                 Nothing was said between the first find and the last, so the page went quiet
+                 exactly when it should have been asking for the other one. */
+              if(found < need && CARD.slides[state.idx] === slide){
+                play(audioFor(slide, "more") || null, ()=>{});
+              }
               if(found >= need){
                 state.locked = true; setSwMood("celebrate"); confettiCannon();
                 if(slide.phase === "mastery"){ state.masteryAttempts++; if(state.attempts === 0) state.masteryHits++; }
@@ -8200,7 +8419,9 @@ const SlideModules = {
              {step:"pause", ms:n}         the SME's "brief pause ... so the child gets a moment"
            Absent => the legacy d.auto reveal below is untouched. */
         state.ownsAudio = true; state.demoRunning = true; setNavActive(false);
-        const qrow = document.createElement("div"); qrow.className = "q-row"; qrow.appendChild(stim);
+        /* [S01r5k] ss-teach: the hook the stylesheet needs to lift the sentence clear of the
+           letter card on the three teach pages, without touching the question pages. */
+        const qrow = document.createElement("div"); qrow.className = "q-row ss-teach"; qrow.appendChild(stim);
         const grid = document.createElement("div");
         grid.className = "opt-grid ss-letter-card cols-" + ((d.options || []).length || 1);
         const cells = (d.options || []).map(opt => {
@@ -8387,6 +8608,45 @@ const SlideModules = {
         play(whole, ()=> setTimeout(reveal, 400));
         return;
       }
+      /* [S01r5m] THE HINT IS THE SENTENCE AGAIN, WITH THE LETTER LIT.
+         With no `hint` id authored on these two pages the 2nd-wrong rung fell through to the PROMPT
+         clip, so the help a struggling child got was the question re-read at them — the SME heard it
+         as "ध्यान से सुनो…" and asked for it to be replaced by "play the sentence again and highlight
+         the च letter just like we did in pages 1, 3 and 5".
+         So it now does what those teach pages do: the target akshara is overlaid on each word (the
+         two-layer form, so only the consonant lights and never its matra), and the line is replayed
+         with each word lighting as it is spoken. The overlay is built HERE rather than at mount
+         because this is a question — lighting the answer inside the stimulus before the child has
+         tried would hand it to them. */
+      const _hintReplay = (done)=>{
+        const chips = [...stim.querySelectorAll(".sentence-word")];
+        const texts = (d.words || []).map(w => (typeof w === "string") ? w : w.text);
+        const tgt = d.target_sound || "";
+        chips.forEach((c, i)=>{
+          const t = c.querySelector(".sw-text");
+          if(!t || t.classList.contains("sound-layered")) return;
+          t.classList.add("sound-layered");
+          t.dataset.swWord = texts[i]; t.dataset.swTarget = tgt;
+          t.innerHTML = soundWordHTML(texts[i], tgt, parseFloat(getComputedStyle(t).fontSize) || 48);
+          c.classList.add("bare-mark");
+        });
+        chips.forEach(c => c.classList.remove("marked", "said", "saying"));
+        const wholeSrc = d.whole_audio ? ("assets/Audio/" + d.whole_audio + "." + AUDIO_EXT) : null;
+        karaokePlay(wholeSrc, texts, (k)=>{
+          chips.forEach((c, j)=>{
+            c.classList.toggle("saying", j === k);
+            if(j <= k){ c.classList.add("said");
+              /* [S01r5n] `mark_initial` marks ONLY a word that BEGINS with the target. P4's new
+                 sentence is "नानी ने नई नाव बनाई।" and its question is about the sound at the START
+                 of words - but बनाई carries a न in the MIDDLE, so the plain contains-the-letter rule
+                 would light it and quietly contradict the question being asked. */
+              const _hit = d.mark_initial
+                ? (splitAksharas(texts[j])[0] || "")[0] === tgt
+                : wordHasSound(texts[j], tgt);
+              if(_hit) c.classList.add("marked"); }
+          });
+        }, ()=>{ chips.forEach(c => c.classList.remove("saying")); if(done) done(); });
+      };
       mountTapOptions({
         slide, host, signalName: d.signal_name || "sentence_sound_first_try",
         stimulus: stim, columnsHint: (d.options || []).length,
@@ -8395,6 +8655,8 @@ const SlideModules = {
         optionRenderer: (opt)=> letterCell(opt.letter),
         mastery: slide.phase === "mastery",
         nudgeTarget: null,
+        hintAction: _hintReplay,
+        nudgeBelow: true,
         /* [S01r4p] data.fixed_order pins the authored option order. mountTapOptions shuffles by
            default, on purpose, so the answer is never pinned to one position — keep that everywhere
            it is not explicitly overridden. This page's flow names the entry order literally
@@ -9224,7 +9486,57 @@ function boot(){
     const _audible = _a && !_a.paused && !_a.ended && _a.currentTime > 0;
     if(!_audible) playLanding(); }, { once:true });
 
+  /* [S01r5l] SME: "if user remains inactive for more than 5 seconds then add hand nudge on the play
+     button". The cover has no other affordance now that the wording is gone, so an idle child has
+     nothing telling them the pill is the way in.
+     The hand lives inside .slide-stage at z-index 55 and the start gate is 80, so it would be drawn
+     BEHIND the cover — `nh-start` lifts it over the gate for this one use and is taken off again by
+     the disarm, so nothing else that nudges is affected. */
+  let _startNudgeT = 0;
+  const _onLandingNow = ()=>{ const sg = $("startGate"); return sg && !sg.classList.contains("hidden"); };
+  const disarmStartNudge = ()=>{
+    clearTimeout(_startNudgeT); _startNudgeT = 0;
+    const nh = $("nudgeHand");
+    if(!nh) return;
+    nh.classList.remove("show", "hint-glow", "nh-start");
+    /* put it back where every other nudge expects to find it */
+    const home = document.querySelector(".slide-stage");
+    if(home && nh.parentNode !== home) home.appendChild(nh);
+  };
+  const armStartNudge = ()=>{
+    clearTimeout(_startNudgeT);
+    _startNudgeT = setTimeout(()=>{
+      if(!_onLandingNow()) return;
+      const btn = $("sgBtn"), nh = $("nudgeHand"), gate = $("startGate");
+      if(!btn || !nh || !gate) return;
+      /* [S01r5l] IT HAS TO BE INSIDE THE GATE, not merely above it in z-index.
+         The hand normally lives in .slide-stage, and z-index is resolved against the nearest
+         stacking context — so `z-index:90` on the hand only ever competed with the slide's own
+         children, while .slide-stage AS A WHOLE still painted under the cover (z-index 80). The
+         first build of this looked correct in the DOM (classes set, z-index 90) and was invisible
+         on screen. Raising .slide-stage instead would lift the mounted slide over the cover too.
+         So for this one nudge the hand is moved INTO the gate and placed against the gate's own
+         box; disarmStartNudge puts it back. */
+      gate.appendChild(nh);
+      const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+      const g = gate.getBoundingClientRect(), b = btn.getBoundingClientRect();
+      const FX = 39.93, FY = 6.38;                    /* fingertip inside the 96x96 hand box */
+      const tipX = (b.left + b.width * 0.72 - g.left) / scale;
+      const tipY = (b.top + b.height * 0.50 - g.top) / scale;
+      nh.style.left = (tipX - FX).toFixed(1) + "px";
+      nh.style.top  = (tipY - FY).toFixed(1) + "px";
+      nh.classList.add("nh-start", "show", "hint-glow");
+    }, 5000);
+  };
+  window.__armStartNudge = armStartNudge;
+  window.__disarmStartNudge = disarmStartNudge;
+  /* any touch of the cover counts as activity */
+  { const sg = $("startGate");
+    if(sg) sg.addEventListener("pointerdown", disarmStartNudge, true); }
+  armStartNudge();
+
   $("sgBtn").onclick = ()=>{
+    disarmStartNudge();
     stopAudio();          // silence the landing greeting BEFORE slide 0 speaks (no VO overlap)
     _ac();                // unlock/resume WebAudio on the start gesture so the first clip never clips
     // [engine JS] r4/P1: peek gate into the tutorial. The landing stays visible-and-BLURRED behind the
@@ -9273,7 +9585,7 @@ function buildDevNav(){
   const sync = ()=>{ const i = cur(); const s = CARD.slides[i]; if(document.activeElement !== sel) sel.value = i;
     lbl.textContent = (i+1) + "/" + CARD.slides.length + (s ? " · " + s.id : ""); };
   const go = (i)=>{ i = Math.max(0, Math.min(i, CARD.slides.length - 1)); leaveStart(); mountSlide(i); sync(); };
-  land.onclick = ()=>{ const sg = $("startGate"); if(sg){ sg.classList.remove("hidden"); document.body.classList.add("is-start"); } };
+  land.onclick = ()=>{ const sg = $("startGate"); if(sg){ sg.classList.remove("hidden"); document.body.classList.add("is-start"); } if(window.__armStartNudge) window.__armStartNudge(); };
   first.onclick = ()=> go(0); prev.onclick = ()=> go(cur() - 1); next.onclick = ()=> go(cur() + 1); last.onclick = ()=> go(CARD.slides.length - 1);
   sel.onchange = ()=> go(parseInt(sel.value, 10));
   bar.append(land, first, prev, sel, lbl, next, last);
