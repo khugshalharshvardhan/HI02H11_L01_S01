@@ -2075,3 +2075,114 @@ audibly worse on any line, say so and the fix is to cut content, not to go back 
 2. **28k has not been listened to.** See above — it was forced, not chosen.
 3. **The pop has not been watched at full speed.** Shard count, colour inheritance and timing are
    verified in the DOM; the burst itself has been measured, not seen.
+
+---
+
+# r5p — the crow answers its own line, the hand waits its turn, and three new pictures
+
+## 1 · The cover
+
+### काँव-**काँव** — the sound now agrees with the sentence
+
+The cover reads **"काला कौआ काँव-काँव करता।"** and the trimmed recording held a **single** call. On the
+one page whose entire subject is that sound, the sound and the words disagreed.
+
+`picture_sfx_times: 2` lives in the **card**, not the engine, because it belongs to the line — a
+different line would want a different count. The engine spaces the repeats by the clip's own
+`audio_dur`, so a re-cut caw cannot make them overlap or straggle, and **every repeat re-checks that
+the cover is still up**: tapping the play button mid-call must not leave a caw to bark over slide 0.
+That is the same trap the cue timeline beneath it already documents.
+
+Measured: **2 calls, 664 ms apart, on a 0.56 s clip.**
+
+### The hand was nudging a child who was listening
+
+r5l armed the 5-second idle timer **at page load**. The greeting is ~19 s. So the hand appeared while
+Swiftie was still talking — it read as "hurry up" at a child who was doing exactly the right thing.
+
+The timer is now disarmed for the whole greeting and armed **from its end**. Both endings count: the
+karaoke run, and the no-token fallback, which fires its `finish()` *before* its clip plays and so has
+to arm from the clip instead. Two more paths that could otherwise leave an idle child with no nudge
+at all — a cover with no landing sentence, and a cover whose greeting never ran — arm it too.
+
+```
+greeting ended  18893 ms
+hand appeared   23909 ms   -> 5.0 s after the VO, as asked
+```
+
+**And idle now means idle.** Activity *restarts* the wait instead of cancelling it. Before, one stray
+tap on the card bought permanent silence, which is not what "inactive for more than 5 seconds"
+describes.
+
+### It points at the middle
+
+`0.72` put the fingertip three-quarters across the pill — fine when the button had a word in it, but
+r5l took the word out, and on an icon-only button that reads as pointing *past* it. Now `0.50`.
+
+Measured: **button centre x=742, fingertip x=742, offset +0 px.**
+
+## 2 · The arrow is the whole button now, so it is sized like one
+
+r5l removed the wording from `#navBtn`, which turned the arrow from a companion to the text into the
+**entire label** — still drawn at a size chosen back when it was not. 28px → **40px**, and the
+celebration's `#endBtn` with it (30px → 40px), because it is the same affordance.
+
+`line-height:1` is pinned on both so a taller glyph box cannot push the pill around. Measured: the
+pill is still exactly **170×62**.
+
+## 3 · Three new pictures on the two practice hunts
+
+The SME supplied art for **चिड़िया**, **लड्डू** and **चश्मा** and named where each goes.
+
+| page | out | in | target | answers |
+|---|---|---|---|---|
+| **11** (P1) | चींटी, लाल | चिड़िया, लड्डू | म | 2 → **2** |
+| **13** (P7) | चींटी | चश्मा | च | 2 → **2** |
+
+**Both swaps preserve the count of correct answers, which is the thing that could quietly have
+broken.** On page 11 both departures were distractors and both arrivals are too (चिड़िया begins च,
+लड्डू begins ल). On page 13 चींटी was an **answer**, and चश्मा begins च as well, so the page still
+holds two. A swap that changed the count would leave the page's own "मैंने सब ढूँढ लिए" logic
+answering a question the child was never asked.
+
+चींटी and लाल have **not** left the lesson — both still appear on page 14's balloons, so their art and
+clips still ship.
+
+The supplied files were cutouts already, so they were only trimmed and fitted to this lesson's 512px
+long edge. The originals went to `_assets_round4/` as `*_SOURCE.png`, which is where this bundle
+already keeps SME masters — `assets/Images` is for game art, and three raw drops sitting in it is how
+the six unreferenced leftovers got there in the first place.
+
+Three new clips, verified by forced choice against the full word list (so चाँद/चाँदी/चश्मा and
+लाल/लड्डू are live near-neighbours, not a soft test) — **all three identified correctly on both
+shuffles.**
+
+## The build reads its recipe from a third place
+
+Worth writing down, because it cost a rebuild to find: `rebuild_isolated.py` ends with
+
+```python
+runpy.run_path(os.path.join(FLN, "scripts", "build_skill_%s.py" % CODE), ...)
+```
+
+— so the recipe that actually runs is **`FLN_Content_Factory/scripts/`**, not the copy in
+`KG/<CODE>/`. A recipe edit synced only to the KG folder builds cleanly and changes nothing, which is
+exactly what happened here: the first rebuild reported the same 88 ids and 20 images as before, with
+every guard passing. The tell was that **nothing changed**, not that anything failed.
+
+## Receipt
+
+- 15 slides; all three guards pass on **all four** trees, now covering 74 authored lines / 80 clips
+- HTML byte-identical across all four (`ac0864265d6a9560`); audio and images identical across the pairs
+- Both swapped pages render their new items with **0 broken images**
+- **dist 9.70 MB — 311 KB under the cap** (91 clips, 23 images)
+
+## Still needs a human
+
+1. **`vo_w_chidiya` came back on the `wrapped-lesson(Kore)` rung** of the refuser ladder, so its
+   timbre may not match its neighbours. It identifies correctly; nobody has *heard* it.
+2. **Nobody has heard `vo_w_laddu` or `vo_w_chashma` either**, nor the doubled crow at full speed —
+   the two calls and their gap are measured, not listened to.
+3. **`vo_w_patta` is fine, and this is the note saying so.** It failed one shuffle of the sweep
+   (read as कबूतर); re-asked six times it came back **5/6**, with the single miss on the same seed
+   and naming a word that sounds nothing like it. ASR noise on a pre-existing clip — not regenerated.

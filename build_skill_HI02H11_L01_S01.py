@@ -205,6 +205,9 @@ VO = {
     "vo_w_ghar": "घर", "vo_w_machhli": "मछली",
     "vo_w_chand": "चाँद",      # [r4 · row 104] deck says चाँद, the old clip said चंदा
     "vo_w_chinti": "चींटी",     # [r4 · rows 89/104] deck says चींटी, the old clip said चींटा
+    # [r5p] SME supplied the art for these three and named where each one goes: चिड़िया and लड्डू
+    # replace चींटी and लाल on P1, चश्मा replaces चींटी on P7.
+    "vo_w_chidiya": "चिड़िया", "vo_w_laddu": "लड्डू", "vo_w_chashma": "चश्मा",
 
     "vo_try_again": "एक बार फिर सुनो।",
 }
@@ -232,6 +235,9 @@ EMOJI = {
     "obj_chuha": "🐭", "obj_ghar": "🏠", "obj_kauaa": "🐦‍⬛", "obj_kela": "🍌", "obj_laal": "🔴",
     "obj_machhli": "🐟", "obj_mala": "📿", "obj_mama": "👨", "obj_muli": "🥕", "obj_pani": "💧",
     "obj_papita": "🍈", "obj_patang": "🪁", "obj_patta": "🍃", "obj_payal": "💍", "obj_sapna": "💭",
+    # [r5p] the emoji is only the no-art fallback, but it still has to READ as the word: a
+    # generic bird for चिड़िया (🐦, not the black 🐦‍⬛ that is already कौआ), a sweet for लड्डू, glasses for चश्मा.
+    "obj_chidiya": "🐦", "obj_laddu": "🍬", "obj_chashma": "👓",
 }
 
 
@@ -543,10 +549,12 @@ def build_card():
     # new page 12 (was page 13) — 5 options down to 4; माला leaves this page
     slides.append(tap_all(
         "P1", "practice", "म", VO["vo_p1_prompt"],
-        [_item("मामा",  "obj_mama",   "vo_w_mama",   has=True),
-         _item("चींटी", "obj_chinti", "vo_w_chinti", has=False),
-         _item("मूली",  "obj_muli",   "vo_w_muli",   has=True),
-         _item("लाल",   "obj_laal",   "vo_w_laal",   has=False)],
+        # [r5p] SME swap. Both departures are DISTRACTORS on a म page, and both arrivals are too
+        # (चिड़िया begins च, लड्डू begins ल), so the page still holds exactly two answers.
+        [_item("मामा",   "obj_mama",    "vo_w_mama",    has=True),
+         _item("चिड़िया", "obj_chidiya", "vo_w_chidiya", has=False),
+         _item("मूली",   "obj_muli",    "vo_w_muli",    has=True),
+         _item("लड्डू",   "obj_laddu",   "vo_w_laddu",   has=False)],
         {"prompt": "vo_p1_prompt", "target": "vo_snd_m", "hint": "vo_p1_hint", "more": "vo_p1_more",
          "try_again": "vo_p1_try", "reveal": "vo_p1_reveal", "done": "vo_p1_done"},
         allow_hand=True))   # [r4u] hand after two wrong taps, as on page 7
@@ -579,10 +587,11 @@ def build_card():
     # new page 15 (was page 19) — 5 options down to 4
     slides.append(tap_all(
         "P7", "practice", "च", VO["vo_p7_prompt"],
-        [_item("चाँद",  "obj_chand",  "vo_w_chand",  has=True),
-         _item("माला",  "obj_mala",   "vo_w_mala",   has=False),
-         _item("चींटी", "obj_chinti", "vo_w_chinti", has=True),
-         _item("लाल",   "obj_laal",   "vo_w_laal",   has=False)],
+        # [r5p] SME swap. चींटी was an ANSWER here, and चश्मा begins च too, so the count holds at two.
+        [_item("चाँद",  "obj_chand",   "vo_w_chand",   has=True),
+         _item("माला",  "obj_mala",    "vo_w_mala",    has=False),
+         _item("चश्मा", "obj_chashma", "vo_w_chashma", has=True),
+         _item("लाल",   "obj_laal",    "vo_w_laal",    has=False)],
         {"prompt": "vo_p7_prompt", "target": "vo_snd_ch", "hint": "vo_p7_hint", "more": "vo_p7_more",
          "try_again": "vo_p7_try", "reveal": "vo_p7_reveal", "done": "vo_p7_done"},
         allow_hand=True))   # [r4u] hand after two wrong taps, as on page 7
@@ -696,6 +705,12 @@ def build_card():
         "picture_img": "obj_kauaa",
         "picture_emoji": EMOJI["obj_kauaa"],
         "picture_sfx": "sfx_kanv",
+        # [r5p] SME: "the voice of crow should play 2 times". The line the cover reads is
+        # "काँव-काँव" - two calls - and the trimmed recording holds one, so the sound contradicted
+        # the sentence on the one page whose subject IS that sound. The count lives here rather
+        # than in the engine because it belongs to this line; the engine spaces the repeats by the
+        # clip's own audio_dur.
+        "picture_sfx_times": 2,
     }
 
     card = {

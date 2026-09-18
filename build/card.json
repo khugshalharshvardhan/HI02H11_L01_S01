@@ -39,7 +39,8 @@
     ],
     "picture_img": "obj_kauaa",
     "picture_emoji": "🐦‍⬛",
-    "picture_sfx": "sfx_kanv"
+    "picture_sfx": "sfx_kanv",
+    "picture_sfx_times": 2
   },
   "phase_transition_audio": {
     "tutorial": "vo_pt_tutorial",
@@ -623,10 +624,10 @@
             "has": true
           },
           {
-            "word_hi": "चींटी",
-            "img": "obj_chinti",
-            "emoji": "🐜",
-            "audio": "vo_w_chinti",
+            "word_hi": "चिड़िया",
+            "img": "obj_chidiya",
+            "emoji": "🐦",
+            "audio": "vo_w_chidiya",
             "has": false
           },
           {
@@ -637,10 +638,10 @@
             "has": true
           },
           {
-            "word_hi": "लाल",
-            "img": "obj_laal",
-            "emoji": "🔴",
-            "audio": "vo_w_laal",
+            "word_hi": "लड्डू",
+            "img": "obj_laddu",
+            "emoji": "🍬",
+            "audio": "vo_w_laddu",
             "has": false
           }
         ],
@@ -737,10 +738,10 @@
             "has": false
           },
           {
-            "word_hi": "चींटी",
-            "img": "obj_chinti",
-            "emoji": "🐜",
-            "audio": "vo_w_chinti",
+            "word_hi": "चश्मा",
+            "img": "obj_chashma",
+            "emoji": "👓",
+            "audio": "vo_w_chashma",
             "has": true
           },
           {
@@ -988,12 +989,15 @@
     "obj_aam": "🥭",
     "obj_chand": "🌙",
     "obj_chandi": "🪙",
+    "obj_chashma": "👓",
+    "obj_chidiya": "🐦",
     "obj_chinti": "🐜",
     "obj_chuha": "🐭",
     "obj_ghar": "🏠",
     "obj_kauaa": "🐦‍⬛",
     "obj_kela": "🍌",
     "obj_laal": "🔴",
+    "obj_laddu": "🍬",
     "obj_machhli": "🐟",
     "obj_mala": "📿",
     "obj_mama": "👨",
@@ -1077,6 +1081,8 @@
       "vo_w_aam": "assets/Audio/vo_w_aam.ogg",
       "vo_w_chand": "assets/Audio/vo_w_chand.ogg",
       "vo_w_chandi": "assets/Audio/vo_w_chandi.ogg",
+      "vo_w_chashma": "assets/Audio/vo_w_chashma.ogg",
+      "vo_w_chidiya": "assets/Audio/vo_w_chidiya.ogg",
       "vo_w_chinti": "assets/Audio/vo_w_chinti.ogg",
       "vo_w_chuha": "assets/Audio/vo_w_chuha.ogg",
       "vo_w_ghar": "assets/Audio/vo_w_ghar.ogg",
@@ -1085,6 +1091,7 @@
       "vo_w_kauaa": "assets/Audio/vo_w_kauaa.ogg",
       "vo_w_kela": "assets/Audio/vo_w_kela.ogg",
       "vo_w_laal": "assets/Audio/vo_w_laal.ogg",
+      "vo_w_laddu": "assets/Audio/vo_w_laddu.ogg",
       "vo_w_machhli": "assets/Audio/vo_w_machhli.ogg",
       "vo_w_mala": "assets/Audio/vo_w_mala.ogg",
       "vo_w_mama": "assets/Audio/vo_w_mama.ogg",
@@ -1157,6 +1164,8 @@
       "vo_w_aam": "आम",
       "vo_w_chand": "चाँद",
       "vo_w_chandi": "चाँदी",
+      "vo_w_chashma": "चश्मा",
+      "vo_w_chidiya": "चिड़िया",
       "vo_w_chinti": "चींटी",
       "vo_w_chuha": "चूहा",
       "vo_w_ghar": "घर",
@@ -1165,6 +1174,7 @@
       "vo_w_kauaa": "कौआ",
       "vo_w_kela": "केला",
       "vo_w_laal": "लाल",
+      "vo_w_laddu": "लड्डू",
       "vo_w_machhli": "मछली",
       "vo_w_mala": "माला",
       "vo_w_mama": "मामा",
@@ -1179,6 +1189,8 @@
       "obj_aam": "assets/Images/obj_aam.png",
       "obj_chand": "assets/Images/obj_chand.png",
       "obj_chandi": "assets/Images/obj_chandi.png",
+      "obj_chashma": "assets/Images/obj_chashma.png",
+      "obj_chidiya": "assets/Images/obj_chidiya.png",
       "obj_chinti": "assets/Images/obj_chinti.png",
       "obj_chuha": "assets/Images/obj_chuha.png",
       "obj_ghar": "assets/Images/obj_ghar.png",
@@ -1187,6 +1199,7 @@
       "obj_kauaa": "assets/Images/obj_kauaa.png",
       "obj_kela": "assets/Images/obj_kela.png",
       "obj_laal": "assets/Images/obj_laal.png",
+      "obj_laddu": "assets/Images/obj_laddu.png",
       "obj_machhli": "assets/Images/obj_machhli.png",
       "obj_mala": "assets/Images/obj_mala.png",
       "obj_mama": "assets/Images/obj_mama.png",
@@ -2064,6 +2077,18 @@
           0.71
         ]
       ],
+      "vo_w_chashma": [
+        [
+          0.33,
+          0.76
+        ]
+      ],
+      "vo_w_chidiya": [
+        [
+          0.27,
+          0.79
+        ]
+      ],
       "vo_w_chinti": [
         [
           0.27,
@@ -2110,6 +2135,12 @@
         [
           0.28,
           0.76
+        ]
+      ],
+      "vo_w_laddu": [
+        [
+          0.26,
+          0.83
         ]
       ],
       "vo_w_machhli": [
@@ -2243,6 +2274,8 @@
       "vo_w_aam": 0.85,
       "vo_w_chand": 1.05,
       "vo_w_chandi": 0.97,
+      "vo_w_chashma": 0.93,
+      "vo_w_chidiya": 0.97,
       "vo_w_chinti": 1.01,
       "vo_w_chuha": 1.01,
       "vo_w_ghar": 1.21,
@@ -2251,6 +2284,7 @@
       "vo_w_kauaa": 1.21,
       "vo_w_kela": 0.97,
       "vo_w_laal": 1.01,
+      "vo_w_laddu": 1.17,
       "vo_w_machhli": 0.69,
       "vo_w_mala": 1.01,
       "vo_w_mama": 1.01,

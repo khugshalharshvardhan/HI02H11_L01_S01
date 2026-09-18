@@ -6814,10 +6814,25 @@ function boot(){
         /* The call belongs to the crow's ARRIVAL, not to a timer running alongside it: fired here,
            in the same statement that reveals the picture, it cannot drift and it cannot outlive the
            screen. (r4 scheduled it on a setTimeout and it was measured landing on the CELEBRATION.) */
+        /* [S01r5p] THE LINE SAYS IT TWICE. The cover reads "काँव-काँव" and the recording holds a
+           SINGLE call, so the picture that arrives on that word answered it once - the sound and the
+           words disagreed on the one page whose whole job is "listen to this sound". How many times
+           is the card's call (`picture_sfx_times`), not the engine's, because it belongs to the line.
+           The gap is read from audio_dur so a re-cut clip cannot make the calls overlap or straggle,
+           and every repeat re-checks onLanding(): tapping the play button mid-call must not leave a
+           caw to bark over slide 0, which is the same trap the cue timeline documents below. */
+        const sfxTimes = Math.max(1, hero.picture_sfx_times || 1);
+        const sfxGapMs = Math.round(((CARD.assets && CARD.assets.audio_dur
+                                      && CARD.assets.audio_dur[hero.picture_sfx]) || 0.6) * 1000) + 90;
+        const callCrow = ()=>{
+          playSfx(hero.picture_sfx);
+          for(let n = 1; n < sfxTimes; n++)
+            setTimeout(()=>{ if(onLanding()) playSfx(hero.picture_sfx); }, n * sfxGapMs);
+        };
         const showCrow = (withSound)=>{
           if(!pic || !pic.classList.contains("seq-hidden")) return;
           pic.classList.remove("seq-hidden"); pic.classList.add("lh-in");
-          if(withSound && onLanding()) playSfx(hero.picture_sfx);
+          if(withSound && onLanding()) callCrow();
         };
         const acts = {
           light: ()=>{ if(strip) strip.classList.remove("lh-dim"); },   // every क lights at once
@@ -6846,6 +6861,16 @@ function boot(){
           cues.push({ k, do: c.do }); from = k + 1;
         });
 
+        /* [S01r5p] SME: "after completion of VO if user remains inactive for more than 5 seconds".
+           r5l armed the 5s timer at load, but the greeting itself is ~15s - so the hand appeared
+           while Swiftie was still talking, nudging a child who was not idle at all, merely listening.
+           The timer is disarmed for the whole greeting and armed from its END. Both endings count:
+           the karaoke run (finish), and the no-token fallback, which fires finish() BEFORE its clip
+           plays and so must arm from the clip instead - hence armOnFinish. */
+        if(window.__disarmStartNudge) window.__disarmStartNudge();
+        const armAfterGreeting = ()=>{ if(window.__armStartNudge && onLanding()) window.__armStartNudge(); };
+        let armOnFinish = true;
+
         const fired = new Set();
         const run = (c)=>{
           if(fired.has(c)) return; fired.add(c);
@@ -6868,9 +6893,10 @@ function boot(){
           if(stopK) stopK();
           if(!onLanding()) return;
           cues.forEach(c => { if(c.do === "crow") { fired.add(c); showCrow(false); } else run(c); });
+          if(armOnFinish) armAfterGreeting();
         };
 
-        if(!toks.length){ finish(); play(src || null, ()=>{}); return; }
+        if(!toks.length){ armOnFinish = false; finish(); play(src || null, armAfterGreeting); return; }
         /* The timeline is only meaningful while ITS OWN clip is sounding. Tapping शुरू करें calls
            stopAudio() (so currentAudio goes null) but the start gate stays up for the length of the
            blur transition — so "is the gate still visible" is NOT a sufficient stop condition, and a
@@ -6893,6 +6919,9 @@ function boot(){
         el.querySelectorAll(".lh-word").forEach(w => { w.classList.remove("seq-hidden"); w.classList.add("lh-in"); });
         const st = el.querySelector(".lh-strip"); if(st) st.classList.remove("lh-dim");
         const pc = el.querySelector(".lh-pic"); if(pc){ pc.classList.remove("seq-hidden"); pc.classList.add("lh-in"); }
+        /* [S01r5p] the greeting never ran at all, so nothing will ever arm the idle hand from its
+           end - arm it here, or an idle child on a silent cover gets no nudge whatsoever. */
+        if(window.__armStartNudge) window.__armStartNudge();
       }, 6000);
       return;
     }
@@ -6945,7 +6974,9 @@ function boot(){
        should sync with the VO"), so it restarts on every play - including the listen chip,
        which is the first time it is heard whenever autoplay was blocked. */
     if(typeof window._landingSentence === "function"){ window._landingSentence(landSrc); return; }
-    play(landSrc, ()=>{}); };
+    /* [S01r5p] no landing sentence (another card, or the hero block never ran) - the greeting is a
+       plain clip, and the idle timer still belongs at its end. */
+    play(landSrc, ()=>{ if(window.__armStartNudge) window.__armStartNudge(); }); };
   const sgVo = $("sgVo"); if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); playLanding(); };
   // ---- [engine JS] r4/P2 boot loader: loader.gif until assets warm, then it dismisses ITSELF into
   // the landing (NO tap gate). DUAL auto-dismiss (window 'load' OR a 2.5s watchdog — never strand the
@@ -7022,7 +7053,9 @@ function boot(){
       const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
       const g = gate.getBoundingClientRect(), b = btn.getBoundingClientRect();
       const FX = 39.93, FY = 6.38;                    /* fingertip inside the 96x96 hand box */
-      const tipX = (b.left + b.width * 0.72 - g.left) / scale;
+      /* [S01r5p] SME: "it must be in the center". 0.72 put the fingertip three-quarters across the
+         pill, which on an icon-only button (r5l took the wording out) reads as pointing past it. */
+      const tipX = (b.left + b.width * 0.50 - g.left) / scale;
       const tipY = (b.top + b.height * 0.50 - g.top) / scale;
       nh.style.left = (tipX - FX).toFixed(1) + "px";
       nh.style.top  = (tipY - FY).toFixed(1) + "px";
@@ -7031,10 +7064,13 @@ function boot(){
   };
   window.__armStartNudge = armStartNudge;
   window.__disarmStartNudge = disarmStartNudge;
-  /* any touch of the cover counts as activity */
+  /* [S01r5p] Any touch of the cover counts as activity - and activity RESTARTS the wait rather than
+     ending it. Cancelling outright meant one stray tap on the card bought permanent silence, which is
+     not what "inactive for more than 5 seconds" describes. Tapping the play button is unaffected: its
+     own onclick disarms, and the timer body re-checks that the cover is still up before it shows. */
   { const sg = $("startGate");
-    if(sg) sg.addEventListener("pointerdown", disarmStartNudge, true); }
-  armStartNudge();
+    if(sg) sg.addEventListener("pointerdown", ()=>{ disarmStartNudge(); armStartNudge(); }, true); }
+  /* NOT armed here any more - the greeting's end owns it now. See [S01r5p] in _landingSentence. */
 
   $("sgBtn").onclick = ()=>{
     disarmStartNudge();
