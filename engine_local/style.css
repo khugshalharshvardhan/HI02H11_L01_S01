@@ -1910,9 +1910,10 @@ body.is-start .phase-gate{
    to the first balloon is kept: the field is centred on the 1333px stage, so at max-width 838 it
    starts at x=247.5 and she now runs x=7.5..255.5 against a field whose content starts at 287.5. */
 /* [S01r5o] SME: "she feels like she is hovering in the air". She was pinned 322px down a field
-   that r5i then lifted 50px, so she ended up mid-air on the left with nothing under her. 322 -> 392
-   puts her feet near the stage floor (measured: she runs to y=729 of 750) while still riding up with
-   the field, which is what keeps her beside the balloons rather than behind them. */
+   that r5i then lifted 50px, so she ended up mid-air on the left with nothing under her. 322 -> 372
+   sets her feet down on the stage floor (measured: 22px of clearance) while still riding up with the
+   field, which is what keeps her beside the balloons rather than behind them. 392 was tried first and
+   measured 2px - too tight, it reads as standing ON the frame edge rather than on the ground. */
 .bal-swiftee{ position:absolute; left:-240px; top:372px; width:248px; height:250px;
   cursor:pointer; z-index:3; }
 .bal-swiftee:active{ transform:scale(.97); }

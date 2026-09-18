@@ -2056,7 +2056,7 @@ and removing them is not this round's call.
 
 - 15 slides (`tutorial 6 · guided 4 · practice 5`); all three guards pass on **all four** trees —
   `build/`, `dist/`, factory KG, factory dist
-- HTML byte-identical across all four (`1abf3ef95dcc8dfb`)
+- HTML byte-identical across all four (`5a7d85008303604e`)
 - Audio byte-identical across the pairs; images now byte-identical too
 - Six new clips: `vo_g1_next`, `vo_g1_correct2`, `vo_g1_hint2`, `vo_w_kauaa`, `vo_w_kamal`,
   `vo_w_kabutar`; two new pictures: `obj_kamal`, `obj_kabutar`
