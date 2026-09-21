@@ -2389,7 +2389,12 @@ html.no-anim .ck-crown, html.no-anim .fx-confetti{display:none;}
    there is nothing left to trade off. The hole is 40 design px inside the card, i.e. 20px of card
    edge on each side, which hides the join. */
 .sg-glow,.sg-sky{position:fixed;inset:0;display:none;pointer-events:none;z-index:1;}
-body.is-start .sg-glow,body.is-start .sg-sky{display:block;}
+/* [S01r5v] THE END SCREEN GETS THE SKY TOO. The kit shows it on BOTH screens
+   ("body.is-start ... body.is-end ... {display:block}") and recipe 2 is live on both by default
+   (when:["is-start","is-end"]). r5u ported only the start screen, so page 15 had the celebration
+   canvas burst but no drifting stars to pop - which is exactly what the SME saw. */
+body.is-start .sg-glow,body.is-start .sg-sky,
+body.is-end   .sg-glow,body.is-end   .sg-sky{display:block;}
 html.rotated .sg-glow,html.rotated .sg-sky{            /* kit R2 */
   inset:auto;left:50%;top:50%;width:100vh;height:100vw;
   transform:translate(-50%,-50%) rotate(90deg);}
@@ -2414,6 +2419,16 @@ html.rotated .sg-glow,html.rotated .sg-sky{            /* kit R2 */
   -webkit-mask-position:center,center; mask-position:center,center;
   -webkit-mask-repeat:no-repeat,no-repeat; mask-repeat:no-repeat,no-repeat;
   -webkit-mask-composite:xor; mask-composite:exclude;}
+/* [S01r5v] the kit's own end-screen variant, verbatim in shape: "end screen has no visible
+   occluder, so a hard edge reads as a sliced crescent. Soft radial hole sized to the mascot
+   instead." The card-shaped hole would cut a rectangle out of empty gold here. */
+body.is-end .sg-sky{
+  --sg-hole-w:calc(800px * var(--scale,1));
+  --sg-hole-h:calc(800px * var(--scale,1));
+  -webkit-mask-image:linear-gradient(#000,#000),
+                     radial-gradient(closest-side,#000 71%,rgba(0,0,0,0) 100%);
+          mask-image:linear-gradient(#000,#000),
+                     radial-gradient(closest-side,#000 71%,rgba(0,0,0,0) 100%);}
 /* [S01r5u] NOT interactive. r5s gave each star pointer-events:auto; the kit warns against exactly
    that - "making .sg-sky interactive would put an invisible full-screen layer over every button" -
    and hit-tests by rect on a capture-phase document listener instead (armSkyBurst in app.js). */
@@ -3256,7 +3271,10 @@ function armSkyBurst(){
   document.addEventListener("pointerdown", (e)=>{
     try{
       if(_skyStill()) return;
-      if(!document.body.classList.contains("is-start")) return;
+      /* [S01r5v] the kit's default is when:["is-start","is-end"] - the end screen is poppable
+         too, and r5u had narrowed this to the cover. */
+      const bc = document.body.classList;
+      if(!bc.contains("is-start") && !bc.contains("is-end")) return;
       const sky = document.querySelector(".sg-sky"); if(!sky) return;
       const els = sky.querySelectorAll("i:not(.popped)");
       for(let i = 0; i < els.length; i++){

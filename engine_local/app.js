@@ -564,7 +564,10 @@ function armSkyBurst(){
   document.addEventListener("pointerdown", (e)=>{
     try{
       if(_skyStill()) return;
-      if(!document.body.classList.contains("is-start")) return;
+      /* [S01r5v] the kit's default is when:["is-start","is-end"] - the end screen is poppable
+         too, and r5u had narrowed this to the cover. */
+      const bc = document.body.classList;
+      if(!bc.contains("is-start") && !bc.contains("is-end")) return;
       const sky = document.querySelector(".sg-sky"); if(!sky) return;
       const els = sky.querySelectorAll("i:not(.popped)");
       for(let i = 0; i < els.length; i++){

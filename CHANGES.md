@@ -2665,3 +2665,74 @@ absent because those stars appeared *at the screen rim* and left immediately.
 
 The burst has been measured, not watched: particle count, hues, gravity variable, flash and cleanup
 are all verified in the DOM, and the pop is synthesised so it has never been heard here.
+
+---
+
+# r5v — the celebration gets the sky it was missing
+
+## What page 15 already had, and what it did not
+
+The SME asked for the toolkit's **recipe 8, celebration star burst**. It has been installed since
+r4r and matches the kit's *retuned* preset parameter for parameter — `stars:32, circles:8,
+startV:14, decay:0.975, ticks:150, shots:[0,220,440], spin:0.18, starScale:1.8` — which is the
+kit's `SB_NEW`, not its `SB_OLD`. Verified it actually renders rather than assuming:
+
+```
+suppress starBurst() and re-screenshot -> 61,662 pixels change, worst delta 703/765
+```
+
+So the canvas burst was never the gap. The SME named the real one: *"the popping of star and
+bubbles is not happening"* — **recipes 1 and 2 were missing from the end screen.**
+
+## The gap was in my own r5u port
+
+The kit runs the drifting sky on **both** screens, and recipe 2 is live on both by default:
+
+```css
+body.is-start .sg-glow,body.is-start .sg-sky,
+body.is-end   .sg-glow,body.is-end   .sg-sky{display:block;}
+```
+```js
+when:["is-start","is-end"]
+```
+
+r5u ported only `is-start`, and dropped the kit's dedicated end-screen mask with it. So page 15 had
+the canvas burst on arrival and then nothing to tap. Both restored.
+
+**The end screen gets a different hole, and the kit says why:** *"end screen has no visible
+occluder, so a hard edge reads as a sliced crescent. Soft radial hole sized to the mascot
+instead."* A card-shaped rectangle would cut a hard-edged box out of empty gold. It is an 800×800
+design-px radial, solid to 71% then fading.
+
+`.end-screen` is `background:transparent` at z-index 90 and `.end-bg` is z-index 0, so the sky at
+z-index 1 slots between them exactly as it does on the cover — no z-order work was needed.
+
+Measured on page 15, after the canvas burst has faded so the sky is what is being tested:
+
+```
+body.is-end   .sg-sky display:block   .sg-glow display:block
+mask-size     100% 100%, 800px 800px  (soft radial, not the card rect)
+drifting stars on screen                32
+tap one  -> .popped=true, k-star burst, 16 particles, flash, 6 hues, audio context used
+         -> 0 burst nodes left after 1.5s
+आगे button under a star                 still resolves to the button
+```
+
+## The cover is untouched
+
+Its mask is still the card-sized rect (1186.78 × 485.79 measured) and r5u's pixel evidence stands.
+
+One note for whoever reads the numbers next: a *rect-based* count says "2 stars over the card" on
+the cover, and that is a limitation of the test, not an overlap. The hole is exactly the card, so a
+star centred just outside it has its bounding box straddling the boundary — and the mask clips the
+inside half to zero alpha. The authoritative measurement is the pixel diff in r5u: **0 changed
+pixels over 8 trials**. Count pixels here, not rectangles.
+
+## Receipt
+
+- Guards pass on all four trees; HTML byte-identical
+- **dist 9.71 MB — 293 KB under the cap.** No new assets; the pop is still synthesised
+
+## Still needs a human
+
+The end-screen pop has been measured, not watched or heard — same standing caveat as the cover's.
