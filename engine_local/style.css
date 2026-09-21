@@ -2369,65 +2369,104 @@ html.no-anim .ck-crown, html.no-anim .fx-confetti{display:none;}
    and the kit's R1 is explicit that vmax is what keeps it correct at every window size.
    NO MASK is used to keep the centre card clear — r0 does that job by construction: nothing ever
    spawns inside 22vmax of centre, so the card sits in a hole the geometry already leaves. */
-/* [S01r5s] the LAYER ignores the pointer; only the stars take it back (below). That is what keeps
-   the card, the play button and the 🔊 chip clickable through a full-viewport overlay. */
-.sg-sky{position:fixed;inset:0;display:none;overflow:hidden;pointer-events:none;z-index:1;}
-body.is-start .sg-sky{display:block;}
+/* [S01r5u] THE MASK IS THE WHOLE POINT, AND WE NEVER HAD IT.
+   Toolkit §1: "hole punched over the centre card ... 1114x456 design px, tracked by --scale. Hard
+   edge: a real occlusion boundary." r4r dropped this and used the spawn radius to keep the centre
+   clear instead - but r0 describes a CIRCLE and the card is a wide RECTANGLE, which is the root of
+   every overlap-vs-density round since (r5l, r5r, r5s). With the mask restored the stars fly from
+   the centre outward exactly as the kit intends and are simply occluded while behind the card, so
+   there is nothing left to trade off. The hole is 40 design px inside the card, i.e. 20px of card
+   edge on each side, which hides the join. */
+.sg-glow,.sg-sky{position:fixed;inset:0;display:none;pointer-events:none;z-index:1;}
+body.is-start .sg-glow,body.is-start .sg-sky{display:block;}
+html.rotated .sg-glow,html.rotated .sg-sky{            /* kit R2 */
+  inset:auto;left:50%;top:50%;width:100vh;height:100vw;
+  transform:translate(-50%,-50%) rotate(90deg);}
+.sg-glow{opacity:.75;background:radial-gradient(ellipse 38% 25% at 50% 79%,
+  rgba(255,255,255,.34) 0%,rgba(255,255,255,.13) 45%,rgba(255,255,255,0) 72%);
+  animation:sgBreathe 6.5s ease-in-out infinite;}
+@keyframes sgBreathe{0%,100%{opacity:.55;}50%{opacity:1;}}
+.sg-sky{overflow:hidden;
+  /* [S01r5u] the kit insets the hole 40 design px so its hard edge hides under the card's own
+     frame. MEASURED here, that inset leaks: diffing the card region with the sky shown vs hidden
+     found 499 changed pixels, worst delta 405/765 - our frame is not opaque across the full 20px,
+     and at the rounded corners a rect inset cuts inside the curve. Sized to the card exactly
+     (1114x456, its design size) so the occlusion boundary IS the card boundary: a star now
+     disappears precisely where the card begins, which is what "goes behind the card" should look
+     like. Re-measured after the change: 0 pixels. */
+  --sg-hole-w:calc(1114px * var(--scale,1));
+  --sg-hole-h:calc(456px * var(--scale,1));
+  -webkit-mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
+          mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
+  -webkit-mask-size:100% 100%,var(--sg-hole-w) var(--sg-hole-h);
+          mask-size:100% 100%,var(--sg-hole-w) var(--sg-hole-h);
+  -webkit-mask-position:center,center; mask-position:center,center;
+  -webkit-mask-repeat:no-repeat,no-repeat; mask-repeat:no-repeat,no-repeat;
+  -webkit-mask-composite:xor; mask-composite:exclude;}
+/* [S01r5u] NOT interactive. r5s gave each star pointer-events:auto; the kit warns against exactly
+   that - "making .sg-sky interactive would put an invisible full-screen layer over every button" -
+   and hit-tests by rect on a capture-phase document listener instead (armSkyBurst in app.js). */
 .sg-sky i{position:absolute;left:50%;top:50%;width:var(--s);aspect-ratio:1;
   margin:calc(var(--s)/-2) 0 0 calc(var(--s)/-2);background:center/contain no-repeat;opacity:0;
-  animation:sgFly var(--t) linear infinite;animation-delay:var(--d);
-  pointer-events:auto;cursor:pointer;}
-/* [S01r5s] a star is 12-39px across, which is a mean target for a five-year-old's finger. An
-   invisible pad widens the hit area without changing anything that is drawn. It cannot steal a tap
-   from the card: the gate sits at z-index 80 over this layer's 1. */
-.sg-sky i::before{content:"";position:absolute;inset:-14px;border-radius:50%;}
-/* the burst: the bubble swells and goes. It starts from the star's LIVE position (--bx/--by, set by
-   popStar) because the drift it is interrupting lives in the same transform property. */
-.sg-sky i.sg-pop{animation:sgBurst .43s cubic-bezier(.2,.8,.3,1) forwards;}
-@keyframes sgBurst{
-  0%{transform:translate(var(--bx),var(--by)) scale(1);opacity:var(--o,.8);}
-  35%{transform:translate(var(--bx),var(--by)) scale(1.95);opacity:1;}
-  100%{transform:translate(var(--bx),var(--by)) scale(2.7);opacity:0;}
-}
-/* ...and the twinkle's glow layer becomes the shock ring, so the burst costs no extra element */
-.sg-sky i.sg-pop::after{background:none;border:2px solid rgba(255,255,255,.95);border-radius:50%;
-  filter:none;opacity:1;animation:sgBurstRing .43s ease-out forwards;}
-@keyframes sgBurstRing{
-  0%{transform:scale(.55);opacity:.95;}
-  100%{transform:scale(2.4);opacity:0;}
-}
+  animation:sgFly var(--t) linear infinite;animation-delay:var(--d);}
 .sg-sky .s1{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 5.5c1.6 0 3 .9 3.7 2.4l6.1 12.4 13.7 2c1.6.2 3 1.4 3.5 3s.1 3.3-1.1 4.4l-9.9 9.6 2.3 13.6c.3 1.6-.4 3.3-1.7 4.2s-3.1 1.1-4.6.3L32 51l-12.2 6.4c-1.5.8-3.2.7-4.6-.3s-2-2.6-1.7-4.2l2.3-13.6-9.9-9.6c-1.2-1.1-1.6-2.9-1.1-4.4s1.9-2.7 3.5-3l13.7-2 6.1-12.4C29 6.4 30.4 5.5 32 5.5z' fill='%23fff'/%3E%3C/svg%3E");}
 .sg-sky .s2{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 5.5c1.6 0 3 .9 3.7 2.4l6.1 12.4 13.7 2c1.6.2 3 1.4 3.5 3s.1 3.3-1.1 4.4l-9.9 9.6 2.3 13.6c.3 1.6-.4 3.3-1.7 4.2s-3.1 1.1-4.6.3L32 51l-12.2 6.4c-1.5.8-3.2.7-4.6-.3s-2-2.6-1.7-4.2l2.3-13.6-9.9-9.6c-1.2-1.1-1.6-2.9-1.1-4.4s1.9-2.7 3.5-3l13.7-2 6.1-12.4C29 6.4 30.4 5.5 32 5.5z' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linejoin='round'/%3E%3C/svg%3E");}
 .sg-sky .s3{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 2c1.6 12.6 15.4 26.4 30 30-14.6 3.6-28.4 17.4-30 30-1.6-12.6-15.4-26.4-30-30C16.6 28.4 30.4 14.6 32 2z' fill='%23fff'/%3E%3C/svg%3E");}
-.sg-sky .s4{border-radius:50%;border:1.5px solid rgba(255,255,255,.92);}
+.sg-sky .s4{border-radius:50%;border:.22vmax solid rgba(255,255,255,.92);}
 .sg-sky .s5{border-radius:50%;background:rgba(255,255,255,.92);}
 /* the twinkle is OPACITY on a pseudo-element carrying a static drop-shadow — animating the
    drop-shadow itself repaints uncomposited every frame, which is what the kit replaced */
 .sg-sky i::after{content:"";position:absolute;inset:0;border-radius:inherit;
-  background:inherit;border:inherit;filter:drop-shadow(0 0 5px rgba(255,255,255,.95));
-  opacity:0;animation:sgGlowOpacity var(--g) ease-in-out infinite alternate;
+  background:inherit;border:inherit;filter:drop-shadow(0 0 7px rgba(255,255,255,.95));
+  opacity:0;will-change:opacity;animation:sgGlowOpacity var(--g) ease-in-out infinite alternate;
   animation-delay:var(--gd);}
-/* [S01r5r] THE STARS NOW POP, AND THEY DO IT ON SCREEN.
-   Two faults, both measured on the shipping build before touching anything:
-     1. NOT ON SCREEN. r4r starts every lane outside the CARD so nothing overlaps it, and r5l pushed
-        that further. Measured at 1484x799: of 87 stars only ~18 were inside the viewport at any
-        moment, median radius 722-791px against a 843px half-diagonal - the field was mostly flying
-        around outside the window. buildSky now caps the lane start (see SKY.rMax in app.js).
-     2. THEY ONLY DRIFTED. The SME asked for a POP. A star that merely slides on at constant size
-        reads as debris; what reads as a twinkle is SCALE - small, overshoot, settle, shrink away.
-   The scale is carried here rather than on a second element because transform is one property: a
-   nested animation would need a wrapper, and the drift already owns the translate. */
+/* [S01r5u] the kit's own keyframes, restored. r5r added a scale pop here on the reading that the
+   SME's "star popping animation" meant the drift should pop in. The repo settles it: the drift is
+   plain (transform keyed ONLY at 0% and 100%, which is what makes the path a straight ray), and the
+   POP is recipe 2 - tapping a star. That is now installed, so this goes back to the reference. */
 @keyframes sgFly{
-  0%{transform:translate(var(--x1),var(--y1)) scale(.15);opacity:0;}
-  9%{transform:translate(calc(var(--x1) + (var(--x2) - var(--x1)) * .09),
-                         calc(var(--y1) + (var(--y2) - var(--y1)) * .09)) scale(1.28);opacity:var(--o);}
-  17%{transform:translate(calc(var(--x1) + (var(--x2) - var(--x1)) * .17),
-                          calc(var(--y1) + (var(--y2) - var(--y1)) * .17)) scale(1);opacity:var(--o);}
+  0%{transform:translate(var(--x1),var(--y1));opacity:0;}
+  10%{opacity:var(--o);}
   84%{opacity:var(--o);}
-  100%{transform:translate(var(--x2),var(--y2)) scale(.25);opacity:0;}
+  100%{transform:translate(var(--x2),var(--y2));opacity:0;}
 }
+
 @keyframes sgGlowOpacity{from{opacity:0;}to{opacity:1;}}
 html.no-anim .sg-sky{display:none !important;}
+html.no-anim .sg-glow{display:none !important;}
+
+/* ===== [S01r5u · fln-animation-toolkit recipe 2] TAP A STAR, IT BURSTS =====
+   16 particles of the SAME shape as the star, in the kit's six hues, arcing out under gravity
+   behind a white-blue flash. The particle is a solid fill MASKED to the shape, so the two colour
+   drop-shadows follow the star's silhouette instead of a box. The star itself is only hidden and
+   returns on its next lap. Gravity is --gy, not --g: the kit records that the shipped version used
+   --g and collided with the sky's own glow-duration variable. */
+.sg-sky i.popped{visibility:hidden;}
+.sg-burst{position:fixed;z-index:95;width:0;height:0;pointer-events:none;}
+.sg-burst.k-star{--shape:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 5.5c1.6 0 3 .9 3.7 2.4l6.1 12.4 13.7 2c1.6.2 3 1.4 3.5 3s.1 3.3-1.1 4.4l-9.9 9.6 2.3 13.6c.3 1.6-.4 3.3-1.7 4.2s-3.1 1.1-4.6.3L32 51l-12.2 6.4c-1.5.8-3.2.7-4.6-.3s-2-2.6-1.7-4.2l2.3-13.6-9.9-9.6c-1.2-1.1-1.6-2.9-1.1-4.4s1.9-2.7 3.5-3l13.7-2 6.1-12.4C29 6.4 30.4 5.5 32 5.5z' fill='%23fff'/%3E%3C/svg%3E");}
+.sg-burst.k-spark{--shape:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 2c1.6 12.6 15.4 26.4 30 30-14.6 3.6-28.4 17.4-30 30-1.6-12.6-15.4-26.4-30-30C16.6 28.4 30.4 14.6 32 2z' fill='%23fff'/%3E%3C/svg%3E");}
+.sg-burst.k-dot{--shape:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23fff'/%3E%3C/svg%3E");}
+.sg-burst .fl{position:absolute;left:0;top:0;
+  width:calc(var(--bs) * 3);height:calc(var(--bs) * 3);
+  margin:calc(var(--bs) * -1.5) 0 0 calc(var(--bs) * -1.5);border-radius:50%;
+  background:radial-gradient(circle,rgba(244,250,255,1) 0%,
+    rgba(96,165,250,.92) 38%,rgba(30,58,138,0) 76%);
+  animation:sgFlash .36s ease-out forwards;}
+.sg-burst i{position:absolute;left:0;top:0;width:var(--ps);height:var(--ps);
+  margin:calc(var(--ps) / -2) 0 0 calc(var(--ps) / -2);
+  background:currentColor;
+  -webkit-mask:var(--shape) center/contain no-repeat;
+          mask:var(--shape) center/contain no-repeat;
+  filter:drop-shadow(0 0 3px currentColor) drop-shadow(0 0 8px currentColor);
+  animation:sgSpark var(--sd) cubic-bezier(.12,.72,.24,1) forwards;
+  animation-delay:var(--sdl);}
+@keyframes sgFlash{0%{transform:scale(.15);opacity:1;}100%{transform:scale(1.6);opacity:0;}}
+@keyframes sgSpark{
+  0%{transform:translate(0,0) scale(.35);opacity:0;}
+  14%{opacity:1;transform:translate(calc(var(--dx) * .3),calc(var(--dy) * .3)) scale(1.12);}
+  100%{transform:translate(var(--dx),calc(var(--dy) + var(--gy))) scale(.3);opacity:0;}
+}
+html.no-anim .sg-burst{display:none !important;}
 @media (prefers-reduced-motion: reduce){ .sg-sky{display:none !important;} }
 
 /* ═══ [S01r4s] fln-animation-toolkit — recipe 3 (nudge hand press, treatment C) + recipe 4

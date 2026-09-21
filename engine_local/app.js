@@ -376,83 +376,93 @@ function ckCorrect(el, crown){
     setTimeout(()=>{ try{ cr.remove(); }catch(e){} }, 900);
   }catch(e){}
 }
-/* [S01r4r · fln-animation-toolkit recipe 1] START-SCREEN SKY.
-   Stars, twinkles, rings and dots drifting outward from centre behind the start card. Built at
-   runtime rather than shipped as markup: the kit's shipped version was 87 hand-placed elements, and
-   a generator is both smaller and collision-proof — one element per lane per layer means two can
-   never occupy the same arc.
-   Units are vmax because this layer lives OUTSIDE the 1333x750 transform-scaled stage (kit R1).
-   r0 is what keeps the centre clear: nothing spawns inside 22vmax, so the start card sits in a hole
-   the geometry already leaves and no CSS mask is needed. */
-/* [S01r5l] THE HOLE HAS TO BE THE SHAPE OF THE CARD.
-   r0 clears a CIRCLE of 22vmax, and the comment above says that is what keeps the centre clear. It
-   is not: the start card is a wide RECTANGLE. The stage is 1333x750 scaled to fit and centred, so
-   the card's half-width works out at ~43.6vmax at EVERY window size (it is scale-invariant: both
-   the card and vmax track the viewport) against a half-height of ~18vmax. A star on a horizontal
-   lane therefore starts 22vmax INSIDE the card, and on the lanes either side of horizontal it
-   drifts out across the card and the mascot before it clears them — which is what the SME saw.
-   So the start radius is computed PER LANE: how far along that ray the card's edge actually is.
-   Vertical lanes keep something close to the original 22; horizontal lanes start out near 47. */
-const SKY_CARD = { w: 1114 / 2 + 24, h: 456 / 2 + 12 };   /* + the mascot's overhang, left and below */
-function _skyClearVmax(){
-  const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
-  const vmax = Math.max(window.innerWidth, window.innerHeight) / 100 || 1;
-  return { w: SKY_CARD.w * scale / vmax, h: SKY_CARD.h * scale / vmax };
+/* [S01r5u · fln-animation-toolkit recipes 1 + 2] START-SCREEN SKY, TO THE REFERENCE.
+   Source: github.com/ananya-goswami/fln-animation-toolkit — ANIMATIONS.md §1 "Start screen stars
+   (drift)" and §2 "Start screen stars (tap to burst)". The SME supplied the repo; this is now a
+   port of it rather than an interpretation of it.
+
+   WHAT EVERY EARLIER ROUND GOT WRONG, AND WHY IT COULD NOT BE FIXED BY TUNING.
+   r4r ported §1 but dropped its CSS mask, reasoning that the spawn radius r0 could keep the centre
+   clear "by construction". It cannot: the kit's hole is the shape of the CARD, a wide rectangle,
+   and r0 describes a CIRCLE. Everything after that was a chase:
+     · r5l made the start radius per-lane so it cleared the card's rectangle — correct geometry,
+       but the card fills most of the window, so the lanes began at the screen rim (18 of 87
+       stars visible) and the sky read as absent.
+     · r5r capped the radius to pull them back on screen — which put 26 of them over the card.
+     · r5s traded the other way again.
+   The kit does not choose. Stars fly from the CENTRE, straight out, and a mask hole the size of the
+   card OCCLUDES them while they are behind it (§1: "hole punched over the centre card ... Hard
+   edge: a real occlusion boundary"). That is why the reference is both dense and clean, and it is
+   the one thing our port never had. The mask lives in style.css; the geometry here is now the kit's
+   verbatim r0:22 / r1:72.
+
+   §2 is what the SME meant by "the star popping animation": tapping a drifting star bursts it into
+   16 particles in 6 hues, arcing under gravity, with a synthesised pop. It was never installed
+   here. (r5s added a burst of my own invention; this replaces it.) */
+const SKY = {
+  lanes: 29, r0: 22, r1: 72,
+  layers: [{rot: 0, scale: 1}, {rot: 6.2, scale: 0.62}, {rot: -6.2, scale: 0.55}],
+  size: [0.8, 2.6], dur: [18, 34], glow: [3.0, 4.8], opacity: [0.62, 0.92],
+  shapes: ["s1", "s2", "s3", "s4", "s5"],
+};
+/* §2 defaults, verbatim. NOTE the kit's own gotcha: the shipped code called the gravity variable
+   --g, which collides with the sky's glow-duration --g. The kit renames it --gy; so do we. */
+const SKY_BURST = {
+  rings: [{n: 9, rad: 3.1, size: 0.58, dur: 0.80}, {n: 7, rad: 1.8, size: 0.78, dur: 0.62}],
+  hues: ["#FCB717", "#3B7DD8", "#21A74A", "#E5484D", "#7048D6", "#F1781D"],
+  kind: {s1: "k-star", s2: "k-star", s3: "k-spark", s4: "k-dot", s5: "k-dot"},
+  gravity: 0.42, pad: 12, padRatio: 0.7, minAlpha: 0.08, life: 1200,
+  volume: 0.22, crackles: 4,
+};
+function _skyStill(){
+  if(document.documentElement.classList.contains("no-anim")) return true;
+  try{ return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; }
 }
-/* distance from centre to the rectangle's edge along (cos,sin), plus a margin */
-function _skyLaneStart(cos, sin, clear){
-  const ac = Math.abs(cos), as = Math.abs(sin);
-  const tw = ac > 1e-4 ? clear.w / ac : Infinity;
-  const th = as > 1e-4 ? clear.h / as : Infinity;
-  /* [S01r5s] CLEARING THE CARD IS NOT NEGOTIABLE, AND r5r MADE IT SO.
-     r5r capped this radius to drag the field back on screen, and the cap did exactly what its own
-     comment admitted it might: measured afterwards, up to 26 stars painted over the card and 5 over
-     Swiftie, which is the complaint r5l had already fixed. The cap is gone.
-     The real constraint is that the card is 1187x486 in a 1484x799 window - it fills most of the
-     viewport, so "outside the card and inside the window" IS a thin margin band, and that band is
-     where the sky belongs. Clearing the card sets the START; _skyLaneEnd stops the flight at the
-     window edge instead of a fixed 72vmax, so the whole flight happens inside that band rather
-     than mostly outside the screen. That is what buys the density back without the overlap. */
-  return Math.max(SKY.r0, Math.min(tw, th) * 1.05 + 1.5);
+
+/* §2 boom(): sine thud + filtered noise tail + square crackles. Synthesised rather than a clip -
+   the kit ships no audio for this, and a generated pop costs nothing against our 10MB budget. */
+function skyBoom(){
+  const actx = _ac(); if(!actx || isMuted) return;
+  try{
+    const t = actx.currentTime, out = actx.createGain();
+    out.gain.value = SKY_BURST.volume; out.connect(actx.destination);
+
+    const tg = actx.createGain();
+    tg.gain.setValueAtTime(0.9, t);
+    tg.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    tg.connect(out);
+    const osc = actx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(420, t);
+    osc.frequency.exponentialRampToValueAtTime(90, t + 0.16);
+    osc.connect(tg); osc.start(t); osc.stop(t + 0.18);
+
+    const n = actx.sampleRate * 0.45;
+    const buf = actx.createBuffer(1, n, actx.sampleRate), d = buf.getChannelData(0);
+    for(let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.6);
+    const src = actx.createBufferSource(); src.buffer = buf;
+
+    for(let c = 0; c < SKY_BURST.crackles; c++){
+      const cg = actx.createGain(), ct = t + 0.10 + Math.random() * 0.30;
+      cg.gain.setValueAtTime(0.0001, ct);
+      cg.gain.exponentialRampToValueAtTime(0.18, ct + 0.006);
+      cg.gain.exponentialRampToValueAtTime(0.0001, ct + 0.07);
+      cg.connect(out);
+      const co = actx.createOscillator();
+      co.type = "square";
+      co.frequency.setValueAtTime(1500 + Math.random() * 2200, ct);
+      co.connect(cg); co.start(ct); co.stop(ct + 0.08);
+    }
+    const bp = actx.createBiquadFilter();
+    bp.type = "bandpass"; bp.frequency.value = 3400; bp.Q.value = 0.8;
+    const ng = actx.createGain();
+    ng.gain.setValueAtTime(0.0001, t);
+    ng.gain.exponentialRampToValueAtTime(0.5, t + 0.03);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+    src.connect(bp); bp.connect(ng); ng.connect(out); src.start(t + 0.02);
+  }catch(e){}
 }
-/* end of the lane: just past this direction's screen edge, so no part of the flight is wasted
-   outside the window (r4r sent every lane to a flat 72vmax, most of which nobody could see) */
-function _skyLaneEnd(cos, sin, r0){
-  return Math.max(r0 + 6, _skyEdgeVmax(cos, sin) * 1.06);
-}
-/* distance from centre to the VIEWPORT edge along (cos,sin), in vmax */
-function _skyEdgeVmax(cos, sin){
-  const vmax = Math.max(window.innerWidth, window.innerHeight) / 100;
-  const hw = (window.innerWidth / 2) / vmax, hh = (window.innerHeight / 2) / vmax;
-  const ac = Math.abs(cos), as = Math.abs(sin);
-  return Math.min(ac > 1e-4 ? hw / ac : Infinity, as > 1e-4 ? hh / as : Infinity);
-}
-/* re-apply on resize: the card keeps its vmax size when the stage is width-limited, but a window
-   that is tall and narrow changes which of the two limits binds. */
-function _skyRelayout(){
-  const sky = document.querySelector(".sg-sky");
-  if(!sky) return;
-  const clear = _skyClearVmax();
-  [...sky.children].forEach(n => {
-    const cos = parseFloat(n.dataset.cos), sin = parseFloat(n.dataset.sin);
-    if(isNaN(cos) || isNaN(sin)) return;
-    const r = _skyLaneStart(cos, sin, clear);
-    n.style.setProperty("--x1", (r * cos).toFixed(1) + "vmax");
-    n.style.setProperty("--y1", (r * sin).toFixed(1) + "vmax");
-    const r2 = _skyLaneEnd(cos, sin, r);
-    n.style.setProperty("--x2", (r2 * cos).toFixed(1) + "vmax");
-    n.style.setProperty("--y2", (r2 * sin).toFixed(1) + "vmax");
-  });
-}
-/* [S01r5r] rMax: a lane may start no further out than this fraction of its own distance to the
-   screen edge, so every star crosses visible screen. dur is shorter than r4r's 18-34s too - a
-   34s crossing is slower than a child's attention, and the pop needs to be caught. */
-/* [S01r5s] r0 is now only a floor; the card's own edge sets the real start. More lanes than
-   r4r's 29: the flight band is a thin margin around a card that fills the screen, so density
-   has to come from lane COUNT rather than from lane length. */
-const SKY = { lanes: 44, r0: 12,
-              layers: [{rot:0, scale:1}, {rot:4.1, scale:0.62}, {rot:-4.1, scale:0.55}],
-              size: [0.8, 2.6], dur: [9, 17], glow: [3.0, 4.8], opacity: [0.62, 0.92] };
+
 /* [S01r4s · fln-animation-toolkit recipe 4] Give the nudge hand its tap ripple: two wavefronts and
    a spark pop breaking from the fingertip at the moment of contact. Built once, into the existing
    #nudgeHand, and left there — the layers are opacity-0 for most of the cycle, so they cost nothing
@@ -497,91 +507,130 @@ function wgWrong(el, n){
     setTimeout(()=>{ try{ fx.remove(); }catch(e){} }, 700);   /* inside the flash's own lifetime */
   }catch(e){}
 }
-/* [S01r5s] Burst one star: freeze it where it is, blow it out, then send it round again.
-   The drift lives in `transform`, so the burst has to start from the star's CURRENT translate or it
-   would jump back to its lane origin before popping - read the live matrix and hand the two numbers
-   to the keyframes as --bx/--by. */
-function popStar(st){
+/* §2 pop(). The star is HIDDEN, not removed, and comes back on its next lap - the kit listens for
+   `animationiteration` and filters on the animation NAME, because the glow cycle on ::after fires
+   its own iterations far more often than the flight does. */
+function popStar(el, r){
   try{
-    if(st.dataset.popped) return;
-    st.dataset.popped = "1";
-    let bx = 0, by = 0;
-    try{
-      const m = new DOMMatrixReadOnly(getComputedStyle(st).transform);
-      bx = m.e; by = m.f;
-    }catch(e){}
-    st.style.setProperty("--bx", bx.toFixed(1) + "px");
-    st.style.setProperty("--by", by.toFixed(1) + "px");
-    st.classList.add("sg-pop");
-    if(!isMuted) playSfx("sfx_bal_pop");
-    setTimeout(()=>{
-      st.classList.remove("sg-pop");
-      st.style.removeProperty("--bx"); st.style.removeProperty("--by");
-      /* restart the drift from the top of its lane, at a fresh point in the cycle */
-      const dur = parseFloat(st.style.getPropertyValue("--t")) || 14;
-      st.style.animation = "none";
-      void st.offsetWidth;                       /* reflow: without it the restart is ignored */
-      st.style.removeProperty("animation");
-      st.style.setProperty("--d", "-" + (Math.random() * dur).toFixed(1) + "s");
-      delete st.dataset.popped;
-    }, 430);
+    el.classList.add("popped");
+    el.addEventListener("animationiteration", function back(e){
+      if(e.animationName !== "sgFly") return;
+      el.classList.remove("popped");
+      el.removeEventListener("animationiteration", back);
+    });
+
+    let kind = "k-dot";
+    el.classList.forEach ? el.classList.forEach(c => { if(SKY_BURST.kind[c]) kind = SKY_BURST.kind[c]; })
+                         : null;
+    const bs = Math.max(11, r.width);
+    const b = document.createElement("div");
+    b.className = "sg-burst " + kind;
+    b.style.left = (r.left + r.width / 2) + "px";
+    b.style.top  = (r.top  + r.height / 2) + "px";
+    b.style.setProperty("--bs", bs + "px");
+    b.appendChild(document.createElement("div")).className = "fl";
+
+    let k = 0;
+    for(let g = 0; g < SKY_BURST.rings.length; g++){
+      const R = SKY_BURST.rings[g], off = Math.random() * Math.PI * 2;
+      for(let i = 0; i < R.n; i++, k++){
+        const a = off + i / R.n * Math.PI * 2;
+        const dist = bs * R.rad * (0.78 + Math.random() * 0.44);
+        const p = document.createElement("i");
+        p.style.cssText =
+          "--ps:"  + (bs * R.size * (0.8 + Math.random() * 0.5)).toFixed(1) + "px;" +
+          "--dx:"  + (Math.cos(a) * dist).toFixed(1) + "px;" +
+          "--dy:"  + (Math.sin(a) * dist).toFixed(1) + "px;" +
+          "--gy:"  + (dist * SKY_BURST.gravity).toFixed(1) + "px;" +
+          "--sd:"  + (R.dur + Math.random() * 0.22).toFixed(2) + "s;" +
+          "--sdl:" + (Math.random() * 0.06).toFixed(3) + "s;" +
+          "color:" + SKY_BURST.hues[k % SKY_BURST.hues.length];
+        b.appendChild(p);
+      }
+    }
+    document.body.appendChild(b);
+    skyBoom();
+    setTimeout(()=>{ try{ b.remove(); }catch(e){} }, SKY_BURST.life);
   }catch(e){}
 }
+
+/* §2's hit-test. The kit is explicit about why this is done by hand: "making .sg-sky interactive
+   would put an invisible full-screen layer over every button". r5s did exactly that; this reverts
+   it. The layer stays pointer-events:none and we test the pointer against each star's rect on a
+   CAPTURE-phase document listener, claiming the tap only when one is actually hit. */
+function armSkyBurst(){
+  if(window.__skyBurstArmed) return;
+  window.__skyBurstArmed = true;
+  document.addEventListener("pointerdown", (e)=>{
+    try{
+      if(_skyStill()) return;
+      if(!document.body.classList.contains("is-start")) return;
+      const sky = document.querySelector(".sg-sky"); if(!sky) return;
+      const els = sky.querySelectorAll("i:not(.popped)");
+      for(let i = 0; i < els.length; i++){
+        const el = els[i], r = el.getBoundingClientRect();
+        if(r.width < 2) continue;
+        const pad = Math.max(SKY_BURST.pad, r.width * SKY_BURST.padRatio);   /* ~4px targets need slack */
+        if(e.clientX < r.left - pad || e.clientX > r.right  + pad ||
+           e.clientY < r.top  - pad || e.clientY > r.bottom + pad) continue;
+        if(parseFloat(getComputedStyle(el).opacity) < SKY_BURST.minAlpha) continue;
+        e.stopPropagation(); e.preventDefault();   /* or the tap also fires the button underneath */
+        popStar(el, r);
+        return;
+      }
+    }catch(err){}
+  }, true);
+}
+
 function buildSky(){
   try{
-    if(document.documentElement.classList.contains("no-anim")) return;   // R5
+    if(_skyStill()) return;                                              // kit R5
     if(document.querySelector(".sg-sky")) return;                        // idempotent
     const bg = document.querySelector(".start-bg");
     if(!bg || !bg.parentNode) return;
     const R = (a, b)=> a + Math.random() * (b - a);
+
+    /* §1 ships a breathing radial wash under the stars; we never had it. */
+    const glow = document.createElement("div");
+    glow.className = "sg-glow"; glow.setAttribute("aria-hidden", "true");
+
     const sky = document.createElement("div");
     sky.className = "sg-sky"; sky.setAttribute("aria-hidden", "true");
-    const shapes = ["s1","s2","s3","s4","s5"];
-    const clear = _skyClearVmax();
+    let maxSize = 0;
     SKY.layers.forEach((L, li)=>{
       for(let i = 0; i < SKY.lanes; i++){
         const a = ((360 / SKY.lanes) * i + L.rot) * Math.PI / 180;
         const cos = Math.cos(a), sin = Math.sin(a);
-        const size = R(SKY.size[0], SKY.size[1]) * L.scale;
-        const dur = R(SKY.dur[0], SKY.dur[1]);
+        const size = +((R(SKY.size[0], SKY.size[1])) * L.scale).toFixed(2);
+        if(size > maxSize) maxSize = size;
+        const dur = +R(SKY.dur[0], SKY.dur[1]).toFixed(1);
         const n = document.createElement("i");
-        n.className = shapes[(i + li) % shapes.length];
-        /* the lane's own angle is kept so _skyRelayout can recompute after a resize */
-        n.dataset.cos = cos.toFixed(6); n.dataset.sin = sin.toFixed(6);
-        const r0 = _skyLaneStart(cos, sin, clear);          /* clears the CARD, not a circle */
-        const r1 = _skyLaneEnd(cos, sin, r0);
+        n.className = SKY.shapes[(i + li) % SKY.shapes.length];
+        /* r0/r1 are FIXED vmax radii, exactly as the kit has them: the card is cleared by the
+           mask, not by the geometry, so nothing here needs to know where the card is - which is
+           also why this layer needs no resize handler any more. */
         n.style.cssText =
-          "--s:" + size.toFixed(2) + "vmax;" +
-          "--x1:" + (r0 * cos).toFixed(1) + "vmax;--y1:" + (r0 * sin).toFixed(1) + "vmax;" +
-          "--x2:" + (r1 * cos).toFixed(1) + "vmax;--y2:" + (r1 * sin).toFixed(1) + "vmax;" +
-          /* a NEGATIVE delay starts each lane mid-flight, so the field is already full on the
-             first frame instead of everything launching together from the inner radius */
-          "--t:" + dur.toFixed(1) + "s;--d:-" + R(0, dur).toFixed(1) + "s;" +
-          "--g:" + R(SKY.glow[0], SKY.glow[1]).toFixed(1) + "s;--gd:-" + R(0, 3).toFixed(1) + "s;" +
-          "--o:" + R(SKY.opacity[0], SKY.opacity[1]).toFixed(2) + ";";
+          "--s:"  + size + "vmax;" +
+          "--x1:" + (SKY.r0 * cos).toFixed(2) + "vmax;--y1:" + (SKY.r0 * sin).toFixed(2) + "vmax;" +
+          "--x2:" + (SKY.r1 * cos).toFixed(2) + "vmax;--y2:" + (SKY.r1 * sin).toFixed(2) + "vmax;" +
+          "--t:"  + dur + "s;" +
+          /* a NEGATIVE delay starts each lane mid-flight, so the field is full on the first frame */
+          "--d:-" + (Math.random() * dur).toFixed(1) + "s;" +
+          "--g:"  + R(SKY.glow[0], SKY.glow[1]).toFixed(1) + "s;" +
+          "--gd:-" + (Math.random() * 4).toFixed(1) + "s;" +
+          "--o:"  + R(SKY.opacity[0], SKY.opacity[1]).toFixed(2) + ";";
         sky.appendChild(n);
       }
     });
-    /* [S01r5s] TAP A STAR AND IT BURSTS. SME: "when we click on any star or bubble it burst with
-       some sfx which is currently missing". Delegated on the layer, so 130 stars cost one listener
-       and a respawned star needs no rebinding.
-       The LAYER stays pointer-events:none and only the stars turn it back on (see the CSS), so the
-       card, the play button and the 🔊 chip are untouched - and because the gate is z-index 80 over
-       the sky's 1, a star that drifts near the card can never steal a tap meant for the card.
-       A burst star is not destroyed, it is RESPAWNED with a fresh delay: a sky that thins out as a
-       child plays with it punishes them for playing with it. */
-    sky.addEventListener("pointerdown", (ev)=>{
-      const st = ev.target.closest && ev.target.closest(".sg-sky > i");
-      if(!st || st.dataset.popped) return;
-      ev.preventDefault();
-      popStar(st);
-    });
-    bg.parentNode.insertBefore(sky, bg.nextSibling);   // directly above the plate, below the gate
-    if(!window.__skyResize){
-      window.__skyResize = true;
-      let t = 0;
-      window.addEventListener("resize", ()=>{ clearTimeout(t); t = setTimeout(_skyRelayout, 150); });
-    }
+    /* the kit's collision proof: the lane arc at the tightest radius must clear the biggest element */
+    const arc = (2 * Math.PI * SKY.r0) / SKY.lanes;
+    if(arc < maxSize * 1.5)
+      console.warn("[animation-kit] sky lanes too tight: arc " + arc.toFixed(2) +
+                   "vmax vs element " + maxSize.toFixed(2) + "vmax.");
+
+    bg.parentNode.insertBefore(glow, bg.nextSibling);
+    bg.parentNode.insertBefore(sky, glow.nextSibling);   // both above the plate, below the gate
+    armSkyBurst();
   }catch(e){}
 }
 

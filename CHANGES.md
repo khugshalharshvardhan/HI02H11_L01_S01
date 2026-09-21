@@ -2565,3 +2565,103 @@ answering before the sheet goes out, not after.
 - `make_manifests.py` added at the bundle root, mirrored to the factory KG with both sheets
 - Regenerate with `PYTHONUTF8=1 python make_manifests.py build`
 - Guards still pass on all four trees; no asset or HTML change in this round
+
+---
+
+# r5u — the sky, ported from the repo instead of guessed at
+
+The SME supplied the reference: **github.com/ananya-goswami/fln-animation-toolkit**. Recipes §1
+"Start screen stars (drift)" and §2 "Start screen stars (tap to burst)" are now ported rather than
+approximated, and four rounds of chasing this collapse into one root cause.
+
+## The root cause, and why no amount of tuning could have found it
+
+**r4r ported §1 but dropped its CSS mask**, on the reasoning that the spawn radius `r0` could keep
+the centre clear "by construction". That reasoning is wrong in one word: `r0` describes a **circle**
+and the card is a wide **rectangle**. Everything after that was a chase between two failures that
+cannot both be fixed geometrically:
+
+| round | what it did | result |
+|---|---|---|
+| r4r | r0 = 22vmax circle | stars crossed the card |
+| r5l | r0 computed per lane to clear the card's rectangle | correct, but the card fills most of the window, so lanes began at the screen rim — **18 of 87 visible**, and the sky read as absent |
+| r5r | capped the radius to pull them back on screen | **26 stars over the card** |
+| r5s | pushed the flight into the margin band | clean, dense, but still not the reference |
+
+**The kit does not choose.** Stars fly from the centre straight out, and a mask hole the size of the
+card *occludes* them while they are behind it — §1's own words: *"hole punched over the centre card
+... Hard edge: a real occlusion boundary."* With the mask restored there is no trade-off left: the
+geometry goes back to the kit's verbatim `r0:22 / r1:72`, 29 lanes × 3 layers, `dur 18–34s`, and the
+card is clean because it is *occluding*, not because the stars are avoiding it.
+
+Also restored from §1: **`.sg-glow`**, the breathing radial wash under the stars, which we never had.
+
+### One deliberate deviation, measured
+
+The kit insets the hole 40 design px so its hard edge hides under the card's own frame. Measured
+here, **that inset leaks**: diffing the card region with the sky shown against hidden found 499
+changed pixels, worst delta 405/765 — our frame is not opaque across the full 20px, and at the
+rounded corners a rect inset cuts inside the curve. The hole is sized to the card exactly
+(1114×456, its design size), so the occlusion boundary *is* the card boundary.
+
+Re-measured after the change, over 8 trials with every animation frozen:
+
+```
+0 changed pixels inside the card
+```
+
+(Two false positives had to be excluded first: Swiftie and the 🔊 chip are an animated WebP and a
+pulsing button *inside* the card, and neither obeys `animation-play-state`, so they differ between
+any two screenshots whatever the sky is doing. That is what the first runs were reporting.)
+
+## §2 — tap to burst, which is what "the star popping animation" meant
+
+It was never installed. r5s added a burst of my own invention; this replaces it with the kit's.
+
+- **16 particles** (rings of 9 and 7) of the **same shape as the star tapped**, in the kit's six
+  hues, arcing out under gravity behind a white-blue flash.
+- The particle is a solid fill **masked** to the shape, so its two colour drop-shadows follow the
+  star's silhouette rather than a box.
+- The star is **hidden, not destroyed**, and returns on its next lap — the kit listens for
+  `animationiteration` and filters on the animation **name**, because the twinkle on `::after`
+  fires far more often than the flight does.
+- The pop is **synthesised** (sine thud → filtered noise tail → four square crackles), not a clip,
+  so it costs nothing against the size budget. r5s's `sfx_bal_pop` is no longer used here.
+
+Measured: `16 particles | flash present | 6 distinct hues | --gy gravity | 0 nodes left after 1.5s`.
+
+**`--gy`, not `--g`.** The kit records that the shipped version named the gravity variable `--g`,
+colliding with the sky's own glow-duration `--g`. Ours uses `--gy`.
+
+### r5s made the layer interactive; the kit forbids it
+
+r5s gave every star `pointer-events:auto`. §2 is explicit: *"making `.sg-sky` interactive would put
+an invisible full-screen layer over every button."* Reverted — the layer is inert again and the tap
+is found by hit-testing each star's rect on a **capture-phase document listener**, claiming the
+event only when one is actually hit. Verified: play button, 🔊 chip and card all still resolve to
+themselves under a centre-point hit test.
+
+The generous hit box is the kit's too: `max(12px, width × 0.7)`, because the smallest stars are
+about 4px.
+
+## What the density looks like now
+
+**24–36 stars on screen** at any moment, against r5s's 99–114. That is not a regression — it is the
+reference's own numbers. The difference is *where* the flight happens: r5s put all 132 stars inside
+the visible margin, while the kit's stars emerge from **behind the card** and sail outward, so each
+one is visible for a long stretch and the motion reads as coming from somewhere. r5l's 18 looked
+absent because those stars appeared *at the screen rim* and left immediately.
+
+## Receipt
+
+- 87 stars (29 lanes × 3 layers), exactly the kit's count
+- `mask-composite: exclude`, hole tracked by `--scale`
+- **0 pixels of the card touched by the sky**, 8 trials
+- Guards pass on all four trees; HTML byte-identical
+- **dist 9.71 MB — 294 KB under the cap.** No new assets: the burst is synthesised and the star
+  shapes were already inline data URIs
+
+## Still needs a human
+
+The burst has been measured, not watched: particle count, hues, gravity variable, flash and cleanup
+are all verified in the DOM, and the pop is synthesised so it has never been heard here.
