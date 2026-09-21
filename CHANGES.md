@@ -2399,3 +2399,91 @@ Both masters stay in `build/`.
 2. **Nobody has heard the 11 re-recorded lines.** They transcribe correctly; that is a machine.
 3. **The star pop is an interpretation, not the reference.** See the note in §1.
 4. **The 11 remaining तुम lines** in §4 — convert or keep.
+
+---
+
+# r5s — the sky keeps off the card, and pops when you tap it
+
+## 1 · My own regression, undone
+
+r5r capped the lane start radius to drag the field back on screen, and its comment said out loud
+that the cap might let stars begin over the card's edge. It did. Measured on the shipping build:
+
+```
+r5r:   up to 26 stars over the CARD, up to 5 over Swiftie
+```
+
+That is the exact complaint r5l had already fixed, reintroduced by me in the round that was supposed
+to make the sky better. The cap is gone.
+
+**The real constraint, stated plainly:** the card is 1187×486 inside a 1484×799 window. It fills
+most of the viewport, so *"outside the card and inside the window"* **is** a thin margin band —
+there is no third place to put stars. r4r's geometry was right about the start and wrong about the
+end: it sent every lane out to a flat `72vmax`, so most of each flight happened past the screen edge
+where nobody could see it. That is why clearing the card looked like "no animation".
+
+So: clearing the card still sets the **start** (non-negotiable), and a new `_skyLaneEnd` stops the
+flight just past **this direction's screen edge** instead of at a fixed radius. The whole flight now
+happens inside the visible band. Density comes from lane **count** (29 → 44 lanes × 3 layers = 132)
+rather than from lane length.
+
+```
+            over card   over Swiftie   visible per sample
+r4r/r5l         0             0              ~18
+r5r            26             5             ~60
+r5s             0             0            99-114
+```
+
+Zero overlap across ten samples, and five times the visible density r5l had.
+
+## 2 · Tap a star and it bursts
+
+SME: *"when we click on any star or bubble it burst with some sfx which is currently missing."*
+
+- **The sound is `sfx_bal_pop`** — 0.20s, already shipping for the balloon page, so this cost
+  nothing in size. It honours mute.
+- **The burst** swells the bubble (scale 1 → 1.95 → 2.7) and fades it, with a shock ring expanding
+  out of it. The ring reuses the twinkle's existing glow pseudo-element, so the effect adds no new
+  element to any of the 132 stars.
+- **It starts from where the star actually is.** The drift lives in `transform`, so a burst that
+  animated `transform` from scratch would snap the star back to its lane origin before popping.
+  `popStar` reads the live matrix and hands the two numbers to the keyframes as `--bx/--by`.
+- **A popped star is respawned, not destroyed** — with a fresh delay, so it re-enters somewhere new.
+  A sky that thins out as a child plays with it punishes them for playing with it.
+- **One listener, not 132.** Delegated on the layer, which also means a respawned star needs no
+  rebinding.
+
+### Nothing on the cover became unclickable
+
+A full-viewport overlay that takes pointer events is how you break every control under it. The
+**layer** stays `pointer-events:none` and only the stars turn it back on. Verified by hit-testing
+the centre of each control:
+
+```
+play button -> the control itself      🔊 chip -> the control itself
+card        -> the control itself      Swiftie -> the control itself
+```
+
+The gate sits at z-index 80 over the sky's 1, so a star drifting near the card cannot steal a tap
+meant for the card either.
+
+Stars are 12–39px across, which is a mean target for a five-year-old, so an invisible `::before`
+pad widens the hit area by 14px without changing anything that is drawn.
+
+### One judgement call, easily reversed
+
+**Popping stars does NOT reset the 5-second idle timer**, so the play button still starts pulsing
+even while a child is happily bursting bubbles. The timer's job is to point at the way forward, and
+popping bubbles is not progress toward it. If you would rather any touch count as activity, it is
+one line.
+
+## Still not the reference
+
+The Slack link still cannot be opened from here, so this burst is built to the description in the
+request — tap, burst, sound — not matched to the repo. If the reference has a particular burst, send
+the repo or the file and it can be matched properly.
+
+## Receipt
+
+- Guards pass on all four trees; HTML byte-identical across them
+- **dist 9.71 MB — 299 KB under the cap.** No new assets: the pop reuses `sfx_bal_pop`

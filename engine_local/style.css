@@ -2369,11 +2369,33 @@ html.no-anim .ck-crown, html.no-anim .fx-confetti{display:none;}
    and the kit's R1 is explicit that vmax is what keeps it correct at every window size.
    NO MASK is used to keep the centre card clear — r0 does that job by construction: nothing ever
    spawns inside 22vmax of centre, so the card sits in a hole the geometry already leaves. */
+/* [S01r5s] the LAYER ignores the pointer; only the stars take it back (below). That is what keeps
+   the card, the play button and the 🔊 chip clickable through a full-viewport overlay. */
 .sg-sky{position:fixed;inset:0;display:none;overflow:hidden;pointer-events:none;z-index:1;}
 body.is-start .sg-sky{display:block;}
 .sg-sky i{position:absolute;left:50%;top:50%;width:var(--s);aspect-ratio:1;
   margin:calc(var(--s)/-2) 0 0 calc(var(--s)/-2);background:center/contain no-repeat;opacity:0;
-  animation:sgFly var(--t) linear infinite;animation-delay:var(--d);}
+  animation:sgFly var(--t) linear infinite;animation-delay:var(--d);
+  pointer-events:auto;cursor:pointer;}
+/* [S01r5s] a star is 12-39px across, which is a mean target for a five-year-old's finger. An
+   invisible pad widens the hit area without changing anything that is drawn. It cannot steal a tap
+   from the card: the gate sits at z-index 80 over this layer's 1. */
+.sg-sky i::before{content:"";position:absolute;inset:-14px;border-radius:50%;}
+/* the burst: the bubble swells and goes. It starts from the star's LIVE position (--bx/--by, set by
+   popStar) because the drift it is interrupting lives in the same transform property. */
+.sg-sky i.sg-pop{animation:sgBurst .43s cubic-bezier(.2,.8,.3,1) forwards;}
+@keyframes sgBurst{
+  0%{transform:translate(var(--bx),var(--by)) scale(1);opacity:var(--o,.8);}
+  35%{transform:translate(var(--bx),var(--by)) scale(1.95);opacity:1;}
+  100%{transform:translate(var(--bx),var(--by)) scale(2.7);opacity:0;}
+}
+/* ...and the twinkle's glow layer becomes the shock ring, so the burst costs no extra element */
+.sg-sky i.sg-pop::after{background:none;border:2px solid rgba(255,255,255,.95);border-radius:50%;
+  filter:none;opacity:1;animation:sgBurstRing .43s ease-out forwards;}
+@keyframes sgBurstRing{
+  0%{transform:scale(.55);opacity:.95;}
+  100%{transform:scale(2.4);opacity:0;}
+}
 .sg-sky .s1{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 5.5c1.6 0 3 .9 3.7 2.4l6.1 12.4 13.7 2c1.6.2 3 1.4 3.5 3s.1 3.3-1.1 4.4l-9.9 9.6 2.3 13.6c.3 1.6-.4 3.3-1.7 4.2s-3.1 1.1-4.6.3L32 51l-12.2 6.4c-1.5.8-3.2.7-4.6-.3s-2-2.6-1.7-4.2l2.3-13.6-9.9-9.6c-1.2-1.1-1.6-2.9-1.1-4.4s1.9-2.7 3.5-3l13.7-2 6.1-12.4C29 6.4 30.4 5.5 32 5.5z' fill='%23fff'/%3E%3C/svg%3E");}
 .sg-sky .s2{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 5.5c1.6 0 3 .9 3.7 2.4l6.1 12.4 13.7 2c1.6.2 3 1.4 3.5 3s.1 3.3-1.1 4.4l-9.9 9.6 2.3 13.6c.3 1.6-.4 3.3-1.7 4.2s-3.1 1.1-4.6.3L32 51l-12.2 6.4c-1.5.8-3.2.7-4.6-.3s-2-2.6-1.7-4.2l2.3-13.6-9.9-9.6c-1.2-1.1-1.6-2.9-1.1-4.4s1.9-2.7 3.5-3l13.7-2 6.1-12.4C29 6.4 30.4 5.5 32 5.5z' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linejoin='round'/%3E%3C/svg%3E");}
 .sg-sky .s3{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 2c1.6 12.6 15.4 26.4 30 30-14.6 3.6-28.4 17.4-30 30-1.6-12.6-15.4-26.4-30-30C16.6 28.4 30.4 14.6 32 2z' fill='%23fff'/%3E%3C/svg%3E");}

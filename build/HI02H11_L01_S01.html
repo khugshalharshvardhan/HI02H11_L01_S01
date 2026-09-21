@@ -2380,11 +2380,33 @@ html.no-anim .ck-crown, html.no-anim .fx-confetti{display:none;}
    and the kit's R1 is explicit that vmax is what keeps it correct at every window size.
    NO MASK is used to keep the centre card clear — r0 does that job by construction: nothing ever
    spawns inside 22vmax of centre, so the card sits in a hole the geometry already leaves. */
+/* [S01r5s] the LAYER ignores the pointer; only the stars take it back (below). That is what keeps
+   the card, the play button and the 🔊 chip clickable through a full-viewport overlay. */
 .sg-sky{position:fixed;inset:0;display:none;overflow:hidden;pointer-events:none;z-index:1;}
 body.is-start .sg-sky{display:block;}
 .sg-sky i{position:absolute;left:50%;top:50%;width:var(--s);aspect-ratio:1;
   margin:calc(var(--s)/-2) 0 0 calc(var(--s)/-2);background:center/contain no-repeat;opacity:0;
-  animation:sgFly var(--t) linear infinite;animation-delay:var(--d);}
+  animation:sgFly var(--t) linear infinite;animation-delay:var(--d);
+  pointer-events:auto;cursor:pointer;}
+/* [S01r5s] a star is 12-39px across, which is a mean target for a five-year-old's finger. An
+   invisible pad widens the hit area without changing anything that is drawn. It cannot steal a tap
+   from the card: the gate sits at z-index 80 over this layer's 1. */
+.sg-sky i::before{content:"";position:absolute;inset:-14px;border-radius:50%;}
+/* the burst: the bubble swells and goes. It starts from the star's LIVE position (--bx/--by, set by
+   popStar) because the drift it is interrupting lives in the same transform property. */
+.sg-sky i.sg-pop{animation:sgBurst .43s cubic-bezier(.2,.8,.3,1) forwards;}
+@keyframes sgBurst{
+  0%{transform:translate(var(--bx),var(--by)) scale(1);opacity:var(--o,.8);}
+  35%{transform:translate(var(--bx),var(--by)) scale(1.95);opacity:1;}
+  100%{transform:translate(var(--bx),var(--by)) scale(2.7);opacity:0;}
+}
+/* ...and the twinkle's glow layer becomes the shock ring, so the burst costs no extra element */
+.sg-sky i.sg-pop::after{background:none;border:2px solid rgba(255,255,255,.95);border-radius:50%;
+  filter:none;opacity:1;animation:sgBurstRing .43s ease-out forwards;}
+@keyframes sgBurstRing{
+  0%{transform:scale(.55);opacity:.95;}
+  100%{transform:scale(2.4);opacity:0;}
+}
 .sg-sky .s1{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 5.5c1.6 0 3 .9 3.7 2.4l6.1 12.4 13.7 2c1.6.2 3 1.4 3.5 3s.1 3.3-1.1 4.4l-9.9 9.6 2.3 13.6c.3 1.6-.4 3.3-1.7 4.2s-3.1 1.1-4.6.3L32 51l-12.2 6.4c-1.5.8-3.2.7-4.6-.3s-2-2.6-1.7-4.2l2.3-13.6-9.9-9.6c-1.2-1.1-1.6-2.9-1.1-4.4s1.9-2.7 3.5-3l13.7-2 6.1-12.4C29 6.4 30.4 5.5 32 5.5z' fill='%23fff'/%3E%3C/svg%3E");}
 .sg-sky .s2{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 5.5c1.6 0 3 .9 3.7 2.4l6.1 12.4 13.7 2c1.6.2 3 1.4 3.5 3s.1 3.3-1.1 4.4l-9.9 9.6 2.3 13.6c.3 1.6-.4 3.3-1.7 4.2s-3.1 1.1-4.6.3L32 51l-12.2 6.4c-1.5.8-3.2.7-4.6-.3s-2-2.6-1.7-4.2l2.3-13.6-9.9-9.6c-1.2-1.1-1.6-2.9-1.1-4.4s1.9-2.7 3.5-3l13.7-2 6.1-12.4C29 6.4 30.4 5.5 32 5.5z' fill='none' stroke='%23fff' stroke-width='4.5' stroke-linejoin='round'/%3E%3C/svg%3E");}
 .sg-sky .s3{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 2c1.6 12.6 15.4 26.4 30 30-14.6 3.6-28.4 17.4-30 30-1.6-12.6-15.4-26.4-30-30C16.6 28.4 30.4 14.6 32 2z' fill='%23fff'/%3E%3C/svg%3E");}
@@ -3035,17 +3057,21 @@ function _skyLaneStart(cos, sin, clear){
   const ac = Math.abs(cos), as = Math.abs(sin);
   const tw = ac > 1e-4 ? clear.w / ac : Infinity;
   const th = as > 1e-4 ? clear.h / as : Infinity;
-  /* [S01r5r] CLEAR THE CARD, BUT STAY IN THE WINDOW. Clearing the card is what stops the stars
-     crossing Swiftie and the panel (r4r/r5l), but on a wide window the card's own half-width in
-     vmax is most of the way to the edge, so the lane started at the rim and the star was gone
-     before it was ever seen: measured 87 spawned, ~18 on screen, median radius past the
-     half-diagonal. Cap the start at a fraction of the distance to this lane's screen edge, so a
-     star always has real screen to cross. When the card genuinely fills that much of the lane the
-     cap wins and the star begins over the card's edge - acceptable, and far better than a sky
-     nobody can see. */
-  const want = Math.max(SKY.r0, Math.min(tw, th) * 1.05 + 1.5);
-  const edge = _skyEdgeVmax(cos, sin);
-  return Math.min(want, Math.max(SKY.r0 * 0.75, edge * SKY.rMax));
+  /* [S01r5s] CLEARING THE CARD IS NOT NEGOTIABLE, AND r5r MADE IT SO.
+     r5r capped this radius to drag the field back on screen, and the cap did exactly what its own
+     comment admitted it might: measured afterwards, up to 26 stars painted over the card and 5 over
+     Swiftie, which is the complaint r5l had already fixed. The cap is gone.
+     The real constraint is that the card is 1187x486 in a 1484x799 window - it fills most of the
+     viewport, so "outside the card and inside the window" IS a thin margin band, and that band is
+     where the sky belongs. Clearing the card sets the START; _skyLaneEnd stops the flight at the
+     window edge instead of a fixed 72vmax, so the whole flight happens inside that band rather
+     than mostly outside the screen. That is what buys the density back without the overlap. */
+  return Math.max(SKY.r0, Math.min(tw, th) * 1.05 + 1.5);
+}
+/* end of the lane: just past this direction's screen edge, so no part of the flight is wasted
+   outside the window (r4r sent every lane to a flat 72vmax, most of which nobody could see) */
+function _skyLaneEnd(cos, sin, r0){
+  return Math.max(r0 + 6, _skyEdgeVmax(cos, sin) * 1.06);
 }
 /* distance from centre to the VIEWPORT edge along (cos,sin), in vmax */
 function _skyEdgeVmax(cos, sin){
@@ -3066,7 +3092,7 @@ function _skyRelayout(){
     const r = _skyLaneStart(cos, sin, clear);
     n.style.setProperty("--x1", (r * cos).toFixed(1) + "vmax");
     n.style.setProperty("--y1", (r * sin).toFixed(1) + "vmax");
-    const r2 = Math.max(r + 20, _skyEdgeVmax(cos, sin) * 1.18);
+    const r2 = _skyLaneEnd(cos, sin, r);
     n.style.setProperty("--x2", (r2 * cos).toFixed(1) + "vmax");
     n.style.setProperty("--y2", (r2 * sin).toFixed(1) + "vmax");
   });
@@ -3074,9 +3100,12 @@ function _skyRelayout(){
 /* [S01r5r] rMax: a lane may start no further out than this fraction of its own distance to the
    screen edge, so every star crosses visible screen. dur is shorter than r4r's 18-34s too - a
    34s crossing is slower than a child's attention, and the pop needs to be caught. */
-const SKY = { lanes: 29, r0: 22, r1: 72, rMax: 0.55,
-              layers: [{rot:0, scale:1}, {rot:6.2, scale:0.62}, {rot:-6.2, scale:0.55}],
-              size: [0.8, 2.6], dur: [11, 21], glow: [3.0, 4.8], opacity: [0.62, 0.92] };
+/* [S01r5s] r0 is now only a floor; the card's own edge sets the real start. More lanes than
+   r4r's 29: the flight band is a thin margin around a card that fills the screen, so density
+   has to come from lane COUNT rather than from lane length. */
+const SKY = { lanes: 44, r0: 12,
+              layers: [{rot:0, scale:1}, {rot:4.1, scale:0.62}, {rot:-4.1, scale:0.55}],
+              size: [0.8, 2.6], dur: [9, 17], glow: [3.0, 4.8], opacity: [0.62, 0.92] };
 /* [S01r4s · fln-animation-toolkit recipe 4] Give the nudge hand its tap ripple: two wavefronts and
    a spark pop breaking from the fingertip at the moment of contact. Built once, into the existing
    #nudgeHand, and left there — the layers are opacity-0 for most of the cycle, so they cost nothing
@@ -3121,6 +3150,36 @@ function wgWrong(el, n){
     setTimeout(()=>{ try{ fx.remove(); }catch(e){} }, 700);   /* inside the flash's own lifetime */
   }catch(e){}
 }
+/* [S01r5s] Burst one star: freeze it where it is, blow it out, then send it round again.
+   The drift lives in `transform`, so the burst has to start from the star's CURRENT translate or it
+   would jump back to its lane origin before popping - read the live matrix and hand the two numbers
+   to the keyframes as --bx/--by. */
+function popStar(st){
+  try{
+    if(st.dataset.popped) return;
+    st.dataset.popped = "1";
+    let bx = 0, by = 0;
+    try{
+      const m = new DOMMatrixReadOnly(getComputedStyle(st).transform);
+      bx = m.e; by = m.f;
+    }catch(e){}
+    st.style.setProperty("--bx", bx.toFixed(1) + "px");
+    st.style.setProperty("--by", by.toFixed(1) + "px");
+    st.classList.add("sg-pop");
+    if(!isMuted) playSfx("sfx_bal_pop");
+    setTimeout(()=>{
+      st.classList.remove("sg-pop");
+      st.style.removeProperty("--bx"); st.style.removeProperty("--by");
+      /* restart the drift from the top of its lane, at a fresh point in the cycle */
+      const dur = parseFloat(st.style.getPropertyValue("--t")) || 14;
+      st.style.animation = "none";
+      void st.offsetWidth;                       /* reflow: without it the restart is ignored */
+      st.style.removeProperty("animation");
+      st.style.setProperty("--d", "-" + (Math.random() * dur).toFixed(1) + "s");
+      delete st.dataset.popped;
+    }, 430);
+  }catch(e){}
+}
 function buildSky(){
   try{
     if(document.documentElement.classList.contains("no-anim")) return;   // R5
@@ -3143,9 +3202,7 @@ function buildSky(){
         /* the lane's own angle is kept so _skyRelayout can recompute after a resize */
         n.dataset.cos = cos.toFixed(6); n.dataset.sin = sin.toFixed(6);
         const r0 = _skyLaneStart(cos, sin, clear);          /* clears the CARD, not a circle */
-        /* [S01r5r] travel past the corner of THIS window, not a fixed 72vmax: with the start
-           radius capped, a fixed far target made the outer half of every flight off-screen. */
-        const r1 = Math.max(r0 + 20, _skyEdgeVmax(cos, sin) * 1.18);
+        const r1 = _skyLaneEnd(cos, sin, r0);
         n.style.cssText =
           "--s:" + size.toFixed(2) + "vmax;" +
           "--x1:" + (r0 * cos).toFixed(1) + "vmax;--y1:" + (r0 * sin).toFixed(1) + "vmax;" +
@@ -3157,6 +3214,20 @@ function buildSky(){
           "--o:" + R(SKY.opacity[0], SKY.opacity[1]).toFixed(2) + ";";
         sky.appendChild(n);
       }
+    });
+    /* [S01r5s] TAP A STAR AND IT BURSTS. SME: "when we click on any star or bubble it burst with
+       some sfx which is currently missing". Delegated on the layer, so 130 stars cost one listener
+       and a respawned star needs no rebinding.
+       The LAYER stays pointer-events:none and only the stars turn it back on (see the CSS), so the
+       card, the play button and the 🔊 chip are untouched - and because the gate is z-index 80 over
+       the sky's 1, a star that drifts near the card can never steal a tap meant for the card.
+       A burst star is not destroyed, it is RESPAWNED with a fresh delay: a sky that thins out as a
+       child plays with it punishes them for playing with it. */
+    sky.addEventListener("pointerdown", (ev)=>{
+      const st = ev.target.closest && ev.target.closest(".sg-sky > i");
+      if(!st || st.dataset.popped) return;
+      ev.preventDefault();
+      popStar(st);
     });
     bg.parentNode.insertBefore(sky, bg.nextSibling);   // directly above the plate, below the gate
     if(!window.__skyResize){
