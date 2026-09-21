@@ -2487,3 +2487,81 @@ the repo or the file and it can be matched properly.
 
 - Guards pass on all four trees; HTML byte-identical across them
 - **dist 9.71 MB — 299 KB under the cap.** No new assets: the pop reuses `sfx_bal_pop`
+
+---
+
+# r5t — the delivery manifests
+
+The text is frozen, so the recording brief can be cut. `make_manifests.py` writes both sheets from
+the built card:
+
+| file | what it is |
+|---|---|
+| `build/assets/Audio/audio_manifest.xlsx` | the VO brief — every spoken line, the exact filename to deliver it as, and where the child hears it |
+| `build/assets/Images/image_manifest.xlsx` | the illustration inventory — every picture the card references, where it is used, what ships today |
+
+```
+audio   81 lines   0 missing   0 unresolved
+images  23 images  0 missing
+```
+
+**Every one of the 81 lines reads "machine TTS — replace".** Nothing is pink. This is a complete
+replace-list for a human voice artist, not a list of gaps.
+
+The 10 card audio ids that are *not* on the sheet are the 7 sound effects and the 3 phase-gate
+clips — none of them has spoken text, and none of them is something a person records.
+
+## Why this is a script in the repo and not a one-off export
+
+**1 · It has to be re-cut whenever a word changes.** r5r rewrote eleven lines two rounds ago. A
+manifest cut before that would have sent a voice artist the old wording, and nothing downstream
+would have caught it.
+
+**2 · The shared generator could not say where two thirds of the clips are used.** `make_vo_sheets.py`
+resolves usage from `slide["audio"]` and `data["options"]` only. This card also keeps clips in
+`data["items"]`, `data["levels"][n]["items"] / ["spares"] / ["audio"]`, `data["teach_seq"]`,
+`data["whole_audio"]` and `landing_hero["sync_audio"]` — so **28 of 81 rows came out as
+"engine/shared"**, including *all 20 picture words*. That is precisely the column a voice artist
+reads to know what they are naming. Resolved locally rather than by editing the shared tool, which
+serves the whole fleet — though that resolver is the obvious upstream improvement if anyone wants it.
+
+**3 · The shared generator labels usage by slide ID.** `G1:correct`, `P7:prompt`. Nobody outside
+this repo can turn G1 into a page number, so every row is relabelled `page N · role` — and a word
+used in several places now says so:
+
+```
+vo_w_patang   page 7 · picture पतंग; page 9 · picture पतंग; page 14 · round 1 balloon पतंग
+vo_w_kela     page 7 · picture केला; page 14 · round 1 balloon केला; page 14 · round 2 balloon केला
+```
+
+The audio sheet's own format — columns, colours, the pink MISSING fill — is the shared tool's and is
+deliberately not re-invented; only the usage column is rewritten.
+
+Neither manifest ships: `sync_dist.py` copies only referenced `.ogg`/`.png`, so `dist/` is untouched
+and the size budget is unaffected.
+
+## A correction, and it matters before anyone records
+
+r5r reported **11** spoken-only lines still in तुम. The real number is **14**. That scan looked for
+तुम *verbs* (करो/देखो/सुनो/डालो/बोलो) and missed three lines that carry the तुम *pronoun* instead:
+`vo_g2_done` ("तुमने … खोज लिए"), `vo_p4_try` ("तुमने आखिरी आवाज़ सुनी"), `vo_p7_done` ("तुमने च की
+आवाज़ … पहचान ली").
+
+The full list, all voice-only — **every on-screen line is आप**:
+
+```
+verb form   vo_g2_reveal  vo_g2_try   vo_g5_hint  vo_g5_try  vo_landing
+            vo_p1_hint    vo_p1_reveal  vo_p1_try
+            vo_p7_hint    vo_p7_reveal  vo_p7_try
+pronoun     vo_g2_done    vo_p4_try   vo_p7_done
+```
+
+**This is now time-critical rather than cosmetic.** The manifest is the handoff to human recording;
+14 lines recorded in तुम and then converted is 14 lines recorded twice. The register question wants
+answering before the sheet goes out, not after.
+
+## Receipt
+
+- `make_manifests.py` added at the bundle root, mirrored to the factory KG with both sheets
+- Regenerate with `PYTHONUTF8=1 python make_manifests.py build`
+- Guards still pass on all four trees; no asset or HTML change in this round
