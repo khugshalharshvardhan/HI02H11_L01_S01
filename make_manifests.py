@@ -113,6 +113,15 @@ def audio_manifest():
     for r in range(2, ws.max_row + 1):
         aid = ws.cell(r, 2).value
         if not aid: continue
+        # [r5w] COLUMN C SAYS .wav, NOT .ogg. The shared tool derives the extension from the card's
+        # audio paths, which say .ogg - but that is the name the ENGINE loads, not the format a
+        # person records. gen_tts writes RIFF/WAV content under an .ogg name (its own note: Chromium
+        # sniffs it), so build/ is 124 WAV files wearing an .ogg extension, and the karaoke speech
+        # map only parses 16-bit RIFF: hand it a real Ogg and _wav_mono16 returns nothing, the word
+        # highlighting silently falls back to wall-clock timing, and we are back to the desync the
+        # SME reported in r5e. So the sheet asks for what a studio should actually deliver - a WAV -
+        # and intake_vo.py does the renaming into build/.
+        ws.cell(r, 3).value = str(aid) + ".wav"
         places = use.get(aid)
         if places:
             ws.cell(r, 5).value = "; ".join(places[:4]) + (" (+%d more)" % (len(places) - 4) if len(places) > 4 else "")
@@ -120,6 +129,19 @@ def audio_manifest():
         elif (ws.cell(r, 5).value or "") == "engine/shared":
             unresolved.append(aid)
     ws.column_dimensions["E"].width = 46
+    # a format block the artist cannot miss, on both tabs
+    from openpyxl.styles import Font as _F
+    summ = wb[wb.sheetnames[0]]
+    r0 = summ.max_row + 2
+    for j, line in enumerate([
+            "AUDIO FORMAT - please deliver exactly this:",
+            "    WAV, 16-bit PCM, MONO, 48 kHz.  One file per row, named as column C (e.g. vo_landing.wav).",
+            "    16-bit WAV is a hard requirement, not a preference: the word-by-word highlighting is timed by",
+            "    reading the waveform, and that reader only understands 16-bit PCM WAV. An MP3/OGG/M4A delivery",
+            "    still plays, but the highlighting silently falls back to guessed timing and drifts out of sync.",
+            "    No added silence, no fades, no music bed, no normalisation to a brickwall - a clean room take.",
+            "    Send the folder as-is; the build renames and encodes (Opus 28k mono) on its own."]):
+        summ.cell(r0 + j, 1, line).font = _F(name="Arial", bold=(j == 0), size=10)
     wb.save(out)
     print("  audio_manifest.xlsx  %d lines, %d unresolved %s"
           % (ws.max_row - 1, len(unresolved), unresolved or ""))

@@ -2736,3 +2736,70 @@ pixels over 8 trials**. Count pixels here, not rectangles.
 ## Still needs a human
 
 The end-screen pop has been measured, not watched or heard — same standing caveat as the cover's.
+
+---
+
+# r5w — the manifest says what to actually deliver, and an intake step that checks it
+
+The SME asked which column carries the filename, and what audio format to record in. Answering the
+second question turned up a trap worth closing in code rather than in a reply.
+
+## Column C — but it now says `.wav`, and that is the point
+
+The shared generator derives the extension from the card's audio paths, which say `.ogg`. That is
+the name the **engine loads**, not the format a person records. `gen_tts` writes **RIFF/WAV content
+under an `.ogg` name** (its own note: Chromium sniffs the container), so `build/` is 124 WAV files
+wearing an `.ogg` extension, and only the dist step produces real Opus.
+
+Asking a studio for "vo_landing.ogg" would therefore get us a real Ogg — which is the one thing
+that must not arrive:
+
+> **The karaoke word-highlighting is timed by reading the waveform.** `_wav_mono16` in the recipe
+> accepts **16-bit PCM RIFF and nothing else**. Hand it an Ogg, an MP3 or a 24-bit WAV and it
+> returns no segments: the clip still plays, the highlighting silently falls back to wall-clock
+> guessing, and the words drift off the voice. That is precisely the defect reported in r5e, and it
+> would come back one clip at a time **with no error anywhere** — the length guard only checks that
+> a clip is long enough to hold its line, so a correctly-long clip in the wrong format passes every
+> check we have.
+
+So column C now reads `<vo_id>.wav`, and `intake_vo.py` does the renaming into `build/`.
+
+The SUMMARY tab carries the spec in full: **WAV, 16-bit PCM, mono, 48 kHz**, no added silence, no
+fades, no music bed, no brickwall normalisation.
+
+## `intake_vo.py`
+
+```
+PYTHONUTF8=1 python intake_vo.py <delivered_folder> [--apply]
+```
+
+Dry run by default. It reports the real format of every delivered file, rejects the ones that would
+break the highlighting, flags names that are not audio ids in this lesson, lists which lines are
+still outstanding, and only then — with `--apply` — copies them in under the `.ogg` name the engine
+wants. It refuses to apply at all while anything is rejected.
+
+Exercised on a deliberately mixed folder:
+
+```
+vo_g2_more        24000Hz 1ch 16bit                      replace vo_g2_more.ogg
+vo_g3_reveal      24000Hz 1ch 24bit  <- must be 16-bit    !! REJECTED
+vo_landing        24000Hz 1ch 16bit                      replace vo_landing.ogg
+vo_not_a_real_id  -                                      !! not an audio id - SKIPPED
+vo_w_kela         not WAV (Ogg)                          !! REJECTED
+2 accepted, 2 rejected, 1 unrecognised, 77 lesson lines not in this delivery
+```
+
+Both rejects are the silent kind: a 24-bit WAV and a real Ogg, each of which plays perfectly and
+each of which would have quietly desynced its page.
+
+## Sample rate
+
+Deliver **48 kHz**. The current machine clips are 24 kHz, the waveform reader takes any rate, and
+`dist` encodes to Opus at 48 kHz mono — so 48 kHz in means no resample anywhere and a better master
+than what it replaces.
+
+## Receipt
+
+- `make_manifests.py` rewrites column C and writes the format block; both manifests regenerated
+- `intake_vo.py` added at the bundle root, mirrored to the factory KG with both manifests
+- No engine, card or asset change in this round
