@@ -248,13 +248,24 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
    made symmetric so "centre of the content box" is also the centre of the dashed box.
    30px top/bottom still clears the label pill, which hangs about 20px down into the box: a 124px
    tile centred in the resulting 186px content area starts ~61px below the box top. */
-.sort-bin.dd-zone{ padding:30px 12px; }
+/* [S01r5r] 30 -> 36px. The label pill is centred ON the top border and hangs half its height
+   into the box; at r5r's 40px label that is 32px, which crossed the old 30px padding and let
+   a dropped picture touch the pill. Raised on BOTH axes so r4z's reason for this rule still
+   holds - symmetric padding is what makes the content box's centre the dashed box's centre.
+   252px min-height - 72px leaves 180px of clear drop area for a ~124px tile. */
+.sort-bin.dd-zone{ padding:36px 12px; }
 .sort-bin.dd-zone .bin-items{ flex:1 1 auto; align-content:center; align-items:center; }
+/* [S01r5r] SME: the प / च on the box is "looking too small ... make them a little big so it was
+   readable clearly". r5n cut this label down from a sentence to a single अक्षर but left it at the
+   sentence's 26px, so the one thing a pre-reader must read became the smallest text on the page.
+   40px, with the pill's padding widened to match. Held at 40 rather than higher because the pill is
+   centred ON the top border and half of it hangs into the box: at 40px it hangs ~28px, inside the
+   30px padding-top that keeps a dropped picture clear of it. */
 .sort-bin.dd-zone .bin-title{
   position:absolute; top:0; left:50%; transform:translate(-50%,-50%);
   width:auto; max-width:calc(100% - 24px); height:auto; min-height:0;
-  padding:5px 20px; border-radius:16px; background:#fff;
-  font-size:26px; line-height:1.15; white-space:nowrap;
+  padding:6px 26px; border-radius:18px; background:#fff;
+  font-size:40px; line-height:1.15; white-space:nowrap;
   box-shadow:0 2px 10px rgba(11,61,140,.12); }
 .sort-tray{display:flex;gap:18px;justify-content:center;flex-wrap:nowrap;}
 /* [24a A5] tray ghost-slot: a placed sort card leaves a faint same-size dashed placeholder at its
@@ -833,7 +844,10 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 /* [S01r5p] SME: "increase the size of arrow icon in the next button". 28 -> 40: r5l took the
    word out of this pill, so the arrow stopped being a companion to the text and became the
    entire label, at a size chosen back when it was not. line-height:1 keeps the 62px pill. */
-.nav-btn::after{content:"→";font-size:40px;line-height:1;}
+/* [S01r5r] 40 -> 52. r5p already grew it once; the SME asked again, and the pill has the room:
+   line-height:1 means the glyph box cannot push the 62px height around, and the arrow's ink is
+   about half its font-size, so 52px of glyph is ~26px of visible arrow in a 62px pill. */
+.nav-btn::after{content:"→";font-size:52px;line-height:1;}
 
 /* ===== HINT / FEEDBACK OVERLAY — kit-style card + clean Swiftee ===== */
 .hint-overlay{position:absolute;inset:0;display:none;align-items:flex-start;justify-content:center;padding-top:120px;z-index:60;background:rgba(11,61,140,.28);}
@@ -894,7 +908,7 @@ body.loaded .sg-acell{animation-play-state:running;}
 .sg-ex-len .sg-bar{height:18px;border-radius:9px;background:#F5A623;border:2.5px solid #D98C14;}
 .sg-ex-wt svg{width:122px;height:106px;display:block;}
 /* start button = provided image (button + tapping hand), transparent bg */
-.sg-btn{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:4;font-family:var(--font-hi);font-weight:800;font-size:32px;color:var(--navy);background:#FCB717;border:4.54px solid #fff;border-radius:44.56px;padding:14px 54px;cursor:pointer;box-shadow:0 6px 6px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);animation:sgBtnPulse 1.4s ease-in-out infinite;}
+.sg-btn{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:4;font-family:var(--font-hi);font-weight:800;font-size:32px;color:var(--navy);background:#FCB717;border:4.54px solid #fff;border-radius:44.56px;padding:14px 54px;cursor:pointer;box-shadow:0 6px 6px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);}
 .sg-btn img{width:100%;height:auto;display:block;pointer-events:none;}
 /* [S01r5l] SME: drop the "शुरू करें" wording, make it a play button, keep the button itself as it is.
    So the pill is untouched - same fill, border, radius, shadow and its 186px min-width, which is what
@@ -902,6 +916,17 @@ body.loaded .sg-acell{animation-play-state:running;}
    glyph through ::after exactly the way .nav-btn already draws its arrow, so there is no new asset
    to ship and nothing to go missing. The Hindi stays on the button as aria-label. */
 .sg-btn::after{content:"\25B6";font-size:30px;line-height:1;display:block;transform:translateX(2px);}
+/* [S01r5r] THE PULSE IS EARNED. It used to run from first paint, so it was not a signal - it was
+   wallpaper, and there was nothing left to escalate to when the child actually stalled. It now
+   starts only when the 5s idle timer fires (armStartNudge), which is what the SME asked the hand
+   to be replaced by. */
+.sg-btn.idle-pulse{ animation:sgBtnPulse 1.4s ease-in-out infinite; }
+/* ...and while the greeting is still speaking the button is genuinely disabled, so it has to LOOK
+   disabled. Muted, flat and not clickable - a bright button that ignores taps is worse than a
+   grey one, because the child concludes the screen is broken rather than that it is busy. */
+.sg-btn.sg-waiting{ background:#E8E8EA; color:#B3B3B8; border-color:#F4F4F6;
+  box-shadow:0 4px 0 #D6D6D6; cursor:default; animation:none; }
+.sg-btn.sg-waiting:active{ transform:translateX(-50%); }
 .sg-btn:active{transform:translateX(-50%) translateY(3px);}
 @keyframes sgBtnPulse{0%,100%{transform:translateX(-50%) scale(1);}50%{transform:translateX(-50%) scale(1.03);}}
 /* landing "listen" button — a warm welcome plays on the title screen; tap to replay */
@@ -948,7 +973,7 @@ body.is-end .stage-inner{visibility:hidden;}
    be a character inside that text, so it comes back here. Written as the glyph itself rather
    than a CSS escape - the escape form is one stray backslash away from rendering as digits. */
 /* [S01r5p] the celebration's button is the same affordance and was the same small arrow. */
-.end-btn::after{content:"→";font-size:40px;line-height:1;}
+.end-btn::after{content:"→";font-size:52px;line-height:1;}
 .end-btn{display:none;z-index:3;font-family:var(--font-hi);font-weight:800;font-size:28px;color:var(--navy);background:#FCB717;border:4.54px solid #FFFFFF;border-radius:44.56px;padding:14px 44px;cursor:pointer;box-shadow:0 6px 6px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);}
 .end-btn.show{display:inline-flex;align-items:center;animation:hintPop .4s cubic-bezier(.34,1.5,.6,1);}
 .end-btn:active{transform:translateY(3px);box-shadow:0 3px 3px rgba(0,0,0,.25), inset 4.54px 9.09px 12.12px rgba(255,255,255,.25), inset -4.54px -4.54px 13.63px rgba(116,60,0,.19);}
@@ -1893,6 +1918,9 @@ body.is-start .phase-gate{
 .stage.vo-only .prompt-band,
 .stage.vo-only .hint-btn,
 .stage.vo-only .nav-btn{ display:none !important; }
+/* [S01r5r] page 9 hands over by itself, so its आगे pill never appears. Hidden for the whole
+   slide rather than removed at the end, so it cannot flash in and out. */
+.stage.auto-adv .nav-btn{ display:none !important; }
 /* [S01r5g] ---- the balloon page's own look, matched to the SME reference ---------------------
    BACKGROUND. The stage paints var(--bg) #F2F7FA, a grey-white. The reference is a touch bluer and
    the balloons read better against it. Scoped to .vo-only, which ONLY this slide sets, so no other
@@ -2357,10 +2385,24 @@ body.is-start .sg-sky{display:block;}
   background:inherit;border:inherit;filter:drop-shadow(0 0 5px rgba(255,255,255,.95));
   opacity:0;animation:sgGlowOpacity var(--g) ease-in-out infinite alternate;
   animation-delay:var(--gd);}
+/* [S01r5r] THE STARS NOW POP, AND THEY DO IT ON SCREEN.
+   Two faults, both measured on the shipping build before touching anything:
+     1. NOT ON SCREEN. r4r starts every lane outside the CARD so nothing overlaps it, and r5l pushed
+        that further. Measured at 1484x799: of 87 stars only ~18 were inside the viewport at any
+        moment, median radius 722-791px against a 843px half-diagonal - the field was mostly flying
+        around outside the window. buildSky now caps the lane start (see SKY.rMax in app.js).
+     2. THEY ONLY DRIFTED. The SME asked for a POP. A star that merely slides on at constant size
+        reads as debris; what reads as a twinkle is SCALE - small, overshoot, settle, shrink away.
+   The scale is carried here rather than on a second element because transform is one property: a
+   nested animation would need a wrapper, and the drift already owns the translate. */
 @keyframes sgFly{
-  0%{transform:translate(var(--x1),var(--y1));opacity:0;}
-  10%{opacity:var(--o);} 84%{opacity:var(--o);}
-  100%{transform:translate(var(--x2),var(--y2));opacity:0;}
+  0%{transform:translate(var(--x1),var(--y1)) scale(.15);opacity:0;}
+  9%{transform:translate(calc(var(--x1) + (var(--x2) - var(--x1)) * .09),
+                         calc(var(--y1) + (var(--y2) - var(--y1)) * .09)) scale(1.28);opacity:var(--o);}
+  17%{transform:translate(calc(var(--x1) + (var(--x2) - var(--x1)) * .17),
+                          calc(var(--y1) + (var(--y2) - var(--y1)) * .17)) scale(1);opacity:var(--o);}
+  84%{opacity:var(--o);}
+  100%{transform:translate(var(--x2),var(--y2)) scale(.25);opacity:0;}
 }
 @keyframes sgGlowOpacity{from{opacity:0;}to{opacity:1;}}
 html.no-anim .sg-sky{display:none !important;}

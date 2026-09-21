@@ -404,7 +404,24 @@ function _skyLaneStart(cos, sin, clear){
   const ac = Math.abs(cos), as = Math.abs(sin);
   const tw = ac > 1e-4 ? clear.w / ac : Infinity;
   const th = as > 1e-4 ? clear.h / as : Infinity;
-  return Math.max(SKY.r0, Math.min(tw, th) * 1.05 + 1.5);
+  /* [S01r5r] CLEAR THE CARD, BUT STAY IN THE WINDOW. Clearing the card is what stops the stars
+     crossing Swiftie and the panel (r4r/r5l), but on a wide window the card's own half-width in
+     vmax is most of the way to the edge, so the lane started at the rim and the star was gone
+     before it was ever seen: measured 87 spawned, ~18 on screen, median radius past the
+     half-diagonal. Cap the start at a fraction of the distance to this lane's screen edge, so a
+     star always has real screen to cross. When the card genuinely fills that much of the lane the
+     cap wins and the star begins over the card's edge - acceptable, and far better than a sky
+     nobody can see. */
+  const want = Math.max(SKY.r0, Math.min(tw, th) * 1.05 + 1.5);
+  const edge = _skyEdgeVmax(cos, sin);
+  return Math.min(want, Math.max(SKY.r0 * 0.75, edge * SKY.rMax));
+}
+/* distance from centre to the VIEWPORT edge along (cos,sin), in vmax */
+function _skyEdgeVmax(cos, sin){
+  const vmax = Math.max(window.innerWidth, window.innerHeight) / 100;
+  const hw = (window.innerWidth / 2) / vmax, hh = (window.innerHeight / 2) / vmax;
+  const ac = Math.abs(cos), as = Math.abs(sin);
+  return Math.min(ac > 1e-4 ? hw / ac : Infinity, as > 1e-4 ? hh / as : Infinity);
 }
 /* re-apply on resize: the card keeps its vmax size when the stage is width-limited, but a window
    that is tall and narrow changes which of the two limits binds. */
@@ -418,13 +435,17 @@ function _skyRelayout(){
     const r = _skyLaneStart(cos, sin, clear);
     n.style.setProperty("--x1", (r * cos).toFixed(1) + "vmax");
     n.style.setProperty("--y1", (r * sin).toFixed(1) + "vmax");
-    n.style.setProperty("--x2", (Math.max(SKY.r1, r + 26) * cos).toFixed(1) + "vmax");
-    n.style.setProperty("--y2", (Math.max(SKY.r1, r + 26) * sin).toFixed(1) + "vmax");
+    const r2 = Math.max(r + 20, _skyEdgeVmax(cos, sin) * 1.18);
+    n.style.setProperty("--x2", (r2 * cos).toFixed(1) + "vmax");
+    n.style.setProperty("--y2", (r2 * sin).toFixed(1) + "vmax");
   });
 }
-const SKY = { lanes: 29, r0: 22, r1: 72,
+/* [S01r5r] rMax: a lane may start no further out than this fraction of its own distance to the
+   screen edge, so every star crosses visible screen. dur is shorter than r4r's 18-34s too - a
+   34s crossing is slower than a child's attention, and the pop needs to be caught. */
+const SKY = { lanes: 29, r0: 22, r1: 72, rMax: 0.55,
               layers: [{rot:0, scale:1}, {rot:6.2, scale:0.62}, {rot:-6.2, scale:0.55}],
-              size: [0.8, 2.6], dur: [18, 34], glow: [3.0, 4.8], opacity: [0.62, 0.92] };
+              size: [0.8, 2.6], dur: [11, 21], glow: [3.0, 4.8], opacity: [0.62, 0.92] };
 /* [S01r4s · fln-animation-toolkit recipe 4] Give the nudge hand its tap ripple: two wavefronts and
    a spark pop breaking from the fingertip at the moment of contact. Built once, into the existing
    #nudgeHand, and left there — the layers are opacity-0 for most of the cycle, so they cost nothing
@@ -491,7 +512,9 @@ function buildSky(){
         /* the lane's own angle is kept so _skyRelayout can recompute after a resize */
         n.dataset.cos = cos.toFixed(6); n.dataset.sin = sin.toFixed(6);
         const r0 = _skyLaneStart(cos, sin, clear);          /* clears the CARD, not a circle */
-        const r1 = Math.max(SKY.r1, r0 + 26);               /* always travel a real distance */
+        /* [S01r5r] travel past the corner of THIS window, not a fixed 72vmax: with the start
+           radius capped, a fixed far target made the outer half of every flight off-screen. */
+        const r1 = Math.max(r0 + 20, _skyEdgeVmax(cos, sin) * 1.18);
         n.style.cssText =
           "--s:" + size.toFixed(2) + "vmax;" +
           "--x1:" + (r0 * cos).toFixed(1) + "vmax;--y1:" + (r0 * sin).toFixed(1) + "vmax;" +
@@ -4666,6 +4689,14 @@ const SlideModules = {
         const endDemo = ()=>{
           if(demoEnded) return; demoEnded = true;
           stopNudge(); state.demoRunning = false; state.locked = true;   /* stays locked: nothing to do here */
+          /* [S01r5r] AUTO-ADVANCE. On a watch-first page there is nothing to do, so आगे would be a
+             gate with no question behind it - the SME asked for the page to hand over by itself.
+             The stage class hides the pill for the whole slide (see .stage.auto-adv), so it never
+             appears and then vanishes. The beat lets the last tile settle before the screen moves. */
+          if(slide.data.auto_advance){
+            setTimeout(()=>{ if(CARD.slides[state.idx] === slide) completeSlide(true); }, 1100);
+            return;
+          }
           setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true);
         };
         const flyNext = ()=>{
@@ -6516,6 +6547,9 @@ function mountSlide(idx){
   { const _pb = $("promptText").parentElement;
     if(_pb) _pb.style.display = (slide.prompt_hi ? "" : "none"); }
   $("stage").classList.remove("vo-only");
+  /* [S01r5r] a slide that ends itself hides the आगे pill for its whole life, rather than letting it
+     appear and then be taken away. Cleared here with the other per-slide stage classes. */
+  $("stage").classList.toggle("auto-adv", !!(slide.data && slide.data.auto_advance));
   document.body.classList.remove("bal-page");   /* [S01r5i] */
 
   // Hint button stays HIDDEN until the learner makes a wrong attempt, then it is
@@ -6868,7 +6902,28 @@ function boot(){
            the karaoke run (finish), and the no-token fallback, which fires finish() BEFORE its clip
            plays and so must arm from the clip instead - hence armOnFinish. */
         if(window.__disarmStartNudge) window.__disarmStartNudge();
-        const armAfterGreeting = ()=>{ if(window.__armStartNudge && onLanding()) window.__armStartNudge(); };
+        if(window.__setStartBtnReady) window.__setStartBtnReady(false);
+        /* [S01r5r] DEAD-BUTTON WATCHDOG. Every ordinary ending releases the button, but they all run
+           off play()'s onEnd - and a clip that stalls rather than errors never fires it. The cover is
+           now the only way into the lesson, so that case would be a total block, not a degraded one.
+           Sized off the clip's own length with a wide margin; it only ever fires when something has
+           already gone wrong, and releasing early costs nothing worse than a skippable greeting. */
+        {
+          const _dur = (CARD.assets && CARD.assets.audio_dur
+                        && CARD.assets.audio_dur[hero.sync_audio || "vo_landing"]) || 20;
+          setTimeout(()=>{
+            if(!onLanding()) return;
+            const b = document.getElementById("sgBtn");
+            if(b && b.disabled && window.__setStartBtnReady){
+              window.__setStartBtnReady(true);
+              if(window.__armStartNudge) window.__armStartNudge();
+            }
+          }, Math.round(_dur * 1000) + 8000);
+        }
+        const armAfterGreeting = ()=>{
+          if(!onLanding()) return;
+          if(window.__setStartBtnReady) window.__setStartBtnReady(true);
+          if(window.__armStartNudge) window.__armStartNudge(); };
         let armOnFinish = true;
 
         const fired = new Set();
@@ -6919,8 +6974,11 @@ function boot(){
         el.querySelectorAll(".lh-word").forEach(w => { w.classList.remove("seq-hidden"); w.classList.add("lh-in"); });
         const st = el.querySelector(".lh-strip"); if(st) st.classList.remove("lh-dim");
         const pc = el.querySelector(".lh-pic"); if(pc){ pc.classList.remove("seq-hidden"); pc.classList.add("lh-in"); }
-        /* [S01r5p] the greeting never ran at all, so nothing will ever arm the idle hand from its
-           end - arm it here, or an idle child on a silent cover gets no nudge whatsoever. */
+        /* [S01r5p] the greeting never ran at all, so nothing will ever arm the idle timer from its
+           end - arm it here, or an idle child on a silent cover gets no nudge whatsoever.
+           [S01r5r] and RELEASE THE BUTTON. It is disabled from first paint, so a cover whose
+           greeting never starts would otherwise be a dead end with no way into the lesson. */
+        if(window.__setStartBtnReady) window.__setStartBtnReady(true);
         if(window.__armStartNudge) window.__armStartNudge();
       }, 6000);
       return;
@@ -6969,6 +7027,20 @@ function boot(){
   // greeting lives HERE now (not on slide 0), which also kills the old overlap glitch where the
   // landing VO and slide-0 VO could talk over each other.
   const landSrc = (CARD.assets && CARD.assets.audio && CARD.assets.audio["vo_landing"]) || ("assets/Audio/vo_landing." + AUDIO_EXT);
+  /* [S01r5r] SME: "button is inactive during the voice over, once voice over is complete then the
+     play button will activate". So the greeting is no longer skippable - it is the lesson's opening
+     instruction and the cover is the one screen with nothing else to do. setStartBtnReady(false) is
+     called as the greeting starts and (true) at its end, by the same two paths that arm the idle
+     timer, so the button and the pulse can never disagree about whether the VO is still running. */
+  const setStartBtnReady = (ready)=>{
+    const b = $("sgBtn"); if(!b) return;
+    b.disabled = !ready;
+    b.classList.toggle("sg-waiting", !ready);
+    if(!ready) b.classList.remove("idle-pulse");
+  };
+  window.__setStartBtnReady = setStartBtnReady;
+  setStartBtnReady(false);          /* dead from first paint - the greeting starts within 1.6s */
+
   const playLanding = ()=>{ if($("startGate").classList.contains("hidden")) return;
     /* [S01r4] the sentence animation is meant to run WITH the greeting ("the highlighting
        should sync with the VO"), so it restarts on every play - including the listen chip,
@@ -6976,7 +7048,8 @@ function boot(){
     if(typeof window._landingSentence === "function"){ window._landingSentence(landSrc); return; }
     /* [S01r5p] no landing sentence (another card, or the hero block never ran) - the greeting is a
        plain clip, and the idle timer still belongs at its end. */
-    play(landSrc, ()=>{ if(window.__armStartNudge) window.__armStartNudge(); }); };
+    play(landSrc, ()=>{ if(window.__setStartBtnReady) window.__setStartBtnReady(true);
+                        if(window.__armStartNudge) window.__armStartNudge(); }); };
   const sgVo = $("sgVo"); if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); playLanding(); };
   // ---- [engine JS] r4/P2 boot loader: loader.gif until assets warm, then it dismisses ITSELF into
   // the landing (NO tap gate). DUAL auto-dismiss (window 'load' OR a 2.5s watchdog — never strand the
@@ -7026,8 +7099,16 @@ function boot(){
      the disarm, so nothing else that nudges is affected. */
   let _startNudgeT = 0;
   const _onLandingNow = ()=>{ const sg = $("startGate"); return sg && !sg.classList.contains("hidden"); };
+  /* [S01r5r] THE HAND IS OFF THE COVER. SME: "remove the hand nudge from the cover page, the button
+     will pulsate after the user is inactive for 5 seconds". A hand pointing at the only affordance
+     on an otherwise empty screen was saying what the button can say by itself, and it covered the
+     ▶ it was pointing at. The idle timer and its reset are r5p's, unchanged - all that changes is
+     what happens when it fires: .sg-btn gets .idle-pulse instead of a hand being flown in.
+     disarmStartNudge still tidies the hand away, because an OLD build may have left it shown and
+     because the same helper is what the play button calls on its way out. */
   const disarmStartNudge = ()=>{
     clearTimeout(_startNudgeT); _startNudgeT = 0;
+    const b = $("sgBtn"); if(b) b.classList.remove("idle-pulse");
     const nh = $("nudgeHand");
     if(!nh) return;
     nh.classList.remove("show", "hint-glow", "nh-start");
@@ -7039,27 +7120,10 @@ function boot(){
     clearTimeout(_startNudgeT);
     _startNudgeT = setTimeout(()=>{
       if(!_onLandingNow()) return;
-      const btn = $("sgBtn"), nh = $("nudgeHand"), gate = $("startGate");
-      if(!btn || !nh || !gate) return;
-      /* [S01r5l] IT HAS TO BE INSIDE THE GATE, not merely above it in z-index.
-         The hand normally lives in .slide-stage, and z-index is resolved against the nearest
-         stacking context — so `z-index:90` on the hand only ever competed with the slide's own
-         children, while .slide-stage AS A WHOLE still painted under the cover (z-index 80). The
-         first build of this looked correct in the DOM (classes set, z-index 90) and was invisible
-         on screen. Raising .slide-stage instead would lift the mounted slide over the cover too.
-         So for this one nudge the hand is moved INTO the gate and placed against the gate's own
-         box; disarmStartNudge puts it back. */
-      gate.appendChild(nh);
-      const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
-      const g = gate.getBoundingClientRect(), b = btn.getBoundingClientRect();
-      const FX = 39.93, FY = 6.38;                    /* fingertip inside the 96x96 hand box */
-      /* [S01r5p] SME: "it must be in the center". 0.72 put the fingertip three-quarters across the
-         pill, which on an icon-only button (r5l took the wording out) reads as pointing past it. */
-      const tipX = (b.left + b.width * 0.50 - g.left) / scale;
-      const tipY = (b.top + b.height * 0.50 - g.top) / scale;
-      nh.style.left = (tipX - FX).toFixed(1) + "px";
-      nh.style.top  = (tipY - FY).toFixed(1) + "px";
-      nh.classList.add("nh-start", "show", "hint-glow");
+      const btn = $("sgBtn");
+      /* a button the child cannot press yet must not beg to be pressed */
+      if(!btn || btn.disabled) return;
+      btn.classList.add("idle-pulse");
     }, 5000);
   };
   window.__armStartNudge = armStartNudge;

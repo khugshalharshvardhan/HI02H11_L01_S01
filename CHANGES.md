@@ -2244,3 +2244,158 @@ was measured rather than assumed.
 
 Nobody has heard `vo_w_chammach`. It identifies 6/6 against the full word list and 6/6 against चश्मा
 directly, but that is a machine listening, not a person.
+
+---
+
+# r5r — the cover waits its turn, page 9 shows itself out, and the lesson speaks आप
+
+## 1 · The cover
+
+### The hand is gone; the button does its own asking
+
+A hand pointing at the only affordance on an otherwise empty screen was saying what the button can
+say by itself — and it covered the ▶ it was pointing at. The idle timer and its reset are r5p's,
+unchanged; all that differs is what firing does: `.sg-btn` gets `.idle-pulse`.
+
+**The pulse is now earned.** It used to run from first paint, which made it wallpaper rather than a
+signal, and left nothing to escalate to when a child actually stalled.
+
+### The button is dead until the greeting finishes
+
+SME: *"button is inactive during the voice over, once voice over is complete then the play button
+will activate."* So the greeting is no longer skippable. `.sg-waiting` makes that visible — muted and
+flat, because a bright button that ignores taps teaches the child the screen is broken rather than
+busy.
+
+Measured end to end:
+
+```
+t(ms)   disabled  waiting  pulsing  hand
+    0   True      True     False    False     <- dead from first paint
+  345   True      True     False    False     <- greeting speaking
+23292   False     False    False    False     <- greeting ends, button live
+28300   False     False    True     False     <- 5.0s idle -> pulse
+```
+
+The hand never appears at any point.
+
+**This has a cost worth naming: the child now waits ~23 s before they can start.** That is the
+greeting's own length, and it was previously skippable by tapping through. If it proves too long in
+front of children, the fix is to shorten `vo_landing`, not to re-open the button mid-line — a button
+that works halfway through a sentence is the thing this change removed.
+
+**A dead play button is now a total block, so it has a watchdog.** Every ordinary ending releases the
+button off `play()`'s `onEnd`, but a clip that *stalls* rather than errors never fires it. A timer
+sized off the clip's own duration plus 8 s releases the button regardless. It only ever fires when
+something has already gone wrong.
+
+### The stars pop, and they do it on screen
+
+Two faults, both measured on the shipping build before anything was touched.
+
+**They were mostly outside the window.** r4r starts each lane outside the *card* so nothing crosses
+Swiftie or the panel, and r5l pushed that further out. On a wide window the card's own half-width in
+vmax is most of the way to the edge, so lanes began at the rim and the star was gone before it could
+be seen:
+
+```
+before   87 stars   18 on screen   median radius 722-791px   (screen half-diagonal 843px)
+after    87 stars   60 on screen
+```
+
+`_skyLaneStart` now caps the start at 55% of that lane's own distance to the screen edge, and the
+travel target is the window's corner rather than a fixed 72vmax, so the outer half of each flight is
+no longer off-screen either.
+
+**They only drifted.** A star that slides on at constant size reads as debris. What reads as a
+twinkle is *scale*: `sgFly` now opens at 0.15, overshoots to 1.28, settles to 1, and shrinks to 0.25
+on the way out. Measured live scale range **0.25 – 1.26**, against a flat 1.00 before. Flight time
+came down from 18–34 s to 11–21 s, because a 34-second crossing is slower than the pop is worth.
+
+> **This is not a match to the reference.** The Slack link in the request is not something I can
+> open, so the animation above is built from what the code measurably got wrong, not from the repo
+> it was meant to copy. If the reference has a specific pop, send the repo or the file and this can
+> be matched properly rather than approximated.
+
+## 2 · Page 9 shows itself out
+
+- **The box labels are legible.** r5n cut these from a sentence to a single अक्षर and left them at
+  the sentence's 26px, so the one thing a pre-reader must read became the smallest text on the page.
+  **26px → 40px.** The pill is centred *on* the top border and hangs half its height into the box —
+  at 40px that is 32px, which crossed the old 30px padding and let a dropped picture touch it, so
+  the box padding went **30px → 36px** (both axes, keeping r4z's symmetry). Measured clearance
+  **+7px**. This is a shared component, so page 10's labels grew with it.
+- **No आगे pill, and the page leaves by itself.** There is nothing to *do* on a watch-first page, so
+  a button that only says "I have finished watching" is a gate with no question behind it. The pill
+  is hidden for the slide's whole life (`.stage.auto-adv`) rather than removed at the end, so it
+  cannot flash in and out. Scoped by its own `auto_advance` flag, not by `auto_demo`, so a future
+  demo page can still choose to wait for a tap.
+- **"देखो," is gone** from the panel, leaving the instruction on its own.
+
+```
++ 0s  slide=8  navBtn display=none  auto-adv=True   tiles in boxes=0
++10s  slide=8  navBtn display=none  auto-adv=True   tiles in boxes=2
++16s  slide=9  navBtn display=flex  auto-adv=False  -> left page 9 on its own
+```
+
+## 3 · The arrow, again
+
+**40px → 52px** on `#navBtn` and `#endBtn`. The pill still measures exactly **170×62** —
+`line-height:1` is what keeps the glyph box from pushing it around.
+
+## 4 · The lesson speaks आप
+
+करो → **कीजिए**, देखो → **देखिए**, on the on-screen instructions the SME named.
+
+**This closed a defect that was already logged.** `vo_g1_prompt` and `vo_g1_hint` came from the deck
+in आप while every other line was तुम; r4 flagged the split as OPEN-4 and preserved it because the
+deck's wording was authoritative. It is now closed by making the rest match, and that note has been
+rewritten so nobody restores the old split.
+
+**The spoken-only siblings went too.** `prompt_hi` *is* the VO on these pages, and a page that reads
+कीजिए then says करो two seconds later is worse than either register on its own — so `vo_g2_more`,
+`vo_p1_more`, `vo_p7_more`, `vo_g1_next`, `vo_g2_hint` and `vo_g3_reveal` moved with their panels.
+
+**And page 10, which the instruction did not name.** Its on-screen prompt ends सुनो/डालो, not
+करो/देखो — but it is the fourth on-screen instruction, and once 7/11/13 moved it was the only panel
+left in तुम, sitting beside three that were not. It travels with them.
+
+**11 spoken-only lines are still तुम, and that is a decision, not an oversight.** They are never
+shown on screen:
+
+```
+vo_g2_reveal  vo_g2_try  vo_g5_hint  vo_g5_try  vo_landing
+vo_p1_hint    vo_p1_reveal  vo_p1_try
+vo_p7_hint    vo_p7_reveal  vo_p7_try
+```
+
+They were left because converting them is a bigger change than was asked for, and because
+`vo_landing` is the cover's 19-second karaoke clip — the most delicate recording in the lesson, with
+the sentence animation timed against its speech map. Converting it means re-cutting that map and
+re-checking every cue. Say the word and it is one more pass.
+
+## 5 · चाँदी leaves the balloons, and the lesson
+
+SME: *"don't use chandi balloon."* **चम्मच** replaces it — also च, with art and a clip that already
+ship from page 10, so the board keeps four च targets at no cost in size.
+
+This was चाँदी's **last** use: r5q had already replaced it on page 10. `obj_chandi` and
+`vo_w_chandi` are now unreferenced and have dropped out of `dist/` (92 → 91 clips, 24 → 23 images).
+Both masters stay in `build/`.
+
+## Receipt
+
+- 15 slides; all three guards pass on **all four** trees (74 lines / 80 clips)
+- HTML byte-identical across all four
+- **11 clips re-recorded**, every one on the **primary** TTS rung — no refuser-ladder fallback
+  despite कीजिए/सुनिए being imperatives, which is the failure class r5e documented
+- All 11 transcribe at **97–100%**
+- **dist 9.70 MB — 303 KB under the cap**
+
+## Still needs a human
+
+1. **The ~23-second wait on the cover.** Measured, intended, and the direct consequence of the
+   request. It wants watching with a real child before it ships.
+2. **Nobody has heard the 11 re-recorded lines.** They transcribe correctly; that is a machine.
+3. **The star pop is an interpretation, not the reference.** See the note in §1.
+4. **The 11 remaining तुम lines** in §4 — convert or keep.

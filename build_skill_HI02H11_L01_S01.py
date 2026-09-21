@@ -72,15 +72,19 @@ VO = {
     "vo_t6_prompt": "हमने म की आवाज़ सुनी। यह आवाज़ म अक्षर से लिखी जाती है। जैसे—म से मूली।",
 
     # ---- guided 1 · balloons (deck page 8) ----------------------------------------------
-    # [r4 · rows 55/60/62] VERBATIM from the deck. NOTE these three lines are AAP («कीजिए»,
-    # «सुनिए») while every other line in the lesson is TUM. That is the deck's own wording and
-    # the reviewer's phrasing is authoritative, so it is preserved — flagged as OPEN-4.
+    # [r4 · rows 55/60/62] VERBATIM from the deck, and AAP («कीजिए», «सुनिए») where every
+    # other line used to be TUM. That split was flagged as OPEN-4 and is now CLOSED: [r5r] moved the
+    # whole lesson to AAP on the SME's instruction, so these lines are no longer the odd ones out.
     "vo_g1_prompt":  "प की आवाज़ वाले चित्र पर टैप कीजिए।",
     "vo_g1_correct": "शाबाश! इसमें प की आवाज़ है।",
     "vo_g1_hint":    "ध्यान से सुनिए, इसमें प की आवाज़ नहीं है।",
     # [r5o] ROUND 2 hunts a DIFFERENT sound, so it cannot share round 1's praise or hint - both name
     # the letter out loud. levels[n].audio carries these.
-    "vo_g1_next":     "अब “च” की आवाज़ वाले चित्रों पर टैप करो।",
+    # [r5r] REGISTER: this lesson addresses the child as आप, not तुम. करो -> कीजिए and देखो -> देखिए
+    # throughout. The SME asked for it on the ON-SCREEN text; the spoken-only lines went with it,
+    # because prompt_hi IS the VO on these pages and a page that reads कीजिए then says करो two
+    # seconds later is worse than either register on its own.
+    "vo_g1_next":     "अब “च” की आवाज़ वाले चित्रों पर टैप कीजिए।",
     "vo_g1_correct2": "शाबाश! इसमें च की आवाज़ है।",
     "vo_g1_hint2":    "ध्यान से सुनिए, इसमें च की आवाज़ नहीं है।",
 
@@ -89,12 +93,12 @@ VO = {
     # string (shown == spoken, by construction), so the quotes live here rather than in a second
     # copy of the line. They cost nothing spoken: TTS does not voice a quotation mark, so the
     # existing clip still matches and does not need re-recording.
-    "vo_g2_prompt": "जिन शब्दों में \u201cप\u201d की आवाज़ सुनाई दे, उन पर टैप करो।",
+    "vo_g2_prompt": "जिन शब्दों में \u201cप\u201d की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
     # [r5m] SME: "after first correct selection the VO will play 'एक और प वाले शब्द पर टैप करो'".
     # The mechanic had nothing to say between the first correct tap and the last one, so a child who
     # found one word got silence where the page should have asked for the other.
-    "vo_g2_more":   "एक और प वाले शब्द पर टैप करो।",
-    "vo_g2_hint":   "हर शब्द को ध्यान से देखो और सुनो। किस शब्द में प की आवाज़ आ रही है?",   # [r4 · row 72]
+    "vo_g2_more":   "एक और प वाले शब्द पर टैप कीजिए।",
+    "vo_g2_hint":   "हर शब्द को ध्यान से देखिए और सुनिए। किस शब्द में प की आवाज़ आ रही है?",   # [r4 · row 72]
     "vo_g2_try":    "इस शब्द की शुरुआत में प की आवाज़ नहीं है। एक बार फिर सुनो।",
     "vo_g2_reveal": "सुनो — इसमें प की आवाज़ है।",
     "vo_g2_done":   "शाबाश! तुमने प की आवाज़ वाले सारे शब्द खोज लिए।",
@@ -107,7 +111,7 @@ VO = {
     # keeps shown == spoken, which passing a separate display string would have broken.
     "vo_g3_prompt":  "इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
     "vo_g3_try":     "यह च की आवाज़ नहीं है।",                          # [r4 · row 79] Hint 1, verbatim
-    "vo_g3_reveal":  "ध्यान से देखो, सही जवाब च है।",                    # [r4 · row 80] Hint 2, verbatim
+    "vo_g3_reveal":  "ध्यान से देखिए, सही जवाब च है।",                    # [r4 · row 80] Hint 2, verbatim
     "vo_g3_correct": "चूहे, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।",   # [r4 · row 82]
     "vo_g3_hint":    "हर शब्द की शुरू की आवाज़ पर ध्यान दो।",
 
@@ -115,20 +119,26 @@ VO = {
     # [r5n] SME: "replace the word टोकरी with डिब्बे" in the instruction panel. prompt_hi IS this
     # string, so it changes here — and the two lines that echo the word back at the child change
     # with it, or the page would say डिब्बा once and टोकरी twice.
-    "vo_g5_prompt": "हर चित्र का नाम सुनो और उसे सही डिब्बे में डालो।",     # [r4 · row 85]
+    # [r5r] page 10 is the fourth ON-SCREEN instruction and was the only one left in तुम once
+    # pages 7/11/13 moved to आप. The SME named करो and देखो; this line ends सुनो/डालो, which is the
+    # same register on the same kind of text, so it travels with them rather than sitting beside
+    # three कीजिए panels in तुम. The spoken-ONLY तुम lines are listed in CHANGES.md, undecided.
+    "vo_g5_prompt": "हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए।",   # [r4 · row 85]
     # CONSEQUENCE of row 83: the bins stopped being «प है / प नहीं है» and became «प / च», so a
     # hint that asks a yes-no question about प no longer fits the board it is hinting about.
     # Re-pointed at the two-way choice; logic and progression untouched, per the deck's "keep the
     # existing hint logic". Listed under CHANGED BEYOND THE DECK.
 # [r5n] the watch-first page: the child does nothing here, so the line says so.
-    "vo_g5_show":    "देखो, हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
+    # [r5r] SME: drop the opening "देखो," from page 9's panel. What is left is the whole
+    # instruction on its own, and the page demonstrates rather than tells.
+    "vo_g5_show":    "हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
     "vo_g5_hint":    "शब्द बोलो और सुनो — उसमें प की आवाज़ है या च की?",
     "vo_g5_try":     "यह डिब्बा सही नहीं है। शब्द की आवाज़ फिर सुनो।",
     "vo_g5_correct": "बहुत बढ़िया! सही डिब्बा।",
 
     # ---- practice 1 · tap-all म (deck page 13) ------------------------------------------
-    "vo_p1_prompt": "जिन शब्दों में \u201cम\u201d की आवाज़ सुनाई दे, उन पर टैप करो।",
-    "vo_p1_more":   "एक और म वाले शब्द पर टैप करो।",
+    "vo_p1_prompt": "जिन शब्दों में \u201cम\u201d की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
+    "vo_p1_more":   "एक और म वाले शब्द पर टैप कीजिए।",
     "vo_p1_hint":   "हर शब्द सुनो — क्या उसमें म की आवाज़ सुनाई देती है?",
     "vo_p1_try":    "इस शब्द की शुरुआत में म की आवाज़ नहीं है। एक बार फिर सुनो।",
     "vo_p1_reveal": "सुनो — इसमें म की आवाज़ है।",
@@ -150,8 +160,8 @@ VO = {
     "vo_p4_correct": "सही! शुरुआत में न की आवाज़ थी।",
 
     # ---- practice 7 · tap-all च (deck page 19) ------------------------------------------
-    "vo_p7_prompt": "जिन शब्दों में \u201cच\u201d की आवाज़ सुनाई दे, उन पर टैप करो।",
-    "vo_p7_more":   "एक और च वाले शब्द पर टैप करो।",
+    "vo_p7_prompt": "जिन शब्दों में \u201cच\u201d की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
+    "vo_p7_more":   "एक और च वाले शब्द पर टैप कीजिए।",
     "vo_p7_hint":   "च की आवाज़ शुरू में भी हो सकती है और बीच में भी। पूरा शब्द सुनो।",
     "vo_p7_try":    "इस शब्द में च की आवाज़ कहीं नहीं है। एक बार फिर सुनो।",
     "vo_p7_reveal": "सुनो — इसमें च की आवाज़ है।",
@@ -350,7 +360,8 @@ def tap_all(sid, phase, sound, prompt, items, clips, allow_hand=False):
     }
 
 
-def sort_two(sid, phase, prompt, bins, items, clips, signal, drag_demo=False, auto_demo=False):
+def sort_two(sid, phase, prompt, bins, items, clips, signal, drag_demo=False, auto_demo=False,
+             auto_advance=False):
     return {
         "id": sid, "phase": phase, "eis": "enactive", "type": "SORT_VACHAN",
         "prompt_hi": prompt,
@@ -359,8 +370,10 @@ def sort_two(sid, phase, prompt, bins, items, clips, signal, drag_demo=False, au
         # once, so the child sees HOW to drag. Points between the baskets, never at the right one.
         # [r5n] auto_demo: the page plays the drag itself and takes no input. drag_demo is the
         # older, weaker thing - a hand travelling over a board the child still has to work.
+        # [r5r] auto_advance: when the demo finishes, go to the next slide instead of lighting
+        # आगे. Separate from auto_demo so a demo page can still choose to wait for a tap.
         "data": {"bins": bins, "items": items, "reveal_seq": True, "signal_name": signal,
-                 "drag_demo": drag_demo, "auto_demo": auto_demo},
+                 "drag_demo": drag_demo, "auto_demo": auto_demo, "auto_advance": auto_advance},
     }
 
 
@@ -530,7 +543,12 @@ def build_card():
          _item("चाँद", "obj_chand",  "vo_w_chand",  gender="P")],
         {"prompt": "vo_g5_show", "target": "vo_snd_p", "correct": "vo_g5_correct"},
         "sound_sort_demo",
-        auto_demo=True))
+        # [r5r] SME: "remove the next button from the 9th page, once the pre screen tutorial is
+        # complete then it will automatically transition to the 10th page". There is nothing to
+        # DO on a watch-first page, so a button that only says "I have finished watching" is a
+        # gate with no question behind it. Scoped to this slide by its own flag rather than to
+        # auto_demo, so a future demo page can still choose to wait for a tap.
+        auto_demo=True, auto_advance=True))
 
     slides.append(sort_two(
         "G5", "guided", VO["vo_g5_prompt"],
@@ -648,7 +666,10 @@ def build_card():
                            _bit("केला",   "obj_kela",    "vo_w_kela",    False),
                            _bit("चाँद",   "obj_chand",   "vo_w_chand",   True),
                            _bit("कौआ",    "obj_kauaa",   "vo_w_kauaa",   False),
-                           _bit("चाँदी",  "obj_chandi",  "vo_w_chandi",  True),
+                           # [r5r] SME: "don't use chandi balloon". चम्मच replaces it - also च, art and
+                           # clip already ship (page 10), so the board keeps four च targets at no cost.
+                           # चाँदी now leaves the lesson entirely: this was its last use.
+                           _bit("चम्मच",  "obj_chammach", "vo_w_chammach", True),
                            _bit("कमल",    "obj_kamal",   "vo_w_kamal",   False),
                            _bit("चींटी",  "obj_chinti",  "vo_w_chinti",  True),
                            _bit("कबूतर",  "obj_kabutar", "vo_w_kabutar", False)],
