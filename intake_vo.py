@@ -65,6 +65,27 @@ for f in sorted(os.listdir(SRC)):
     if ext.lower() in (".wav", ".ogg", ".mp3", ".m4a", ".flac"):
         have.setdefault(stem, []).append(f)
 
+# [r5x] These ids must ship as the BARE akshara, but their audio_text is the "<letter> से <word>"
+# carrier, because that text doubles as the recording script. A studio reads what it is given, so a
+# delivery will hand back the carrier - which is exactly what happened on the first real delivery,
+# and it surfaced as a build failure rather than an intake one. Warn here instead.
+BARE_IDS = ("vo_snd_ch", "vo_snd_l", "vo_snd_r",
+            "vo_ltr_ch", "vo_ltr_l", "vo_ltr_r", "vo_ltr_p", "vo_ltr_m", "vo_ltr_n")
+BARE_MAX = 1.6
+
+
+def wav_seconds(path):
+    d = io.open(path, "rb").read()
+    if d[:4] != b"RIFF": return None
+    i, br = 12, 0
+    while i + 8 <= len(d):
+        cid, n = d[i:i + 4], int.from_bytes(d[i + 4:i + 8], "little")
+        if cid == b"fmt ": br = int.from_bytes(d[i + 16:i + 20], "little")
+        elif cid == b"data": return n / br if br else None
+        i += 8 + n + (n & 1)
+    return None
+
+
 known = set(TEXT)
 print("delivered folder: %s" % SRC)
 print("%-18s %-30s %s" % ("VO ID", "format", "action"))
@@ -87,8 +108,13 @@ for stem in sorted(have):
         print("%-18s %-30s %s" % (stem, desc, "!! REJECTED - re-export as 16-bit mono WAV"))
         bad += 1
         continue
+    note = ""
+    if stem in BARE_IDS:
+        sec = wav_seconds(src)
+        if sec and sec > BARE_MAX:
+            note = "  !! %.2fs - this id ships as the BARE letter, but the script gives it the carrier phrase; it needs trimming to the first burst" % sec
     dst = os.path.join(DEST, stem + ".ogg")     # the name the engine loads; content stays WAV
-    print("%-18s %-30s %s" % (stem, desc, ("replace " if os.path.exists(dst) else "add     ") + stem + ".ogg"))
+    print("%-18s %-30s %s%s" % (stem, desc, ("replace " if os.path.exists(dst) else "add     ") + stem + ".ogg", note))
     plan.append((src, dst))
     ok += 1
 

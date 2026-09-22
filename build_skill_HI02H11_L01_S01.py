@@ -965,7 +965,13 @@ def speech_map(out_dir, audio_ids):
 # ══════════════════════════════════════════════════════════════════════════════════════════
 BARE_SOUND_IDS = ("vo_snd_ch", "vo_snd_l", "vo_snd_r",
                   "vo_ltr_ch", "vo_ltr_l", "vo_ltr_r", "vo_ltr_p", "vo_ltr_m", "vo_ltr_n")
-BARE_SOUND_MAX_SEC = 0.8
+# [r5x] 0.8 -> 1.6. The threshold has to separate "a bare अक्षर" from "the लेटर से शब्द carrier",
+# and 0.8 was really measuring "spoken by the TTS". The human delivery says one letter in
+# 0.84-1.36s and the carrier phrase in 2.24-2.36s, so the two populations are far apart and the
+# discriminator belongs between them, not below both. At 1.6 the guard still catches the exact
+# regression it was written for - it caught vo_snd_ch's 2.36s carrier in this very delivery -
+# while no longer failing a correct human take for being human.
+BARE_SOUND_MAX_SEC = 1.6
 
 
 def _clip_seconds(path):

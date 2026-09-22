@@ -2803,3 +2803,103 @@ than what it replaces.
 - `make_manifests.py` rewrites column C and writes the format block; both manifests regenerated
 - `intake_vo.py` added at the bundle root, mirrored to the factory KG with both manifests
 - No engine, card or asset change in this round
+
+---
+
+# r5x — the human VO delivery
+
+81 studio recordings arrived in `build/assets/Audio/voiceovers`, named by VO id. **79 are in place.**
+Two were sent back; both are described below, and neither was caught by anything except verification.
+
+```
+intake   81 accepted, 0 rejected, 0 unrecognised, 0 lesson lines missing
+         all 16-bit mono WAV, complete coverage of the manifest
+```
+
+`intake_vo.py` took them in and the rebuild recomputed `audio_dur` and the speech map, so **the
+word-by-word highlighting re-timed itself to the new voice** — the reason the format spec insisted
+on 16-bit WAV in r5w.
+
+## Two guards fired, and both were right
+
+**1 · The bare-sound guard — a real regression, and a threshold that was measuring the wrong thing.**
+
+`vo_snd_ch` came back as the full carrier `"च से चम्मच।"` (2.36s) because that is what its
+`audio_text` says, and `audio_text` doubles as the recording script. A studio reads what it is given.
+Trimmed to its first speech burst using the build's own detector — **2.36s → 0.75s**, the human
+voice kept. The untrimmed take is in the scratchpad.
+
+But the same guard also failed all six `vo_ltr_*`, and those were **correct**: their text is a single
+अक्षर and that is what was recorded. The threshold was 0.8s, which really measured *"spoken by the
+TTS"*. The two populations are far apart —
+
+```
+human single letter   0.84 - 1.36s
+carrier phrase        2.24 - 2.36s
+```
+
+— so the discriminator belongs between them, not below both. **0.8 → 1.6s.** It still caught
+`vo_snd_ch` in this very delivery.
+
+`intake_vo.py` now warns about this at delivery instead of letting it surface as a build failure.
+
+**2 · The length guard — `vo_p8_prompt` was the wrong line entirely.**
+
+1.68s against the 4.12s its 105 characters need. Transcribed, it says **"बहुत बढ़िया"** — a generic
+praise line, not the lesson summary the card carries (*"शाबाश! आज हमने सीखा — वाक्य ध्यान से सुनना…"*).
+Reverted to the previous take so page 15 still speaks its recap.
+
+## What verification found that no guard could
+
+Every clip was transcribed, and every word clip additionally put through forced choice, because
+transcription is unreliable on isolated words — that is the method note from r5d, and it mattered
+here: eight word clips "failed" transcription and **22 of 23 passed forced choice**.
+
+**`vo_w_kamal` says "काल", not "कमल".** Open transcription three times in a row returns काल; the
+म is missing. Against the full word list it scores **0/6**, identified as लाल or कबूतर. (Head to head
+against लाल alone it scores 6/6 — which is why a two-option test is not evidence.) Reverted; the
+restored take transcribes as कमल three times out of three.
+
+### Seven lines were recorded from a different script
+
+These play fine and are good Hindi. They are simply **not what the card says**, which matters because
+`prompt_hi` is both the on-screen text and the VO on several pages:
+
+| id | card says | recorded |
+|---|---|---|
+| `vo_p4_try` | तुमने आखिरी आवाज़ सुनी। हमें वह आवाज़ ढूँढनी है… | यह आवाज़ बार-बार नहीं आई। वाक्य पढ़कर देखो… |
+| `vo_g1_correct` | शाबाश! इसमें प की आवाज़ है। | शाबाश |
+| `vo_g1_correct2` | शाबाश! इसमें च की आवाज़ है। | शाबाश |
+| `vo_g1_hint` | ध्यान से **सुनिए**, इसमें प की आवाज़ नहीं है। | ध्यान से **देखिए** … + प वाले चित्र पर टैप कीजिए। |
+| `vo_g1_hint2` | ध्यान से **सुनिए**, इसमें च की आवाज़ नहीं है। | ध्यान से **देखिए** … + च वाले चित्र पर टैप कीजिए। |
+| `vo_p7_hint` | च की आवाज़ शुरू में भी… पूरा शब्द सुनो। | शब्द को दोबारा पढ़ो। च की आवाज़ शुरू में भी… |
+| `vo_g5_prompt` | हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए। | …उसे **उसके प या च वाले** सही डिब्बे में डालिए। |
+
+`vo_g5_try` also reads 88%, but that one is ASR noise on डिब्बा — it is fine.
+
+**`vo_g5_prompt` is the urgent one: it is page 10's on-screen text.** The panel and the voice now say
+different things, which is the exact defect class this bundle has been closing all round.
+
+**`vo_g1_hint`/`hint2` say देखिए where the card says सुनिए** — and this is a *listening* lesson. "Look
+carefully" is arguably the wrong verb for a phonics hint, so this is not a free swap either.
+
+These were left exactly as delivered rather than quietly rewriting the lesson's script to match
+whatever was spoken. Which way each goes is the SME's call, not mine.
+
+## Receipt
+
+- 79 of 81 clips are the human delivery; `vo_p8_prompt` and `vo_w_kamal` remain the previous take
+- All three guards pass on all four trees; HTML byte-identical
+- **dist 9.80 MB — 202 KB under the cap** (the human takes are longer overall: +93 KB)
+- Delivery masters filed at `_assets_round4/voiceovers_SME_20260922/` (14 MB, 81 WAV) — moved out of
+  `build/assets/Audio`, which is for game clips
+- Manifests regenerated against the new durations
+
+## Still needs a human
+
+1. **The seven script mismatches above** — re-record to the card, or change the card to match? One of
+   them is on-screen text and two change a verb that matters pedagogically.
+2. **`vo_p8_prompt` and `vo_w_kamal` need re-recording**, or page 15's recap and the balloon page's
+   कमल stay in the old voice among 79 human ones.
+3. **Nobody has listened to the delivery.** 79 clips verified by machine; that is not the same as
+   hearing them.
