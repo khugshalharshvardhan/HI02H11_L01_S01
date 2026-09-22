@@ -2903,3 +2903,67 @@ whatever was spoken. Which way each goes is the SME's call, not mine.
    कमल stay in the old voice among 79 human ones.
 3. **Nobody has listened to the delivery.** 79 clips verified by machine; that is not the same as
    hearing them.
+
+---
+
+# r5y — the cover trapped the child, and r5r built the trap
+
+SME: *"when we are tapping the play button after completing the VO it is not moving ahead and playing
+the same VO again."* Both symptoms, one listener.
+
+## What was happening
+
+The cover carries an autoplay fallback: a one-shot `pointerdown` listener that starts the greeting if
+the browser refused to autoplay it. Its guard asks **"is audio audible right now?"** — and that is
+false in **two** different situations:
+
+1. autoplay was blocked, which is what the listener is for, and
+2. the greeting simply **ended**.
+
+Before r5r the second case was unreachable in practice: the child could tap through mid-clip, so the
+first `pointerdown` almost always landed while audio was sounding. **r5r disabled the button until
+the greeting finishes** — which *guarantees* the first `pointerdown` happens after it. So on every
+run the fallback fired and replayed the 15-second greeting.
+
+And because a replay calls `setStartBtnReady(false)`, it **disabled the button in the middle of the
+child's own gesture**. A disabled element receives no `click`, so the cover stopped advancing too.
+
+Measured before the fix — the whole event trace for a real tap on the button:
+
+```
+pointerdown@741,591 defaultPrevented=false
+(no click event at all)
+```
+
+The star-burst hit test was the obvious suspect and was **innocent**: 0 stars had a padded hit box
+over the button, and `defaultPrevented` was false.
+
+## The fix
+
+**1 · Releasing the button IS the signal that the greeting is done, so test that.** The fallback now
+fires only when audio is inaudible *and* the button is still disabled — i.e. genuinely "the greeting
+never started", never "the greeting finished".
+
+**2 · A replay must never take away a way in that was already granted.** `__greetingDone` is set by
+every path that releases the button, and the lock is applied on the first telling only. A child who
+has already sat through the greeting and asks to hear it again (the 🔊 chip) is not sent to the back
+of the queue — and, more importantly, nothing that replays the greeting can re-trap the cover.
+
+Fix 1 alone would have been enough for this bug. Fix 2 is there because the trap — "something
+re-locks the only way forward, mid-gesture" — is worth closing as a class, not as an instance.
+
+## Verified, all three paths
+
+```
+tap play after the greeting   -> gate hidden, is-start cleared, slide 0 speaking   (was: stuck)
+replay via the 🔊 chip         -> button stays live; tapping play mid-replay advances
+autoplay BLOCKED               -> button stays disabled, a gesture still starts the greeting
+```
+
+The last one is the fallback's actual purpose, tested by launching Chrome with
+`--autoplay-policy=document-user-activation-required`, and it still works.
+
+## Receipt
+
+- Guards pass on all four trees; HTML byte-identical
+- No card, asset or dist change — engine only

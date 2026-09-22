@@ -10416,7 +10416,12 @@ function boot(){
            the karaoke run (finish), and the no-token fallback, which fires finish() BEFORE its clip
            plays and so must arm from the clip instead - hence armOnFinish. */
         if(window.__disarmStartNudge) window.__disarmStartNudge();
-        if(window.__setStartBtnReady) window.__setStartBtnReady(false);
+        /* [S01r5y] lock the button for the FIRST telling only. The SME's rule was "inactive during
+           the voice over"; a child who has already sat through it and then asks to hear it again
+           (the 🔊 chip) must not be sent to the back of the queue - and, more importantly, nothing
+           that replays the greeting should ever be able to take away a way in that was already
+           granted. That is what trapped the cover. */
+        if(!window.__greetingDone && window.__setStartBtnReady) window.__setStartBtnReady(false);
         /* [S01r5r] DEAD-BUTTON WATCHDOG. Every ordinary ending releases the button, but they all run
            off play()'s onEnd - and a clip that stalls rather than errors never fires it. The cover is
            now the only way into the lesson, so that case would be a total block, not a degraded one.
@@ -10429,6 +10434,7 @@ function boot(){
             if(!onLanding()) return;
             const b = document.getElementById("sgBtn");
             if(b && b.disabled && window.__setStartBtnReady){
+              window.__greetingDone = true;
               window.__setStartBtnReady(true);
               if(window.__armStartNudge) window.__armStartNudge();
             }
@@ -10436,6 +10442,7 @@ function boot(){
         }
         const armAfterGreeting = ()=>{
           if(!onLanding()) return;
+          window.__greetingDone = true;
           if(window.__setStartBtnReady) window.__setStartBtnReady(true);
           if(window.__armStartNudge) window.__armStartNudge(); };
         let armOnFinish = true;
@@ -10492,6 +10499,7 @@ function boot(){
            end - arm it here, or an idle child on a silent cover gets no nudge whatsoever.
            [S01r5r] and RELEASE THE BUTTON. It is disabled from first paint, so a cover whose
            greeting never starts would otherwise be a dead end with no way into the lesson. */
+        window.__greetingDone = true;
         if(window.__setStartBtnReady) window.__setStartBtnReady(true);
         if(window.__armStartNudge) window.__armStartNudge();
       }, 6000);
@@ -10562,7 +10570,8 @@ function boot(){
     if(typeof window._landingSentence === "function"){ window._landingSentence(landSrc); return; }
     /* [S01r5p] no landing sentence (another card, or the hero block never ran) - the greeting is a
        plain clip, and the idle timer still belongs at its end. */
-    play(landSrc, ()=>{ if(window.__setStartBtnReady) window.__setStartBtnReady(true);
+    play(landSrc, ()=>{ window.__greetingDone = true;
+                        if(window.__setStartBtnReady) window.__setStartBtnReady(true);
                         if(window.__armStartNudge) window.__armStartNudge(); }); };
   const sgVo = $("sgVo"); if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); playLanding(); };
   // ---- [engine JS] r4/P2 boot loader: loader.gif until assets warm, then it dismisses ITSELF into
@@ -10603,7 +10612,19 @@ function boot(){
        The सुनो chip's own playLanding() is untouched — an explicit replay must always replay. */
     const _a = (typeof currentAudio !== "undefined") ? currentAudio : null;
     const _audible = _a && !_a.paused && !_a.ended && _a.currentTime > 0;
-    if(!_audible) playLanding(); }, { once:true });
+    /* [S01r5y] ...AND IT MUST NOT FIRE ONCE THE GREETING HAS ALREADY FINISHED.
+       "is audio audible right now" is false in TWO different situations: autoplay was blocked (this
+       listener's whole purpose) and the greeting simply ENDED. Before r5r that second case was
+       unreachable in practice, because the child could tap through mid-clip and the first pointerdown
+       therefore landed while audio was sounding. r5r disabled the button until the greeting ends -
+       which GUARANTEES the first pointerdown happens after it, so this fired every time, replayed the
+       15-second greeting, and (because a replay calls setStartBtnReady(false)) disabled the button in
+       the middle of the child's gesture. A disabled element gets no click event, so the cover also
+       stopped advancing. One listener, both symptoms the SME reported.
+       Releasing the button IS the signal that the greeting is done, so that is the thing to test. */
+    const _btn = $("sgBtn");
+    const _greetingDone = _btn && !_btn.disabled;
+    if(!_audible && !_greetingDone) playLanding(); }, { once:true });
 
   /* [S01r5l] SME: "if user remains inactive for more than 5 seconds then add hand nudge on the play
      button". The cover has no other affordance now that the wording is gone, so an idle child has
