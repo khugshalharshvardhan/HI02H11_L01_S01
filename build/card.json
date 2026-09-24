@@ -1004,6 +1004,7 @@
   },
   "assets": {
     "audio": {
+      "sfx_bal_music": "assets/Audio/sfx_bal_music.ogg",
       "sfx_bal_pop": "assets/Audio/sfx_bal_pop.ogg",
       "sfx_celebrate": "assets/Audio/sfx_celebrate.ogg",
       "sfx_correct": "assets/Audio/sfx_correct.ogg",
@@ -2372,6 +2373,7 @@
       ]
     },
     "audio_dur": {
+      "sfx_bal_music": 12.0,
       "sfx_bal_pop": 0.2,
       "sfx_celebrate": 1.09,
       "sfx_correct": 0.85,

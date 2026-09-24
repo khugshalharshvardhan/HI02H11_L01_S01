@@ -585,91 +585,80 @@ function armSkyBurst(){
   }, true);
 }
 
-/* [S01r6g] A SOFT BED UNDER THE BALLOON GAME.
-   SYNTHESISED, not a clip, and that is a size decision rather than a preference: dist is 112 KB from
-   the 10MB cap and any real music loop is 100-300 KB. The same Web Audio route already carries the
-   balloon burst, so this adds no bytes at all.
-   What it plays: a warm pad of three detuned triangles a fifth apart under a slow low-pass, plus a
-   sparse pentatonic pluck every few seconds. Pentatonic because no two notes in it can clash - the
-   bed can wander without ever landing on something sour under a child's voice.
-   Three rules it obeys:
-     * it DUCKS while any clip is sounding. This page talks constantly - every balloon names itself -
-       so a bed that held its level would be competing with the words the lesson is about.
-     * it honours mute, and it checks continuously rather than only at the start.
-     * it fades, never cuts, and it stops dead when the page is left. */
+/* [S01r6i] THE BALLOON PAGE'S MUSIC — THE SME'S OWN CLIP, REPLACING r6g's SYNTHESISER.
+   r6g synthesised a pad because a music file would not fit: dist had ~112 KB of headroom and the
+   supplied track is 3.16 MB. That was the right call then and it is the wrong call now, because the
+   track has structure worth keeping. What ships is ONE 12.00s phrase of it, not the whole 98s:
+   autocorrelation over the quiet opening section puts the musical period at exactly 12.00s (r=0.966),
+   and the two phrases inside the first 24s are near-identical - so a 24s cut would have cost double
+   the bytes for no extra variety. The loop is crossfaded onto itself over 0.25s at the head, which
+   puts the splice step at 454 against the material's own 99th-percentile step of 4709: inaudible.
+   At 40 kbps mono Opus that is 70 KB of the 106 KB that was free.
+
+   AN <audio> ELEMENT, NOT WEB AUDIO. decodeAudioData needs fetch(), and this bundle is deliberately
+   fetch-free everywhere except telemetry so it runs from file:// - routing the bed through Web Audio
+   would have made it the one asset that goes silent when the HTML is opened off a disk. The price is
+   that the level has to be ramped by hand instead of with setTargetAtTime; balGate does that.
+
+   THREE RULES, and rules 1 and 2 are the SME's words:
+     1. "the audio will only sound when the vo is finish" - it stays silent until the opening
+        sequence has finished naming every balloon, which is balMusicOpen().
+     2. "when the ballon pop or swift ai is saying something they will sound correctly" - it drops to
+        SILENCE under any clip, not to r6g's 0.34 duck. Pops are exempt on purpose: playSfx runs on
+        its own element and never sets isPlaying, so a 0.2s pop cannot make the bed pump, and at 0.7
+        against the bed's 0.34 it cuts straight through anyway.
+     3. it honours mute, continuously rather than once at the start, and it never outlives the page. */
 const BAL_MUSIC = {
-  /* [S01r6h] 0.055 -> 0.072, the SME's "30 percent more": measured inaudible in the room.
-     Still under the speech - the duck below keeps it at a third of this while a clip sounds. */
-  vol: 0.072,          /* the whole point is that it sits UNDER everything */
-  duck: 0.34,          /* of that, while a clip is sounding */
-  notes: [261.63, 293.66, 329.63, 392.00, 440.00],    /* C major pentatonic */
-  nodes: null, timer: 0, duckTimer: 0,
+  id: "sfx_bal_music",
+  vol: 0.34,           /* resting level, once the page has stopped talking */
+  up: 0.010,           /* per 40ms tick: ~1.4s to swell back in */
+  down: 0.100,         /* per 40ms tick: ~140ms to get out of a word's way */
+  el: null, gate: 0, open: false,
 };
 function balMusicStart(){
   try{
-    if(BAL_MUSIC.nodes) return;
+    if(BAL_MUSIC.el) return;
     if(document.documentElement.classList.contains("no-anim")) return;
-    const c = _ac(); if(!c) return;
-    const master = c.createGain();
-    master.gain.setValueAtTime(0.0001, c.currentTime);
-    master.gain.exponentialRampToValueAtTime(BAL_MUSIC.vol, c.currentTime + 2.0);   /* fade in */
-    const lp = c.createBiquadFilter();
-    lp.type = "lowpass"; lp.frequency.value = 900; lp.Q.value = 0.6;
-    lp.connect(master); master.connect(c.destination);
-
-    /* the pad: a chord that simply holds, detuned so it breathes instead of sitting still */
-    const oscs = [];
-    [130.81, 196.00, 261.63].forEach((f, i)=>{
-      const o = c.createOscillator(), g = c.createGain();
-      o.type = "triangle"; o.frequency.value = f; o.detune.value = (i - 1) * 6;
-      g.gain.value = [0.5, 0.32, 0.22][i];
-      o.connect(g).connect(lp); o.start();
-      oscs.push(o);
-    });
-    /* a very slow swell across the pad, so it is never a flat drone */
-    const lfo = c.createOscillator(), lfoG = c.createGain();
-    lfo.type = "sine"; lfo.frequency.value = 0.055; lfoG.gain.value = 260;
-    lfo.connect(lfoG).connect(lp.frequency); lfo.start();
-
-    BAL_MUSIC.nodes = { master, lp, oscs, lfo };
-
-    /* the plucks */
-    let k = 0;
-    const pluck = ()=>{
-      if(!BAL_MUSIC.nodes) return;
-      const t = c.currentTime;
-      const o = c.createOscillator(), g = c.createGain();
-      o.type = "sine";
-      o.frequency.value = BAL_MUSIC.notes[(k = (k + 1 + Math.floor(Math.random() * 2)) % BAL_MUSIC.notes.length)];
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.5, t + 0.04);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);        /* long, soft tail */
-      o.connect(g).connect(lp); o.start(t); o.stop(t + 2.3);
-      BAL_MUSIC.timer = setTimeout(pluck, 2200 + Math.random() * 2600);
-    };
-    BAL_MUSIC.timer = setTimeout(pluck, 1400);
-
-    /* duck under speech, and follow mute, without polling the audio graph itself */
-    BAL_MUSIC.duckTimer = setInterval(()=>{
-      if(!BAL_MUSIC.nodes) return;
-      const want = isMuted ? 0.0001
-                 : (isPlaying ? BAL_MUSIC.vol * BAL_MUSIC.duck : BAL_MUSIC.vol);
-      try{ BAL_MUSIC.nodes.master.gain.setTargetAtTime(want, c.currentTime, 0.35); }catch(e){}
-    }, 220);
+    const a = new Audio("assets/Audio/" + BAL_MUSIC.id + "." + AUDIO_EXT);
+    a.loop = true; a.volume = 0; a.preload = "auto";
+    BAL_MUSIC.el = a; BAL_MUSIC.open = false;
+    /* ONE interval owns the level, and it recomputes the target every tick rather than being told
+       when to duck. A clip can end half a dozen ways here - natural end, stopAudio, a superseded
+       chain, a missing file, a refused autoplay - and only a poll sees all of them. Being told
+       would eventually leave the bed silent for the rest of the page after an ending nobody wired. */
+    BAL_MUSIC.gate = setInterval(()=>{
+      const el = BAL_MUSIC.el; if(!el) return;
+      const target = (isMuted || !BAL_MUSIC.open || isPlaying) ? 0 : BAL_MUSIC.vol;
+      const d = target - el.volume;
+      const v = Math.max(0, Math.min(1, el.volume + (d > 0 ? Math.min(d, BAL_MUSIC.up)
+                                                           : Math.max(d, -BAL_MUSIC.down))));
+      try{ el.volume = v; }catch(e){}
+    }, 40);
+  }catch(e){}
+}
+/* Opened once the board has finished introducing itself. Idempotent: round 2 calls it again and it
+   does nothing, which is what we want - the bed should carry ACROSS rounds, and it silences itself
+   under round 2's prompt through isPlaying without being told to. */
+function balMusicOpen(){
+  try{
+    const el = BAL_MUSIC.el;
+    if(!el || BAL_MUSIC.open) return;
+    BAL_MUSIC.open = true;
+    el.play().catch(()=>{});      /* refused autoplay is not an error worth surfacing - it is a bed */
   }catch(e){}
 }
 function balMusicStop(){
   try{
-    const n = BAL_MUSIC.nodes; if(!n) return;
-    BAL_MUSIC.nodes = null;
-    clearTimeout(BAL_MUSIC.timer); clearInterval(BAL_MUSIC.duckTimer);
-    const c = _ac();
-    if(c){ try{ n.master.gain.setTargetAtTime(0.0001, c.currentTime, 0.25); }catch(e){} }
-    /* let the fade finish before the oscillators go, or the stop is a click */
-    setTimeout(()=>{
-      try{ n.oscs.forEach(o => o.stop()); n.lfo.stop(); }catch(e){}
-      try{ n.master.disconnect(); n.lp.disconnect(); }catch(e){}
-    }, 900);
+    const el = BAL_MUSIC.el; if(!el) return;
+    BAL_MUSIC.el = null; BAL_MUSIC.open = false;
+    clearInterval(BAL_MUSIC.gate);
+    /* fade rather than cut, then stop for real - a paused element at volume 0 still holds a decoder */
+    let v = el.volume;
+    const f = setInterval(()=>{
+      v -= 0.08;
+      if(v <= 0){ clearInterval(f); try{ el.pause(); el.currentTime = 0; el.src = ""; }catch(e){} }
+      else { try{ el.volume = v; }catch(e){} }
+    }, 40);
   }catch(e){}
 }
 function buildSky(){
@@ -6420,7 +6409,7 @@ const SlideModules = {
       /* the deck's reference screen is a bare stage: no prompt band, no hint chip, no आगे */
       $("stage").classList.add("vo-only");
       document.body.classList.add("bal-page");
-      balMusicStart();          /* [S01r6g] the bed, under everything this page says */
+      balMusicStart();          /* [S01r6i] loads the bed and holds it SILENT; balMusicOpen opens it */
       $("hintBtn").classList.remove("show"); $("hintBtn").style.display = "none";
       $("navBtn").style.display = "none"; setNavActive(false);
 
@@ -6663,7 +6652,9 @@ const SlideModules = {
           revealing = true; busy = true;
           const step = (i)=>{
             if(!alive()) return;
-            if(i >= cells.length){ busy = false; return; }
+            if(i >= cells.length){ busy = false;
+              balMusicOpen();   /* [S01r6i] "the audio will only sound when the vo is finish" */
+              return; }
             const { b, it } = cells[i];
             flightPath(b);
             b.classList.remove("seq-hidden");
@@ -6838,7 +6829,7 @@ function mountSlide(idx){
      appear and then be taken away. Cleared here with the other per-slide stage classes. */
   $("stage").classList.toggle("auto-adv", !!(slide.data && slide.data.auto_advance));
   document.body.classList.remove("bal-page");   /* [S01r5i] */
-  balMusicStop();                               /* [S01r6g] and it never outlives the page */
+  balMusicStop();                               /* [S01r6i] and it never outlives the page */
 
   // Hint button stays HIDDEN until the learner makes a wrong attempt, then it is
   // exposed (graduated scaffold). Mastery uses the SAME scaffold — not excluded.

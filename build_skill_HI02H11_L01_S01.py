@@ -231,7 +231,15 @@ INHERITED_AUDIO = ["vo_pt_tutorial", "vo_pt_guided", "vo_pt_practice",
                    # ONLY from engine code, so the card never declared it and it had no entry in
                    # audio_dur - which the balloon page now needs to know how long to hold a word
                    # back behind its feedback sound.
-                   "sfx_bal_pop"]
+                   "sfx_bal_pop",
+                   # [r6i] The balloon page's music bed, supplied by the SME. It is declared
+                   # here rather than left as a bare path in the engine for the reason r5h
+                   # gives just above: an id the card does not declare gets no audio_dur row,
+                   # and nothing downstream - the manifest, the receipt's VO-coverage count,
+                   # the dist asset walker - can see that it exists. It is NOT in
+                   # assets.audio_text, so check_clip_lengths skips it: there is no line for a
+                   # twelve-second loop of music to be "too short to contain".
+                   "sfx_bal_music"]
 # [r4 · row 13] "A small काँव-काँव sound effect can play when the crow appears, if suitable."
 # DELIVERED in r4d: an SME recording, trimmed here to one call. This list means "not scripted
 # in VO" — these are sounds, not lines — not "still outstanding". sfx_kanv stays in it because a

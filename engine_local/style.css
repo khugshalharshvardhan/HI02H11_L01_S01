@@ -2316,6 +2316,19 @@ html.no-anim .balloon.bal-entering{ animation:none; opacity:1; transform:none; }
    an earlier attempt. */
 .sg-card.lh-card .lh-cover{ position:absolute; left:0; top:0; width:100%; height:100%;
   object-fit:cover; border-radius:35px; display:block; pointer-events:none; }
+/* [S01r6i] A WHITE RIM ROUND THE COVER. SME, on a screenshot: "add white border in the outer line of
+   the middle box right now its matching with the background colour."
+   It matches because of r6f. The card's white frame was never CSS - it is painted into
+   start_card.webp - and r6f took the artwork edge to edge to kill the white band the SME had just
+   rejected, which covered that painted frame along with it. So the edge has to be drawn back, and it
+   has to be drawn OUTSIDE the art rather than inset, or we are back to the band r6f removed.
+   box-shadow with spread, not `border`: a border would eat 7px of the card's fixed 1114x456 box and
+   push the art in by that much (the same 11px-band failure in a new costume), whereas a spread ring
+   paints outside the border box and takes no layout at all. border-radius here does not round the
+   card - the art already clips itself at 35px - it only tells the ring to follow the same curve, so
+   the corners stay round instead of poking out square.
+   No scale maths: .stage is transform:scale(var(--scale)), so 7 design px stays 7 design px. */
+.sg-card.lh-card{ border-radius:35px; box-shadow:0 0 0 7px #FFFFFF; }
 /* the play button and Swiftie sit ABOVE the art, not under it - the SME asked for both to stay
    exactly where they are */
 .sg-card.lh-card .sg-btn, .sg-card.lh-card .sg-mascot, .sg-card.lh-card .sg-vo{ z-index:5; }
