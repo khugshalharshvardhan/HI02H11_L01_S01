@@ -598,7 +598,9 @@ function armSkyBurst(){
      * it honours mute, and it checks continuously rather than only at the start.
      * it fades, never cuts, and it stops dead when the page is left. */
 const BAL_MUSIC = {
-  vol: 0.055,          /* the whole point is that it sits UNDER everything */
+  /* [S01r6h] 0.055 -> 0.072, the SME's "30 percent more": measured inaudible in the room.
+     Still under the speech - the duck below keeps it at a third of this while a clip sounds. */
+  vol: 0.072,          /* the whole point is that it sits UNDER everything */
   duck: 0.34,          /* of that, while a clip is sounding */
   notes: [261.63, 293.66, 329.63, 392.00, 440.00],    /* C major pentatonic */
   nodes: null, timer: 0, duckTimer: 0,

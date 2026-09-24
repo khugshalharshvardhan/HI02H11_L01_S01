@@ -2288,24 +2288,26 @@ html.no-anim .balloon.bal-entering{ animation:none; opacity:1; transform:none; }
    Scoped to .lh-card, set by the landing-hero branch in app.js: the shared `.sg-btn{bottom:40px}`
    above is a fleet-standard value swept by _tools/start_btn_standard.py, so it must not be edited
    here - this overrides it for this one cover only. */
-/* [S01r6f] SME: "add the circular play button instead of what we are using now, the position is a
-   little above and it should be a little bigger."
-   A circle, not a pill: width is pinned equal to the height and the radius goes to 50%, so the
-   padding that made it a 198x68 lozenge cannot stretch it back out. `min-width:0` is the one that
-   actually matters: [30l] sets min-width:186px on .sg-btn, and a min-width FLOOR beats a width
-   declaration however specific it is - the first attempt came out 198px wide for exactly that reason. 96px against the old 68px is the
-   "little bigger", and bottom 16 -> 54px lifts it clear of the card's lower edge so it sits on the
-   path in the artwork rather than on the frame. The arrow grows with it. */
-.sg-card.lh-card .sg-btn{ bottom:54px; width:96px; height:96px; min-width:0; padding:0;
-  box-sizing:border-box; border-radius:50%;
-  display:flex; align-items:center; justify-content:center; }
-/* [S01r6g] CENTRED IN THE DISC, AND BIGGER. Measured at 4x on the live button: the ▶ glyph's own
-   side bearing already pushes it right, and the pill-era translateX(3px) pushed it further - the ink
-   centre sat +6.8px right of the disc centre, which on a 96px circle put the tip almost on the rim
-   with a wide gap behind it. 44 -> 54px (ink goes from 36% to ~44% of the disc), and the nudge is now
-   a small NEGATIVE one: a play triangle still wants to sit a hair right of geometric centre, because
-   its centroid is a sixth of its width left of its bounding box, but 6.8px was far past that. */
-.sg-card.lh-card .sg-btn::after{ font-size:54px; transform:translate(-2.7px, 1px); }
+/* [S01r6h] THE BUTTON IS NOW THE SME'S OWN ARTWORK. It replaces the disc r6f built in CSS - same
+   language (gold circle, white rim, navy triangle), but supplied rather than approximated, so the
+   triangle's placement inside it is the designer's and not my optical guess.
+   It lives in assets/UI, not in the card's image set: it is chrome, like start_card.webp and
+   nudge_hand_new.svg beside it, not lesson content. 1.1 KB of self-contained SVG - it stays crisp at
+   any size, which a rasterised copy would not, and costs almost nothing against a tight budget.
+   Everything the CSS disc used to draw is turned OFF here: the art carries its own fill, rim and
+   shadow, and a second set underneath would print a ring around it.
+   min-width:0 is still required - [30l] sets min-width:186px on .sg-btn, and a min-width FLOOR beats
+   any width declaration however specific the selector. */
+.sg-card.lh-card .sg-btn{ bottom:54px; width:104px; height:104px; min-width:0; padding:0;
+  box-sizing:border-box; border:0; border-radius:50%;
+  background:url("assets/UI/play_btn.svg") center/contain no-repeat;
+  box-shadow:none; display:block; }
+.sg-card.lh-card .sg-btn::after{ content:none; }
+/* while the greeting runs the button is genuinely disabled, so it has to LOOK it. Desaturating the
+   art says "not yet" without swapping in a second graphic. */
+.sg-card.lh-card .sg-btn.sg-waiting{ background:url("assets/UI/play_btn.svg") center/contain no-repeat;
+  filter:grayscale(.85) opacity(.5); box-shadow:none; }
+.sg-card.lh-card .sg-btn:active{ transform:translateX(-50%) translateY(3px); }
 /* [S01r6e] The supplied cover art fills the card's INNER box - the SME's words - not the card itself.
    The frame is painted into start_card.webp, not drawn in CSS, so `border-radius:inherit` resolved to
    0 and the first attempt laid a hard rectangle straight over the white rim and its rounded corners.
@@ -3382,7 +3384,9 @@ function armSkyBurst(){
      * it honours mute, and it checks continuously rather than only at the start.
      * it fades, never cuts, and it stops dead when the page is left. */
 const BAL_MUSIC = {
-  vol: 0.055,          /* the whole point is that it sits UNDER everything */
+  /* [S01r6h] 0.055 -> 0.072, the SME's "30 percent more": measured inaudible in the room.
+     Still under the speech - the duck below keeps it at a third of this while a clip sounds. */
+  vol: 0.072,          /* the whole point is that it sits UNDER everything */
   duck: 0.34,          /* of that, while a clip is sounding */
   notes: [261.63, 293.66, 329.63, 392.00, 440.00],    /* C major pentatonic */
   nodes: null, timer: 0, duckTimer: 0,

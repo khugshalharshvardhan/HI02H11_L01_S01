@@ -3386,3 +3386,50 @@ right of geometric centre — its centroid is a sixth of its width left of its b
 
 **Nobody has heard the music.** Its level, its ducking and its lifecycle are measured in the audio
 graph; whether it is pleasant under a child's voice is a listening judgement.
+
+---
+
+# r6h — the bed comes up 30%, and the play button is the SME's own art
+
+## 1 · Music volume
+
+`0.055 → 0.072`. Measured settled with nothing speaking: **0.0720, which is 131% of the old level** —
+the +30% asked for. The duck still bites: **0.0245** while a clip sounds, so it drops out from under
+the words exactly as before.
+
+Worth noting for anyone reading the numbers: sampling during the balloon **intro** shows roughly
+0.027–0.031 and almost no gap between speaking and quiet. That is not the duck failing — the intro
+runs eight word clips back to back, so the gain never gets the ~1s it needs to climb back. The
+settled figure above is taken after the board is built.
+
+## 2 · The play button is supplied art now
+
+The SME added `play button.svg`. It replaces the disc r6f drew in CSS — same language (gold circle,
+white rim, navy triangle), but supplied rather than approximated, so the triangle's placement inside
+it is the designer's and not my optical guess.
+
+**Filed in `assets/UI/`, not the card's image set.** It is chrome, like `start_card.webp` and
+`nudge_hand_new.svg` beside it, not lesson content — and the card's image pipeline is PNG-only
+(`<id>.<IMG_EXT>`, palettised into dist), which would have meant rasterising a 1.1 KB vector into
+something larger and blurrier. Renamed off `play button.svg`: a space becomes `%20` in a URL.
+
+Everything the CSS disc drew is switched off — fill, border, box-shadow and the `::after` glyph —
+because the art carries its own and a second set underneath prints a ring around it.
+
+The disabled state is kept: while the greeting runs the button is genuinely dead, so it now
+desaturates (`grayscale(.85) opacity(.5)`) rather than swapping in a second graphic.
+
+`min-width:0` still has to be restated. [30l] sets `min-width:186px` on `.sg-btn`, and a min-width
+floor beats any width declaration however specific the selector — that is what made the button 198px
+wide two rounds ago, and it would do it again.
+
+## Receipt
+
+- Guards pass on all four trees; HTML byte-identical; no console errors
+- `play_btn.svg` (1.1 KB) present in all four trees
+- **dist 9.90 MB — 106 KB under the cap**
+
+## Still needs a human
+
+The music has still not been heard. It is now measurably 31% louder, but whether that reads as
+"audible but underneath" in a real room is a listening judgement.
