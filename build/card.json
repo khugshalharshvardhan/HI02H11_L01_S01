@@ -108,10 +108,6 @@
             "ms": 900
           },
           {
-            "step": "letter",
-            "silent": true
-          },
-          {
             "step": "mark",
             "audio": "vo_t3_explain",
             "words": [
@@ -120,6 +116,13 @@
               "चने",
               "चबाए।"
             ]
+          },
+          {
+            "step": "pause",
+            "ms": 500
+          },
+          {
+            "step": "letter"
           }
         ],
         "mark_bare": true,
@@ -216,10 +219,6 @@
             "ms": 900
           },
           {
-            "step": "letter",
-            "silent": true
-          },
-          {
             "step": "mark",
             "audio": "vo_t5_explain",
             "words": [
@@ -228,6 +227,13 @@
               "मीठी",
               "मलाई"
             ]
+          },
+          {
+            "step": "pause",
+            "ms": 500
+          },
+          {
+            "step": "letter"
           }
         ],
         "mark_bare": true,
@@ -327,10 +333,6 @@
             "ms": 900
           },
           {
-            "step": "letter",
-            "silent": true
-          },
-          {
             "step": "mark",
             "audio": "vo_t1_explain",
             "words": [
@@ -339,6 +341,13 @@
               "पपीता",
               "पीला-पीला।"
             ]
+          },
+          {
+            "step": "pause",
+            "ms": 500
+          },
+          {
+            "step": "letter"
           }
         ],
         "mark_bare": true,
@@ -392,7 +401,7 @@
       "phase": "guided",
       "eis": "iconic",
       "type": "TAP_ALL_WITH_SOUND",
-      "prompt_hi": "जिन शब्दों में “प” की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
+      "prompt_hi": "“प” की आवाज़ वाले शब्दों पर टैप कीजिए।",
       "audio": {
         "prompt": "vo_g2_prompt",
         "target": "vo_snd_p",
@@ -495,8 +504,167 @@
       }
     },
     {
+      "id": "P4",
+      "phase": "practice",
+      "eis": "symbolic",
+      "type": "SENTENCE_SOUND",
+      "prompt_hi": "कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
+      "audio": {
+        "prompt": "vo_p4_prompt",
+        "target": "vo_ltr_n",
+        "try_again": "vo_p4_try",
+        "reveal": "vo_p4_reveal",
+        "correct": "vo_p4_correct"
+      },
+      "data": {
+        "words": [
+          {
+            "text": "नानी"
+          },
+          {
+            "text": "ने"
+          },
+          {
+            "text": "नई"
+          },
+          {
+            "text": "नाव"
+          },
+          {
+            "text": "बनाई।"
+          }
+        ],
+        "whole_audio": "vo_line_l6",
+        "target_sound": "न",
+        "options": [
+          {
+            "letter": "म",
+            "audio": "vo_ltr_m"
+          },
+          {
+            "letter": "ल",
+            "audio": "vo_ltr_l"
+          },
+          {
+            "letter": "न",
+            "audio": "vo_ltr_n"
+          }
+        ],
+        "signal_name": "sentence_sound_first_try",
+        "reveal_seq": true,
+        "hide_replay": true,
+        "seq_say_whole": true,
+        "fixed_order": true,
+        "mark_initial": true
+      }
+    },
+    {
+      "id": "P1",
+      "phase": "practice",
+      "eis": "iconic",
+      "type": "TAP_ALL_WITH_SOUND",
+      "prompt_hi": "“म” की आवाज़ वाले शब्दों पर टैप कीजिए।",
+      "audio": {
+        "prompt": "vo_p1_prompt",
+        "target": "vo_snd_m",
+        "hint": "vo_p1_hint",
+        "more": "vo_p1_more",
+        "try_again": "vo_p1_try",
+        "reveal": "vo_p1_reveal",
+        "done": "vo_p1_done"
+      },
+      "data": {
+        "target_sound": "म",
+        "items": [
+          {
+            "word_hi": "मामा",
+            "img": "obj_mama",
+            "emoji": "👨",
+            "audio": "vo_w_mama",
+            "has": true
+          },
+          {
+            "word_hi": "चिड़िया",
+            "img": "obj_chidiya",
+            "emoji": "🐦",
+            "audio": "vo_w_chidiya",
+            "has": false
+          },
+          {
+            "word_hi": "मूली",
+            "img": "obj_muli",
+            "emoji": "🥕",
+            "audio": "vo_w_muli",
+            "has": true
+          },
+          {
+            "word_hi": "लड्डू",
+            "img": "obj_laddu",
+            "emoji": "🍬",
+            "audio": "vo_w_laddu",
+            "has": false
+          }
+        ],
+        "allow_hand": true,
+        "reveal_seq": true,
+        "signal_name": "tap_all_sound_first_try"
+      }
+    },
+    {
+      "id": "P7",
+      "phase": "practice",
+      "eis": "iconic",
+      "type": "TAP_ALL_WITH_SOUND",
+      "prompt_hi": "“च” की आवाज़ वाले शब्दों पर टैप कीजिए।",
+      "audio": {
+        "prompt": "vo_p7_prompt",
+        "target": "vo_snd_ch",
+        "hint": "vo_p7_hint",
+        "more": "vo_p7_more",
+        "try_again": "vo_p7_try",
+        "reveal": "vo_p7_reveal",
+        "done": "vo_p7_done"
+      },
+      "data": {
+        "target_sound": "च",
+        "items": [
+          {
+            "word_hi": "चाँद",
+            "img": "obj_chand",
+            "emoji": "🌙",
+            "audio": "vo_w_chand",
+            "has": true
+          },
+          {
+            "word_hi": "माला",
+            "img": "obj_mala",
+            "emoji": "📿",
+            "audio": "vo_w_mala",
+            "has": false
+          },
+          {
+            "word_hi": "चश्मा",
+            "img": "obj_chashma",
+            "emoji": "👓",
+            "audio": "vo_w_chashma",
+            "has": true
+          },
+          {
+            "word_hi": "लाल",
+            "img": "obj_laal",
+            "emoji": "🔴",
+            "audio": "vo_w_laal",
+            "has": false
+          }
+        ],
+        "allow_hand": true,
+        "reveal_seq": true,
+        "signal_name": "tap_all_sound_first_try"
+      }
+    },
+    {
       "id": "G5D",
-      "phase": "guided",
+      "phase": "practice",
       "eis": "enactive",
       "type": "SORT_VACHAN",
       "prompt_hi": "हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
@@ -541,7 +709,7 @@
     },
     {
       "id": "G5",
-      "phase": "guided",
+      "phase": "practice",
       "eis": "enactive",
       "type": "SORT_VACHAN",
       "prompt_hi": "हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए।",
@@ -598,165 +766,6 @@
         "drag_demo": false,
         "auto_demo": false,
         "auto_advance": false
-      }
-    },
-    {
-      "id": "P1",
-      "phase": "practice",
-      "eis": "iconic",
-      "type": "TAP_ALL_WITH_SOUND",
-      "prompt_hi": "जिन शब्दों में “म” की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
-      "audio": {
-        "prompt": "vo_p1_prompt",
-        "target": "vo_snd_m",
-        "hint": "vo_p1_hint",
-        "more": "vo_p1_more",
-        "try_again": "vo_p1_try",
-        "reveal": "vo_p1_reveal",
-        "done": "vo_p1_done"
-      },
-      "data": {
-        "target_sound": "म",
-        "items": [
-          {
-            "word_hi": "मामा",
-            "img": "obj_mama",
-            "emoji": "👨",
-            "audio": "vo_w_mama",
-            "has": true
-          },
-          {
-            "word_hi": "चिड़िया",
-            "img": "obj_chidiya",
-            "emoji": "🐦",
-            "audio": "vo_w_chidiya",
-            "has": false
-          },
-          {
-            "word_hi": "मूली",
-            "img": "obj_muli",
-            "emoji": "🥕",
-            "audio": "vo_w_muli",
-            "has": true
-          },
-          {
-            "word_hi": "लड्डू",
-            "img": "obj_laddu",
-            "emoji": "🍬",
-            "audio": "vo_w_laddu",
-            "has": false
-          }
-        ],
-        "allow_hand": true,
-        "reveal_seq": true,
-        "signal_name": "tap_all_sound_first_try"
-      }
-    },
-    {
-      "id": "P4",
-      "phase": "practice",
-      "eis": "symbolic",
-      "type": "SENTENCE_SOUND",
-      "prompt_hi": "कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
-      "audio": {
-        "prompt": "vo_p4_prompt",
-        "target": "vo_ltr_n",
-        "try_again": "vo_p4_try",
-        "reveal": "vo_p4_reveal",
-        "correct": "vo_p4_correct"
-      },
-      "data": {
-        "words": [
-          {
-            "text": "नानी"
-          },
-          {
-            "text": "ने"
-          },
-          {
-            "text": "नई"
-          },
-          {
-            "text": "नाव"
-          },
-          {
-            "text": "बनाई।"
-          }
-        ],
-        "whole_audio": "vo_line_l6",
-        "target_sound": "न",
-        "options": [
-          {
-            "letter": "म",
-            "audio": "vo_ltr_m"
-          },
-          {
-            "letter": "ल",
-            "audio": "vo_ltr_l"
-          },
-          {
-            "letter": "न",
-            "audio": "vo_ltr_n"
-          }
-        ],
-        "signal_name": "sentence_sound_first_try",
-        "reveal_seq": true,
-        "hide_replay": true,
-        "seq_say_whole": true,
-        "fixed_order": true,
-        "mark_initial": true
-      }
-    },
-    {
-      "id": "P7",
-      "phase": "practice",
-      "eis": "iconic",
-      "type": "TAP_ALL_WITH_SOUND",
-      "prompt_hi": "जिन शब्दों में “च” की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
-      "audio": {
-        "prompt": "vo_p7_prompt",
-        "target": "vo_snd_ch",
-        "hint": "vo_p7_hint",
-        "more": "vo_p7_more",
-        "try_again": "vo_p7_try",
-        "reveal": "vo_p7_reveal",
-        "done": "vo_p7_done"
-      },
-      "data": {
-        "target_sound": "च",
-        "items": [
-          {
-            "word_hi": "चाँद",
-            "img": "obj_chand",
-            "emoji": "🌙",
-            "audio": "vo_w_chand",
-            "has": true
-          },
-          {
-            "word_hi": "माला",
-            "img": "obj_mala",
-            "emoji": "📿",
-            "audio": "vo_w_mala",
-            "has": false
-          },
-          {
-            "word_hi": "चश्मा",
-            "img": "obj_chashma",
-            "emoji": "👓",
-            "audio": "vo_w_chashma",
-            "has": true
-          },
-          {
-            "word_hi": "लाल",
-            "img": "obj_laal",
-            "emoji": "🔴",
-            "audio": "vo_w_laal",
-            "has": false
-          }
-        ],
-        "allow_hand": true,
-        "reveal_seq": true,
-        "signal_name": "tap_all_sound_first_try"
       }
     },
     {
@@ -967,8 +976,8 @@
   ],
   "phase_distribution": {
     "tutorial": 6,
-    "guided": 4,
-    "practice": 5
+    "guided": 2,
+    "practice": 7
   },
   "signals_expected": [
     "slide_entered",
@@ -1114,7 +1123,7 @@
       "vo_g2_done": "शाबाश! तुमने प की आवाज़ वाले सारे शब्द खोज लिए।",
       "vo_g2_hint": "हर शब्द को ध्यान से देखिए और सुनिए। किस शब्द में प की आवाज़ आ रही है?",
       "vo_g2_more": "एक और प वाले शब्द पर टैप कीजिए।",
-      "vo_g2_prompt": "जिन शब्दों में “प” की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
+      "vo_g2_prompt": "“प” की आवाज़ वाले शब्दों पर टैप कीजिए।",
       "vo_g2_reveal": "सुनो — इसमें प की आवाज़ है।",
       "vo_g2_try": "इस शब्द की शुरुआत में प की आवाज़ नहीं है। एक बार फिर सुनो।",
       "vo_g3_correct": "चूहे, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।",
@@ -1140,7 +1149,7 @@
       "vo_p1_done": "शाबाश! म की आवाज़ वाले सारे शब्द मिल गए।",
       "vo_p1_hint": "हर शब्द सुनो — क्या उसमें म की आवाज़ सुनाई देती है?",
       "vo_p1_more": "एक और म वाले शब्द पर टैप कीजिए।",
-      "vo_p1_prompt": "जिन शब्दों में “म” की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
+      "vo_p1_prompt": "“म” की आवाज़ वाले शब्दों पर टैप कीजिए।",
       "vo_p1_reveal": "सुनो — इसमें म की आवाज़ है।",
       "vo_p1_try": "इस शब्द की शुरुआत में म की आवाज़ नहीं है। एक बार फिर सुनो।",
       "vo_p4_correct": "सही! शुरुआत में न की आवाज़ थी।",
@@ -1150,7 +1159,7 @@
       "vo_p7_done": "वाह! तुमने च की आवाज़ हर जगह पहचान ली।",
       "vo_p7_hint": "च की आवाज़ शुरू में भी हो सकती है और बीच में भी। पूरा शब्द सुनो।",
       "vo_p7_more": "एक और च वाले शब्द पर टैप कीजिए।",
-      "vo_p7_prompt": "जिन शब्दों में “च” की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
+      "vo_p7_prompt": "“च” की आवाज़ वाले शब्दों पर टैप कीजिए।",
       "vo_p7_reveal": "सुनो — इसमें च की आवाज़ है।",
       "vo_p7_try": "इस शब्द में च की आवाज़ कहीं नहीं है। एक बार फिर सुनो।",
       "vo_p8_prompt": "शाबाश! आज हमने सीखा — वाक्य ध्यान से सुनना, बार-बार आने वाली आवाज़ पहचानना, और प, च और म की आवाज़ ढूँढना।",
@@ -1379,24 +1388,12 @@
       ],
       "vo_g2_prompt": [
         [
-          0.28,
-          1.37
+          0.25,
+          2.33
         ],
         [
-          1.85,
-          2.17
-        ],
-        [
-          2.5,
-          3.66
-        ],
-        [
-          4.04,
-          4.62
-        ],
-        [
-          4.8,
-          5.2
+          2.43,
+          3.14
         ]
       ],
       "vo_g2_reveal": [
@@ -1811,20 +1808,12 @@
       ],
       "vo_p1_prompt": [
         [
-          0.27,
-          1.31
+          0.29,
+          2.27
         ],
         [
-          1.6,
-          3.09
-        ],
-        [
-          3.37,
-          3.92
-        ],
-        [
-          4.05,
-          4.45
+          2.39,
+          2.78
         ]
       ],
       "vo_p1_reveal": [
@@ -1959,28 +1948,20 @@
       ],
       "vo_p7_prompt": [
         [
-          0.32,
-          1.28
+          0.15,
+          0.45
         ],
         [
-          1.43,
-          1.63
+          0.63,
+          2.27
         ],
         [
-          1.75,
-          2.81
+          2.4,
+          2.57
         ],
         [
-          3.14,
-          3.47
-        ],
-        [
-          3.57,
-          3.7
-        ],
-        [
-          3.83,
-          4.24
+          2.69,
+          3.09
         ]
       ],
       "vo_p7_reveal": [
@@ -2423,7 +2404,7 @@
       "vo_g2_done": 5.24,
       "vo_g2_hint": 6.48,
       "vo_g2_more": 3.36,
-      "vo_g2_prompt": 5.6,
+      "vo_g2_prompt": 3.37,
       "vo_g2_reveal": 3.4,
       "vo_g2_try": 5.12,
       "vo_g3_correct": 7.8,
@@ -2449,7 +2430,7 @@
       "vo_p1_done": 4.24,
       "vo_p1_hint": 4.96,
       "vo_p1_more": 3.84,
-      "vo_p1_prompt": 4.88,
+      "vo_p1_prompt": 3.05,
       "vo_p1_reveal": 3.2,
       "vo_p1_try": 5.08,
       "vo_p4_correct": 3.48,
@@ -2459,7 +2440,7 @@
       "vo_p7_done": 4.2,
       "vo_p7_hint": 6.28,
       "vo_p7_more": 3.36,
-      "vo_p7_prompt": 4.6,
+      "vo_p7_prompt": 3.29,
       "vo_p7_reveal": 3.0,
       "vo_p7_try": 4.0,
       "vo_p8_prompt": 9.57,

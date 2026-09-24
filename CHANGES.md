@@ -2967,3 +2967,78 @@ The last one is the fallback's actual purpose, tested by launching Chrome with
 
 - Guards pass on all four trees; HTML byte-identical
 - No card, asset or dist change — engine only
+
+---
+
+# r6a — the letter lands after the highlighting, shorter tap prompts, and two moves
+
+## 1 · The teach pages hand the letter over last
+
+SME: *"once the letter[s are] highlighted then the च letter will appear on the screen and its VO
+will be aligned with it"*, for pages 1, 3 and 5.
+
+The order was `sentence → clear → pause → letter (silent) → mark`. The card arrived **before** the
+line was highlighted, which asks a child to hold an unexplained symbol in mind while the sound is
+hunted for. It is now `sentence → clear → pause → mark → pause → letter`, so the card is the
+**answer** to the repetition they have just watched.
+
+**And it speaks.** `silent: True` is gone, so the card plays `audio.target` as it appears —
+`vo_ltr_ch` / `vo_ltr_m` / `vo_ltr_p`, the bare अक्षर. That is the alignment asked for, and it
+restores the deck's own row 21 (*"play only the च sound"*), which r4f had dropped to keep the page
+to two clips. These pages now carry three.
+
+Measured on all three, live:
+
+```
+page 1   vo_line_l2  0.5s → vo_t3_explain 5.5s (paces the marking) → card 13.9s speaking vo_ltr_ch
+page 3   vo_line_l3  0.5s → vo_t5_explain 5.1s                      → card 14.1s speaking vo_ltr_m
+page 5   vo_line_l1  0.5s → vo_t1_explain 6.0s                      → card 15.4s speaking vo_ltr_p
+```
+
+## 2 · The tap prompts are shorter
+
+`जिन शब्दों में “प” की आवाज़ सुनाई दे, उन पर टैप कीजिए।`
+→ **`“प” की आवाज़ वाले शब्दों पर टैप कीजिए।`**
+
+on all three tap pages (G2 प, P1 म, P7 च). `prompt_hi` is the VO on these pages, so all three were
+re-recorded; they transcribe at 97%.
+
+## 3 & 4 · The running order
+
+Two moves: the sort pair before the balloons, and the न question beside the च question.
+
+| page | was | |
+|---|---|---|
+| 9 | 12 | **P4** — the न question, now straight after G3's च question |
+| 10 | 11 | P1 |
+| 11 | 13 | P7 |
+| 12 | 9 | **G5D** — watch-the-sort |
+| 13 | 10 | **G5** — do-the-sort |
+
+Everything else is where it was.
+
+**The order now lives in one place.** The slide blocks are left where they sit — each carries the
+review history of its own page, and cutting them apart to express a sequence would scatter that. A
+single `ORDER` list states the running order, with an assert that fails the build if it ever
+disagrees with the slides actually constructed. A typo there is a build failure, not a missing page.
+
+**The sort pair is relabelled `practice`.** It now sits after three practice pages, and a slide
+labelled `guided` arriving there would report a phase that has already passed — the emitted signals
+carry `phase`, and the receipt counts by it. No gate misfires either way (`_gatedPhases` is a Set, so
+each gate plays once), but the label should follow the page. Distribution is now
+**tutorial 6 · guided 2 · practice 7**.
+
+## Receipt
+
+- 15 slides, new order verified page by page against the request
+- All three guards pass on all four trees; HTML byte-identical
+- Three re-recorded prompts transcribe at **97%**
+- **dist 9.79 MB — 217 KB under the cap**; manifests regenerated
+
+## Still needs a human
+
+**The three re-worded prompts are machine TTS again.** `vo_g2_prompt`, `vo_p1_prompt` and
+`vo_p7_prompt` were part of the studio delivery and matched; changing their wording made those takes
+wrong, so they fell back to the generated voice. They go on the re-record list with the two from r5x
+(`vo_p8_prompt`, `vo_w_kamal`) and the seven script mismatches — **twelve lines in total**, all
+listed in the manifest.

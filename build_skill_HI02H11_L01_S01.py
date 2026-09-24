@@ -93,7 +93,7 @@ VO = {
     # string (shown == spoken, by construction), so the quotes live here rather than in a second
     # copy of the line. They cost nothing spoken: TTS does not voice a quotation mark, so the
     # existing clip still matches and does not need re-recording.
-    "vo_g2_prompt": "जिन शब्दों में \u201cप\u201d की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
+    "vo_g2_prompt": "\u201cप\u201d की आवाज़ वाले शब्दों पर टैप कीजिए।",
     # [r5m] SME: "after first correct selection the VO will play 'एक और प वाले शब्द पर टैप करो'".
     # The mechanic had nothing to say between the first correct tap and the last one, so a child who
     # found one word got silence where the page should have asked for the other.
@@ -137,7 +137,7 @@ VO = {
     "vo_g5_correct": "बहुत बढ़िया! सही डिब्बा।",
 
     # ---- practice 1 · tap-all म (deck page 13) ------------------------------------------
-    "vo_p1_prompt": "जिन शब्दों में \u201cम\u201d की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
+    "vo_p1_prompt": "\u201cम\u201d की आवाज़ वाले शब्दों पर टैप कीजिए।",
     "vo_p1_more":   "एक और म वाले शब्द पर टैप कीजिए।",
     "vo_p1_hint":   "हर शब्द सुनो — क्या उसमें म की आवाज़ सुनाई देती है?",
     "vo_p1_try":    "इस शब्द की शुरुआत में म की आवाज़ नहीं है। एक बार फिर सुनो।",
@@ -160,7 +160,7 @@ VO = {
     "vo_p4_correct": "सही! शुरुआत में न की आवाज़ थी।",
 
     # ---- practice 7 · tap-all च (deck page 19) ------------------------------------------
-    "vo_p7_prompt": "जिन शब्दों में \u201cच\u201d की आवाज़ सुनाई दे, उन पर टैप कीजिए।",
+    "vo_p7_prompt": "\u201cच\u201d की आवाज़ वाले शब्दों पर टैप कीजिए।",
     "vo_p7_more":   "एक और च वाले शब्द पर टैप कीजिए।",
     "vo_p7_hint":   "च की आवाज़ शुरू में भी हो सकती है और बीच में भी। पूरा शब्द सुनो।",
     "vo_p7_try":    "इस शब्द में च की आवाज़ कहीं नहीं है। एक बार फिर सुनो।",
@@ -415,18 +415,24 @@ def build_card():
         "T3", ["चूहे", "ने", "चार", "चने", "चबाए।"], "vo_line_l2", "च", "vo_ltr_ch",
         mark_bare=True,      # [r4e] "highlight only च - no matra"
         hide_replay=True,    # [r4f] "remove the फिर सुनो button"
-        # [r4f] EXACTLY TWO CLIPS ON THIS PAGE, per review: VO 1 the sentence, a brief pause, VO 2 the
-        # explanation. The letter card still arrives on its own beat but is now SILENT - which means
-        # this page no longer satisfies the deck's own "play only the च sound" for row 21. The later
-        # instruction wins; the conflict is written up in CHANGES.md so the SME can see it.
+        # [r5z] THE LETTER ARRIVES LAST, AND IT SPEAKS. SME: "once the letter[s are] highlighted then
+        # the च letter will appear on the screen and its VO will be aligned with it."
+        #   * ORDER: mark before letter. The page used to show the card and then go looking for the
+        #     sound in the words, which asks the child to hold an unexplained symbol in mind. Now the
+        #     line is highlighted first and the card is the ANSWER to what they just saw repeating.
+        #   * SOUND: `silent` is gone, so the card plays audio.target - vo_ltr_ch, the bare च - at the
+        #     moment it appears. That is the alignment asked for, and it also restores the deck's own
+        #     row 21 ("play only the च sound"), which r4f had dropped to keep the page to two clips.
+        #     The page now has three: sentence, explanation, letter.
         seq=[
             {"step": "sentence"},                 # VO 1, word-by-word in step with the line
             {"step": "clear_words"},              # "After the sentence is completed, remove the
                                                   #  word-level highlighting."
             {"step": "pause", "ms": 900},         # "a brief pause ... a moment to notice"
-            {"step": "letter", "silent": True},   # the letter appears; nothing is spoken
             {"step": "mark", "audio": "vo_t3_explain",
              "words": ["चूहे", "चार", "चने", "चबाए।"]},   # VO 2
+            {"step": "pause", "ms": 500},         # let the marked line settle before the card lands
+            {"step": "letter"},                   # the card appears AND says च (audio.target)
         ]))
     # new page 3 (was page 5) — च; the ant is gone, the mouse the sentence is ABOUT takes its place
     slides.append(meet_letter("T4", "च", "चूहा", "obj_chuha",
@@ -448,11 +454,14 @@ def build_card():
             # [r5k] SME: remove the "म से मछली" VO, this page should be the same as page 1.
             # It was the ONE teach page that spoke on this beat — pages 1 and 5 have always
             # been silent here — so the म page alone said a carrier phrase the others never did.
-            {"step": "letter", "silent": True},
             # "लाए" is listed nowhere here, on purpose: "Do not highlight लाए, because it does not
             # contain the target sound म."
             {"step": "mark", "audio": "vo_t5_explain",
              "words": ["मेरे", "मामा", "मीठी", "मलाई"]},
+            {"step": "pause", "ms": 500},
+            # [r5z] see T3: the card arrives AFTER the highlighting and says its
+            # letter (audio.target), which is the alignment the SME asked for.
+            {"step": "letter"},
         ]))
     # new page 5 (was page 7) — म
     slides.append(meet_letter("T6", "म", "मूली", "obj_muli",
@@ -480,7 +489,6 @@ def build_card():
             {"step": "pause", "ms": 900},
             # [r4n] SME: "we don't need प se Patang VO" - vo_snd_p is the phrase
             # "प से पतंग।". The card still ARRIVES on its own beat, exactly as page 2 does.
-            {"step": "letter", "silent": True},
             # [r4o] ONE CLIP FOR THE MARK BEAT, so the marking is SPOKEN OVER instead of
             # running silent and being narrated afterwards. vo_t1_words.ogg has never been
             # generated (row 46), so this beat had NO audio at all: the four प lit in silence on
@@ -491,6 +499,10 @@ def build_card():
             # When vo_t1_words.ogg is finally produced the SME may want the two-beat script back.
             {"step": "mark", "audio": "vo_t1_explain",
              "words": ["पीतल", "पतीले", "पपीता", "पीला-पीला।"]},
+            {"step": "pause", "ms": 500},
+            # [r5z] see T3: the card arrives AFTER the highlighting and says its
+            # letter (audio.target), which is the alignment the SME asked for.
+            {"step": "letter"},
         ]))
     # new page 7 (was page 3) — प
     slides.append(meet_letter("T2", "प", "पपीता", "obj_papita",
@@ -536,7 +548,7 @@ def build_card():
     # Words chosen from art and clips this lesson ALREADY ships (पतंग on page 7, चाँद on page 12), so
     # the demo costs one new VO line and nothing else - dist has little headroom left.
     slides.append(sort_two(
-        "G5D", "guided", VO["vo_g5_show"],
+        "G5D", "practice", VO["vo_g5_show"],
         [{"gender": "S", "label": "प"},
          {"gender": "P", "label": "च"}],
         [_item("पतंग", "obj_patang", "vo_w_patang", gender="S"),
@@ -551,7 +563,7 @@ def build_card():
         auto_demo=True, auto_advance=True))
 
     slides.append(sort_two(
-        "G5", "guided", VO["vo_g5_prompt"],
+        "G5", "practice", VO["vo_g5_prompt"],
         # [r5n] SME: "keep only प and च, remove every other word". The boxes are read by a
         # pre-reader, and "प की आवाज़ वाला" is a sentence; the letter alone is the label.
         [{"gender": "S", "label": "प"},
@@ -690,6 +702,25 @@ def build_card():
         "audio": {"prompt": "vo_p8_prompt"},
         "data": {},
     })
+
+    # ── [r5z] RUNNING ORDER, stated once ──────────────────────────────────────────
+    # The SME asked for two moves: the sort pair (G5D, G5) to sit just before the balloons, and the
+    # न question (P4) to follow the च question (G3) "because they are similar".
+    # The blocks above are left where they are - each carries the review history of its own page, and
+    # cutting them apart to express an order would scatter that. The order lives HERE instead, as one
+    # readable line, and the assert makes a typo a build failure rather than a missing page.
+    ORDER = ["T3", "T4", "T5", "T6", "T1", "T2",   # 1-6   teach: sentence, letter, x3
+             "G2",                                  # 7     tap the प words
+             "G3", "P4",                            # 8-9   the two "which sound repeats?" questions
+             "P1", "P7",                            # 10-11 tap the म words, tap the च words
+             "G5D", "G5",                           # 12-13 watch the sort, then do the sort
+             "G1",                                  # 14    balloons
+             "P8"]                                  # 15    celebration
+    _by_id = {s["id"]: s for s in slides}
+    assert len(_by_id) == len(slides), "duplicate slide id"
+    assert set(_by_id) == set(ORDER), "ORDER does not match the slides built: %s" % (
+        sorted(set(_by_id) ^ set(ORDER)),)
+    slides = [_by_id[i] for i in ORDER]
 
     # ── assets: reference-driven, so a dropped slide cannot leave an orphan behind ──────────
     audio_ids, image_ids = set(), set()
