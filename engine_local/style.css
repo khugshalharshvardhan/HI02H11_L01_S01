@@ -2288,7 +2288,13 @@ html.no-anim .balloon.bal-entering{ animation:none; opacity:1; transform:none; }
 .sg-card.lh-card .sg-btn{ bottom:54px; width:96px; height:96px; min-width:0; padding:0;
   box-sizing:border-box; border-radius:50%;
   display:flex; align-items:center; justify-content:center; }
-.sg-card.lh-card .sg-btn::after{ font-size:44px; transform:translateX(3px); }
+/* [S01r6g] CENTRED IN THE DISC, AND BIGGER. Measured at 4x on the live button: the ▶ glyph's own
+   side bearing already pushes it right, and the pill-era translateX(3px) pushed it further - the ink
+   centre sat +6.8px right of the disc centre, which on a 96px circle put the tip almost on the rim
+   with a wide gap behind it. 44 -> 54px (ink goes from 36% to ~44% of the disc), and the nudge is now
+   a small NEGATIVE one: a play triangle still wants to sit a hair right of geometric centre, because
+   its centroid is a sixth of its width left of its bounding box, but 6.8px was far past that. */
+.sg-card.lh-card .sg-btn::after{ font-size:54px; transform:translate(-2.7px, 1px); }
 /* [S01r6e] The supplied cover art fills the card's INNER box - the SME's words - not the card itself.
    The frame is painted into start_card.webp, not drawn in CSS, so `border-radius:inherit` resolved to
    0 and the first attempt laid a hard rectangle straight over the white rim and its rounded corners.

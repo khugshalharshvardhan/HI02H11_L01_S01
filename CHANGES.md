@@ -3325,3 +3325,64 @@ Verified: 102×102, `circular=True`, and still reachable at its centre.
 - CSS only — no engine logic, no card change, no new assets
 - Guards pass on all four trees; HTML byte-identical
 - **dist 9.89 MB — 113 KB under the cap**, unchanged
+
+---
+
+# r6g — a soft bed under the balloon game, and the triangle centred
+
+## 1 · Background music on page 14
+
+**Synthesised, not a clip — and that is a size decision, not a preference.** dist sits 112 KB from the
+10 MB cap and any real music loop is 100–300 KB. The Web Audio route already carries the balloon
+burst, so this adds **no bytes at all**.
+
+What it plays: a warm pad of three detuned triangles a fifth apart under a slow low-pass sweep, plus
+a sparse pluck every few seconds drawn from a **C major pentatonic** — pentatonic because no two
+notes in it can clash, so the bed can wander without ever landing on something sour under a child's
+voice.
+
+**Three rules it obeys, all measured:**
+
+```
+ducks under speech   gain 0.0192 while a clip sounds vs 0.0514 quiet   (2.7x)
+honours mute         0.0023 with mute on, recovers when it is released
+never outlives       3 oscillators on page 14, 0 before it, 0 after leaving
+```
+
+The ducking matters more here than anywhere else in the lesson: **this page talks constantly** —
+every balloon names itself on the way in — so a bed holding its level would be competing with the
+words the page is about. It follows mute continuously rather than only checking at the start, and it
+fades in and out instead of cutting, because stopping an oscillator at full gain is a click.
+
+Resting volume is **0.055**, which is where "you notice it stop" sits rather than "you notice it
+playing".
+
+> **If you would rather have a real recorded track**, it is roughly 100–300 KB and the budget does
+> not currently hold it — something would have to come out first, most cheaply another bitrate drop
+> across the 91 clips.
+
+## 2 · The triangle is centred in the disc, and bigger
+
+Measured at 4× on the live button: the ▶ glyph's own side bearing pushes it right, and the pill-era
+`translateX(3px)` pushed it further — the ink centre sat **+6.8px** right of the disc centre, which on
+a 96px circle put the tip almost on the rim with a wide gap behind it.
+
+```
+        ink width    offset from centre    gap left / right
+before    36%            +6.8px              39% / 25%
+after     44%            +0.8px              27.5px / 26.0px
+```
+
+44px → 54px, and the nudge is now a small NEGATIVE one. A play triangle does still want to sit a hair
+right of geometric centre — its centroid is a sixth of its width left of its bounding box — and
++0.8px is that hair. 6.8px was far past it.
+
+## Receipt
+
+- Guards pass on all four trees; HTML byte-identical; `app.js` parses clean, no console errors
+- **No new assets** — dist unchanged at 9.89 MB, 112 KB under the cap
+
+## Still needs a human
+
+**Nobody has heard the music.** Its level, its ducking and its lifecycle are measured in the audio
+graph; whether it is pleasant under a child's voice is a listening judgement.

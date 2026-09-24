@@ -585,6 +585,91 @@ function armSkyBurst(){
   }, true);
 }
 
+/* [S01r6g] A SOFT BED UNDER THE BALLOON GAME.
+   SYNTHESISED, not a clip, and that is a size decision rather than a preference: dist is 112 KB from
+   the 10MB cap and any real music loop is 100-300 KB. The same Web Audio route already carries the
+   balloon burst, so this adds no bytes at all.
+   What it plays: a warm pad of three detuned triangles a fifth apart under a slow low-pass, plus a
+   sparse pentatonic pluck every few seconds. Pentatonic because no two notes in it can clash - the
+   bed can wander without ever landing on something sour under a child's voice.
+   Three rules it obeys:
+     * it DUCKS while any clip is sounding. This page talks constantly - every balloon names itself -
+       so a bed that held its level would be competing with the words the lesson is about.
+     * it honours mute, and it checks continuously rather than only at the start.
+     * it fades, never cuts, and it stops dead when the page is left. */
+const BAL_MUSIC = {
+  vol: 0.055,          /* the whole point is that it sits UNDER everything */
+  duck: 0.34,          /* of that, while a clip is sounding */
+  notes: [261.63, 293.66, 329.63, 392.00, 440.00],    /* C major pentatonic */
+  nodes: null, timer: 0, duckTimer: 0,
+};
+function balMusicStart(){
+  try{
+    if(BAL_MUSIC.nodes) return;
+    if(document.documentElement.classList.contains("no-anim")) return;
+    const c = _ac(); if(!c) return;
+    const master = c.createGain();
+    master.gain.setValueAtTime(0.0001, c.currentTime);
+    master.gain.exponentialRampToValueAtTime(BAL_MUSIC.vol, c.currentTime + 2.0);   /* fade in */
+    const lp = c.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.value = 900; lp.Q.value = 0.6;
+    lp.connect(master); master.connect(c.destination);
+
+    /* the pad: a chord that simply holds, detuned so it breathes instead of sitting still */
+    const oscs = [];
+    [130.81, 196.00, 261.63].forEach((f, i)=>{
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = "triangle"; o.frequency.value = f; o.detune.value = (i - 1) * 6;
+      g.gain.value = [0.5, 0.32, 0.22][i];
+      o.connect(g).connect(lp); o.start();
+      oscs.push(o);
+    });
+    /* a very slow swell across the pad, so it is never a flat drone */
+    const lfo = c.createOscillator(), lfoG = c.createGain();
+    lfo.type = "sine"; lfo.frequency.value = 0.055; lfoG.gain.value = 260;
+    lfo.connect(lfoG).connect(lp.frequency); lfo.start();
+
+    BAL_MUSIC.nodes = { master, lp, oscs, lfo };
+
+    /* the plucks */
+    let k = 0;
+    const pluck = ()=>{
+      if(!BAL_MUSIC.nodes) return;
+      const t = c.currentTime;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = "sine";
+      o.frequency.value = BAL_MUSIC.notes[(k = (k + 1 + Math.floor(Math.random() * 2)) % BAL_MUSIC.notes.length)];
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.5, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);        /* long, soft tail */
+      o.connect(g).connect(lp); o.start(t); o.stop(t + 2.3);
+      BAL_MUSIC.timer = setTimeout(pluck, 2200 + Math.random() * 2600);
+    };
+    BAL_MUSIC.timer = setTimeout(pluck, 1400);
+
+    /* duck under speech, and follow mute, without polling the audio graph itself */
+    BAL_MUSIC.duckTimer = setInterval(()=>{
+      if(!BAL_MUSIC.nodes) return;
+      const want = isMuted ? 0.0001
+                 : (isPlaying ? BAL_MUSIC.vol * BAL_MUSIC.duck : BAL_MUSIC.vol);
+      try{ BAL_MUSIC.nodes.master.gain.setTargetAtTime(want, c.currentTime, 0.35); }catch(e){}
+    }, 220);
+  }catch(e){}
+}
+function balMusicStop(){
+  try{
+    const n = BAL_MUSIC.nodes; if(!n) return;
+    BAL_MUSIC.nodes = null;
+    clearTimeout(BAL_MUSIC.timer); clearInterval(BAL_MUSIC.duckTimer);
+    const c = _ac();
+    if(c){ try{ n.master.gain.setTargetAtTime(0.0001, c.currentTime, 0.25); }catch(e){} }
+    /* let the fade finish before the oscillators go, or the stop is a click */
+    setTimeout(()=>{
+      try{ n.oscs.forEach(o => o.stop()); n.lfo.stop(); }catch(e){}
+      try{ n.master.disconnect(); n.lp.disconnect(); }catch(e){}
+    }, 900);
+  }catch(e){}
+}
 function buildSky(){
   try{
     if(_skyStill()) return;                                              // kit R5
@@ -6333,6 +6418,7 @@ const SlideModules = {
       /* the deck's reference screen is a bare stage: no prompt band, no hint chip, no आगे */
       $("stage").classList.add("vo-only");
       document.body.classList.add("bal-page");
+      balMusicStart();          /* [S01r6g] the bed, under everything this page says */
       $("hintBtn").classList.remove("show"); $("hintBtn").style.display = "none";
       $("navBtn").style.display = "none"; setNavActive(false);
 
@@ -6750,6 +6836,7 @@ function mountSlide(idx){
      appear and then be taken away. Cleared here with the other per-slide stage classes. */
   $("stage").classList.toggle("auto-adv", !!(slide.data && slide.data.auto_advance));
   document.body.classList.remove("bal-page");   /* [S01r5i] */
+  balMusicStop();                               /* [S01r6g] and it never outlives the page */
 
   // Hint button stays HIDDEN until the learner makes a wrong attempt, then it is
   // exposed (graduated scaffold). Mastery uses the SAME scaffold — not excluded.
