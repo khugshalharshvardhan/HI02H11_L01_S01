@@ -37,6 +37,7 @@
         "do": "crow"
       }
     ],
+    "cover_img": "cover_hero",
     "picture_img": "obj_kauaa",
     "picture_emoji": "🐦‍⬛",
     "picture_sfx": "sfx_kanv",
@@ -1179,6 +1180,7 @@
       "vo_w_payal": "पायल"
     },
     "image": {
+      "cover_hero": "assets/Images/cover_hero.png",
       "obj_aam": "assets/Images/obj_aam.png",
       "obj_chammach": "assets/Images/obj_chammach.png",
       "obj_chand": "assets/Images/obj_chand.png",

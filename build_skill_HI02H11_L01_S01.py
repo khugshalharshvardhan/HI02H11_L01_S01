@@ -729,7 +729,7 @@ def build_card():
     def walk(node):
         if isinstance(node, dict):
             for k, v in node.items():
-                if k in ("img", "picture_img") and isinstance(v, str):
+                if k in ("img", "picture_img", "cover_img") and isinstance(v, str):
                     image_ids.add(v)
                 elif k == "audio" and isinstance(v, str):
                     audio_ids.add(v)
@@ -761,6 +761,11 @@ def build_card():
         #   "क"     -> the greeting's own «इस वाक्य में क की ध्वनि…», where every क lights at once
         #   "ध्वनि" -> the crow arrives (and calls) while the sentence stays up; the VO plays on
         "cues": [{"at": "क", "do": "light"}, {"at": "ध्वनि", "do": "crow"}],
+        # [r6e] SME artwork for the cover: one painted board carrying the title and the crow, fitted
+        # to the card. The word strip and the crow element are NOT rendered when this is set - both are
+        # already in the painting. picture_img / picture_emoji stay declared because picture_sfx still
+        # fires on the crow's cue, and the emoji is the no-art fallback the engine expects beside it.
+        "cover_img": "cover_hero",
         "picture_img": "obj_kauaa",
         "picture_emoji": EMOJI["obj_kauaa"],
         "picture_sfx": "sfx_kanv",

@@ -3223,3 +3223,72 @@ drop the per-balloon clip on the SECOND round only, where the words are already 
 - Guards pass on all four trees; HTML byte-identical; `app.js` parses clean
 - No new assets — the entrance is CSS, and the words are clips the page already shipped
 - **dist 9.79 MB — 210 KB under the cap**
+
+---
+
+# r6e — the cover becomes one painted board; a refilled balloon flies in too
+
+## 1 · The cover artwork
+
+The SME supplied one painted board carrying the title and the crow. It now fills the card's **inner
+box**, and the word strip and the separate crow element are no longer rendered — both are already in
+the painting, so drawing them over it would double the crow and print the line twice.
+
+Swiftie, her speaker chip and the play button are untouched and sit above the art.
+
+**Three things this took, none of them obvious:**
+
+**The file was renamed.** `cover page game 1.png` → `cover_hero.png`. Spaces in a filename become
+`%20` in a URL and are a standing trap; every other asset here is underscore-cased. It is declared on
+the card (`cover_img`) and the asset walker now collects that key, so it is tracked and ships like
+any other picture rather than being a loose file that copies by luck.
+
+**`inset:0` gave it zero width.** It resolves against the nearest POSITIONED ancestor, and that is
+`.sg-content` — a collapsed flex box, measured 0×11. The art is now appended to `.sg-card`, which is
+the box it is meant to fill, as the first child so it paints under Swiftie and the button. Sizing is
+explicit (`calc(100% - 20px)`) because an absolutely positioned REPLACED element with `width:auto`
+takes its intrinsic size and ignores over-constrained insets — that made it 305px wider than the card
+on the second attempt.
+
+**The frame is painted, not CSS.** `border-radius:inherit` resolved to 0, so the first version laid a
+hard rectangle straight over the card's white rim and rounded corners. Measured off `start_card.webp`:
+an opaque rim about 9px thick, corners about 24px. The art sits at `inset:10px` with a 22px radius, so
+the frame still shows — which is what "fit the image in the inner box" asks for.
+
+`cover` rather than `contain`: the painting is 2.357:1 against the card's 2.443:1, so contain would
+letterbox and the join would show. The ~4% cropped top and bottom is empty sky and grass.
+
+**The crow still caws twice.** `showCrow` returned early when there was no `.lh-pic` to reveal, so the
+caw fell silent the moment the element went away. It now fires on its cue either way — verified, 2.
+
+**Size:** the master was 1926px wide for a box that renders at ~1190px. Downscaled to 1400px, which
+took the master from 1.9 MB to 776 KB and the shipped copy to **92 KB**.
+
+## 2 · A refilled balloon flies in like the rest
+
+It used to fade back in on the spot, which read as the same balloon changing its mind rather than a
+new one arriving. It now takes the same flight the opening set takes, including the same clearance
+around Swiftie, because `flightPath` measures her every time.
+
+### A bug this round introduced, caught before it shipped
+
+The first version called `flightPath` from the refill path, but `flightPath` was scoped inside
+`renderLevel` while the refill lives in `wireTap`. The result was
+`Uncaught ReferenceError: flightPath is not defined`, thrown immediately after the image swap and
+before the line that clears `seq-hidden` — so the new balloon stayed parked below the floor at
+`opacity: 0`.
+
+```
+before:  7 of 8 balloons on the board after one correct pop
+after :  8 of 8, refill re-flies, no console errors
+```
+
+**Every correct answer would have quietly cost the child a balloon,** and the board would have
+emptied as they succeeded. Nothing in `flightPath` depends on the level — only on Swiftie — so it
+now lives above `wireTap` where both callers can see it.
+
+## Receipt
+
+- Guards pass on all four trees; HTML byte-identical; `app.js` parses clean and runs error-free
+- **dist 9.89 MB — 113 KB under the cap** (the cover art costs 92 KB)
+- Manifests regenerated: 24 images

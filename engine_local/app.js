@@ -6412,6 +6412,40 @@ const SlideModules = {
       let busy = false;
 
       let revealing = false;
+      /* [S01r6e] flightPath lives HERE, not inside renderLevel. wireTap's REFILL path needs it too,
+         and when it was scoped to renderLevel that call threw `flightPath is not defined` - the
+         refilled balloon kept .seq-hidden and stayed parked below the floor at opacity 0. Measured
+         before the fix: 7 of 8 balloons on the board after one correct pop, so every correct answer
+         quietly cost the child a balloon. Nothing in it depends on the level, only on `sw`. */
+      const swRect = ()=>{ try{ return sw.getBoundingClientRect(); }catch(e){ return null; } };
+      const flightPath = (b)=>{
+        /* Start below the floor, somewhere else horizontally, and swing on the way up. The one
+           hard constraint is Swiftie: she stands at the lower left, and a balloon rising through
+           her reads as a collision. Measure her box and push any start that would cross it to the
+           RIGHT of her, rather than trusting a fixed safe range - the field reflows with --scale. */
+        const R = (lo, hi)=> lo + Math.random() * (hi - lo);
+        const bb = b.getBoundingClientRect(), sr = swRect();
+        let ex  = R(-210, 210);
+        let emx = -ex * R(0.25, 0.55);                  /* swing back across on the way up */
+        if(sr && sr.width){
+          /* Test the WHOLE path, not just the start: the balloon is at rest+ex when it appears and
+             rest+emx at the top of its swing, so either can put it over her. Clear her right edge
+             by a visible margin - an 18px miss still reads as a near-collision on screen. */
+          const PAD = 40;
+          const leftAt = (dx)=> bb.left + dx;
+          const crosses = (dx)=> (bb.right + dx) > (sr.left - PAD) && leftAt(dx) < (sr.right + PAD);
+          if(crosses(ex) || crosses(emx)){
+            ex = Math.min((sr.right + PAD) - bb.left + R(10, 90), 260);  /* come in from her right */
+            if(ex < 0) ex = R(60, 180);
+            emx = -ex * R(0.18, 0.38);
+            if(crosses(emx)) emx = Math.abs(emx);       /* and do not swing back into her */
+          }
+        }
+        b.style.setProperty("--ex", ex.toFixed(0) + "px");
+        b.style.setProperty("--emx", emx.toFixed(0) + "px");
+        b.style.setProperty("--er", R(-9, 9).toFixed(0) + "deg");
+        b.style.setProperty("--edur", R(1.25, 1.75).toFixed(2) + "s");
+      };
       const wireTap = (cell)=>{
         const b = cell.b;
         b.onclick = ()=>{
@@ -6465,10 +6499,19 @@ const SlideModules = {
                 const spare = spares.length ? spares.shift() : null;
                 if(spare) setTimeout(()=>{
                   if(!alive()) return;
+                  /* [S01r6e] SME: "when we pop a balloon the new balloon also come from the bottom
+                     of the screen". It used to fade back in on the spot, which read as the same
+                     balloon changing its mind rather than a new one arriving. It now takes the same
+                     flight the opening set takes - own start, own swing, and the same clearance
+                     around Swiftie, because flightPath measures her every time. */
                   cell.it = spare; fillBalloon(b, spare);
-                  b.classList.remove("popped", "bal-hot");
+                  b.classList.remove("popped", "bal-hot", "bal-entering");
                   b.classList.add("seq-hidden");
-                  requestAnimationFrame(()=> requestAnimationFrame(()=> b.classList.remove("seq-hidden")));
+                  flightPath(b);
+                  requestAnimationFrame(()=> requestAnimationFrame(()=>{
+                    b.classList.remove("seq-hidden");
+                    b.classList.add("bal-entering");
+                  }));
                 }, 560);
                 play(lvlAudio("correct") || null, ()=>{});
               }
@@ -6527,35 +6570,6 @@ const SlideModules = {
            मछली as the board is built, which is eight free exposures to the words before a single tap.
            Taps are held until the whole set has landed (`busy`), so a board still arriving cannot be
            answered against. */
-        const swRect = ()=>{ try{ return sw.getBoundingClientRect(); }catch(e){ return null; } };
-        const flightPath = (b)=>{
-          /* Start below the floor, somewhere else horizontally, and swing on the way up. The one
-             hard constraint is Swiftie: she stands at the lower left, and a balloon rising through
-             her reads as a collision. Measure her box and push any start that would cross it to the
-             RIGHT of her, rather than trusting a fixed safe range - the field reflows with --scale. */
-          const R = (lo, hi)=> lo + Math.random() * (hi - lo);
-          const bb = b.getBoundingClientRect(), sr = swRect();
-          let ex  = R(-210, 210);
-          let emx = -ex * R(0.25, 0.55);                  /* swing back across on the way up */
-          if(sr && sr.width){
-            /* Test the WHOLE path, not just the start: the balloon is at rest+ex when it appears and
-               rest+emx at the top of its swing, so either can put it over her. Clear her right edge
-               by a visible margin - an 18px miss still reads as a near-collision on screen. */
-            const PAD = 40;
-            const leftAt = (dx)=> bb.left + dx;
-            const crosses = (dx)=> (bb.right + dx) > (sr.left - PAD) && leftAt(dx) < (sr.right + PAD);
-            if(crosses(ex) || crosses(emx)){
-              ex = Math.min((sr.right + PAD) - bb.left + R(10, 90), 260);  /* come in from her right */
-              if(ex < 0) ex = R(60, 180);
-              emx = -ex * R(0.18, 0.38);
-              if(crosses(emx)) emx = Math.abs(emx);       /* and do not swing back into her */
-            }
-          }
-          b.style.setProperty("--ex", ex.toFixed(0) + "px");
-          b.style.setProperty("--emx", emx.toFixed(0) + "px");
-          b.style.setProperty("--er", R(-9, 9).toFixed(0) + "deg");
-          b.style.setProperty("--edur", R(1.25, 1.75).toFixed(2) + "s");
-        };
         const reveal = ()=>{
           if(!alive() || revealing) return;
           revealing = true; busy = true;
@@ -7002,9 +7016,32 @@ function boot(){
              + '" data-sw-target="' + (hero.target_sound || "") + '" data-sw-fs="52">'
              + soundWordHTML(w, hero.target_sound, 52) + '</span>')
         : ('<span class="lh-word seq-hidden">' + aksharaHTML(w, hero.target_sound) + '</span>');
-      el.innerHTML = '<div class="lh-strip lh-dim">' + words.map(_lhWord).join("") + '</div>' +
-        (hero.picture_img ? '<div class="lh-pic seq-hidden">' +
-            imgOrEmoji(hero.picture_img, hero.picture_emoji, "lh-img", "lh-emoji") + '</div>' : "");
+      /* [S01r6e] COVER ARTWORK. The SME supplied one painted board carrying the title and the crow,
+         to fill the card. When `cover_img` is set it replaces the word strip and the picture, because
+         both are already IN the painting - rendering them over it would double the crow and print the
+         line twice.
+         The greeting machinery below is deliberately KEPT even though there is now nothing to
+         highlight: it is what times the crow's caw to the moment the voice names it, and it is what
+         releases the play button when the greeting ends (see [S01r5y]). Removing it to save a
+         karaoke pass would silently break both. The word cues simply find no element and do nothing. */
+      el.innerHTML = hero.cover_img ? ""
+        : ('<div class="lh-strip lh-dim">' + words.map(_lhWord).join("") + '</div>' +
+           (hero.picture_img ? '<div class="lh-pic seq-hidden">' +
+               imgOrEmoji(hero.picture_img, hero.picture_emoji, "lh-img", "lh-emoji") + '</div>' : ""));
+      if(hero.cover_img){
+        /* [S01r6e] The art is appended to the CARD, not to this hero element. `inset:0` resolves
+           against the nearest POSITIONED ancestor, and that is .sg-content - which is a collapsed
+           flex box (measured 0x11), so an image placed here came out 0px wide. .sg-card is the box
+           the art is meant to fill, so it is the box it hangs off. First child, so it paints under
+           Swiftie, the chip and the play button. */
+        const _card = el.closest && el.closest(".sg-card");
+        if(_card && !_card.querySelector(".lh-cover")){
+          const ci = document.createElement("img");
+          ci.className = "lh-cover"; ci.alt = "";
+          ci.src = "assets/Images/" + hero.cover_img + "." + IMG_EXT;
+          _card.insertBefore(ci, _card.firstChild);
+        }
+      }
       el.classList.add("show", "lh-hero");
       [...el.querySelectorAll(".lh-word")].forEach((w, i)=> w.dataset.i = i);
       if(hero.mark_bare) refreshSoundWords(el);   // re-lay from the real rendered size
@@ -7048,9 +7085,16 @@ function boot(){
           for(let n = 1; n < sfxTimes; n++)
             setTimeout(()=>{ if(onLanding()) playSfx(hero.picture_sfx); }, n * sfxGapMs);
         };
+        /* [S01r6e] With cover artwork there is no .lh-pic to reveal - the crow is painted into the
+           board - but the CAW still belongs on its cue, and the old guard returned early when the
+           element was missing, so it fell silent. Fire once either way. */
+        let _crowDone = false;
         const showCrow = (withSound)=>{
-          if(!pic || !pic.classList.contains("seq-hidden")) return;
-          pic.classList.remove("seq-hidden"); pic.classList.add("lh-in");
+          if(pic){
+            if(!pic.classList.contains("seq-hidden")) return;
+            pic.classList.remove("seq-hidden"); pic.classList.add("lh-in");
+          } else if(_crowDone) return;
+          _crowDone = true;
           if(withSound && onLanding()) callCrow();
         };
         const acts = {

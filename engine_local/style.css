@@ -2278,6 +2278,23 @@ html.no-anim .balloon.bal-entering{ animation:none; opacity:1; transform:none; }
    above is a fleet-standard value swept by _tools/start_btn_standard.py, so it must not be edited
    here - this overrides it for this one cover only. */
 .sg-card.lh-card .sg-btn{ bottom:16px; }
+/* [S01r6e] The supplied cover art fills the card's INNER box - the SME's words - not the card itself.
+   The frame is painted into start_card.webp, not drawn in CSS, so `border-radius:inherit` resolved to
+   0 and the first attempt laid a hard rectangle straight over the white rim and its rounded corners.
+   Measured off that art: an opaque white rim about 9px thick with roughly 24px corners. inset:10px
+   and a 22px radius therefore sit the painting just inside the frame, leaving it visible.
+   `cover` rather than `contain`: the painting is 2.357:1 against the card's 2.443:1, so contain would
+   letterbox it and the join would show. The ~4% cropped off the top and bottom is empty sky and
+   grass - the title and the crow sit well inside it. */
+/* sized explicitly, not by insets: an absolutely positioned REPLACED element with width/height
+   auto takes its intrinsic size and ignores the over-constrained insets, which made it 305px wider
+   than the card on the first try. */
+.sg-card.lh-card .lh-cover{ position:absolute; left:10px; top:10px;
+  width:calc(100% - 20px); height:calc(100% - 20px);
+  object-fit:cover; border-radius:22px; display:block; pointer-events:none; }
+/* the play button and Swiftie sit ABOVE the art, not under it - the SME asked for both to stay
+   exactly where they are */
+.sg-card.lh-card .sg-btn, .sg-card.lh-card .sg-mascot, .sg-card.lh-card .sg-vo{ z-index:5; }
 
 @media (max-width:900px){
   .balloon{ width:124px; } .bal-body{ width:124px; height:142px; }
