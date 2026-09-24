@@ -3292,3 +3292,36 @@ now lives above `wireTap` where both callers can see it.
 - Guards pass on all four trees; HTML byte-identical; `app.js` parses clean and runs error-free
 - **dist 9.89 MB — 113 KB under the cap** (the cover art costs 92 KB)
 - Manifests regenerated: 24 images
+
+---
+
+# r6f — the cover art goes edge to edge, and the play button becomes a circle
+
+## 1 · No white edge
+
+r6e inset the art 10px to leave the card's painted rim showing. Measured on screen that read as an
+**11px white band on all four sides**, which is not what "fit the image in the inner box" meant. The
+art now covers the card completely: gap measured **0,0,0,0**.
+
+**The radius is measured, not guessed.** `start_card.webp`'s top row is transparent until x=35, so
+that is where its corner curve ends. The art carries the same 35px, which is why no white crescent
+survives at the corners — a smaller radius would have left four of them.
+
+## 2 · A circular play button, bigger and lifted
+
+Pill → circle: **96×96** (rendered 102 with its border) against the old 198×68, radius 50%, and
+lifted from 16px to 54px off the card's lower edge so it sits on the path in the artwork rather than
+on the frame. The arrow grows with it, 30px → 44px.
+
+**`min-width` was the real obstacle.** Setting `width:96px` had no effect — the button came out 198px
+wide — because [30l] sets `min-width:186px` on `.sg-btn`, and **a min-width floor beats a width
+declaration however specific the selector is**. Releasing it with `min-width:0` is what actually made
+the circle possible; the width alone never could have.
+
+Verified: 102×102, `circular=True`, and still reachable at its centre.
+
+## Receipt
+
+- CSS only — no engine logic, no card change, no new assets
+- Guards pass on all four trees; HTML byte-identical
+- **dist 9.89 MB — 113 KB under the cap**, unchanged

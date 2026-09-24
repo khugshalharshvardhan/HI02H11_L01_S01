@@ -2277,7 +2277,18 @@ html.no-anim .balloon.bal-entering{ animation:none; opacity:1; transform:none; }
    Scoped to .lh-card, set by the landing-hero branch in app.js: the shared `.sg-btn{bottom:40px}`
    above is a fleet-standard value swept by _tools/start_btn_standard.py, so it must not be edited
    here - this overrides it for this one cover only. */
-.sg-card.lh-card .sg-btn{ bottom:16px; }
+/* [S01r6f] SME: "add the circular play button instead of what we are using now, the position is a
+   little above and it should be a little bigger."
+   A circle, not a pill: width is pinned equal to the height and the radius goes to 50%, so the
+   padding that made it a 198x68 lozenge cannot stretch it back out. `min-width:0` is the one that
+   actually matters: [30l] sets min-width:186px on .sg-btn, and a min-width FLOOR beats a width
+   declaration however specific it is - the first attempt came out 198px wide for exactly that reason. 96px against the old 68px is the
+   "little bigger", and bottom 16 -> 54px lifts it clear of the card's lower edge so it sits on the
+   path in the artwork rather than on the frame. The arrow grows with it. */
+.sg-card.lh-card .sg-btn{ bottom:54px; width:96px; height:96px; min-width:0; padding:0;
+  box-sizing:border-box; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; }
+.sg-card.lh-card .sg-btn::after{ font-size:44px; transform:translateX(3px); }
 /* [S01r6e] The supplied cover art fills the card's INNER box - the SME's words - not the card itself.
    The frame is painted into start_card.webp, not drawn in CSS, so `border-radius:inherit` resolved to
    0 and the first attempt laid a hard rectangle straight over the white rim and its rounded corners.
@@ -2286,12 +2297,17 @@ html.no-anim .balloon.bal-entering{ animation:none; opacity:1; transform:none; }
    `cover` rather than `contain`: the painting is 2.357:1 against the card's 2.443:1, so contain would
    letterbox it and the join would show. The ~4% cropped off the top and bottom is empty sky and
    grass - the title and the crow sit well inside it. */
-/* sized explicitly, not by insets: an absolutely positioned REPLACED element with width/height
-   auto takes its intrinsic size and ignores the over-constrained insets, which made it 305px wider
-   than the card on the first try. */
-.sg-card.lh-card .lh-cover{ position:absolute; left:10px; top:10px;
-  width:calc(100% - 20px); height:calc(100% - 20px);
-  object-fit:cover; border-radius:22px; display:block; pointer-events:none; }
+/* [S01r6f] EDGE TO EDGE. r6e inset the art 10px to leave the card's painted rim showing; measured on
+   screen that read as an 11px white band on all four sides, which the SME wants gone. The art now
+   covers the card completely.
+   35px of radius, not a guess: start_card.webp's top row is transparent until x=35, so that is where
+   its corner curve ends. Matching it means the art rounds exactly as the card does and no white
+   crescent survives at the corners.
+   Sized explicitly rather than by insets - an absolutely positioned REPLACED element with width/height
+   auto takes its INTRINSIC size and ignores over-constrained insets, which made it 305px too wide on
+   an earlier attempt. */
+.sg-card.lh-card .lh-cover{ position:absolute; left:0; top:0; width:100%; height:100%;
+  object-fit:cover; border-radius:35px; display:block; pointer-events:none; }
 /* the play button and Swiftie sit ABOVE the art, not under it - the SME asked for both to stay
    exactly where they are */
 .sg-card.lh-card .sg-btn, .sg-card.lh-card .sg-mascot, .sg-card.lh-card .sg-vo{ z-index:5; }
