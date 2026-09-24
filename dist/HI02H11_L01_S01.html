@@ -1970,7 +1970,39 @@ body.is-start .phase-gate{
    briefly, as a balloon does under pressure, before it goes - and .bal-ring expands behind it.
    OUTSIDE. body carries the page colour too while this slide is up, so the stage stops showing a
    pale border on wide screens. */
-body.bal-page{ background:#EAF2FB; }
+/* [S01r6c] SME: "a plain background but attractive". Plain is the operative word - this page has
+   eight coloured balloons, a mascot and a burst on every pop, so the background's job is to sit
+   still and let them read. A single soft vertical sky (deeper at the top, bright near the floor)
+   plus one wide bloom low down where the balloons rise from: no pattern, no texture, nothing that
+   competes with a balloon for attention. */
+body.bal-page{ background:linear-gradient(180deg,#CFE6FF 0%,#E4F1FF 46%,#F4FAFF 100%); }
+body.bal-page .stage{ background:transparent !important; }
+/* the bloom, and the layer the drifting background balloons live in */
+.bal-sky{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
+  background:radial-gradient(ellipse 58% 34% at 50% 104%,
+    rgba(255,255,255,.85) 0%, rgba(255,255,255,.34) 44%, rgba(255,255,255,0) 74%); }
+/* [S01r6c] THE PART THAT ACTUALLY KEEPS GOING UP. These are decoration, not targets: they are
+   behind the field (z-index 0 against the balloons' own stacking) and pointer-events:none, so a
+   child can never chase one or lose a tap to it. That separation is the whole design - see the
+   note on .balloon below for why the PLAYABLE balloons must not travel. */
+.bal-sky i{ position:absolute; bottom:-22%; left:var(--x); width:var(--s); height:calc(var(--s) * 1.18);
+  border-radius:50% 50% 48% 48% / 42% 42% 58% 58%; background:var(--c); opacity:0;
+  animation:balRise var(--t) linear infinite; animation-delay:var(--d); }
+.bal-sky i::after{ content:""; position:absolute; left:50%; top:16%; width:26%; height:30%;
+  transform:translateX(-58%) rotate(-18deg); border-radius:50%;
+  background:rgba(255,255,255,.55); }
+/* the string */
+.bal-sky i::before{ content:""; position:absolute; left:50%; top:100%; width:2px; height:26%;
+  transform:translateX(-50%); background:rgba(255,255,255,.55); border-radius:2px; }
+@keyframes balRise{
+  0%{ transform:translate(0, 0) rotate(-3deg); opacity:0; }
+  8%{ opacity:var(--o,.5); }
+  50%{ transform:translate(calc(var(--sway,18px) * 1), -62vh) rotate(3deg); }
+  88%{ opacity:var(--o,.5); }
+  100%{ transform:translate(0, -128vh) rotate(-3deg); opacity:0; }
+}
+html.no-anim .bal-sky i{ display:none; }
+@media (prefers-reduced-motion: reduce){ .bal-sky i{ display:none; } }
 /* [S01r5i] LIFT THE FIELD DIRECTLY, because centring cannot do it any more. Once the balloons
    grew to 164px the field became 542px tall against a 438px content box, so there is no free space
    left for `align-content:center` to share out - the field simply starts at the top of the box and
@@ -2060,8 +2092,9 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
 .balloon.bcol-3 .bal-body{ background:#FFB0C8; color:#EE8BAC; }
 .balloon.bcol-4 .bal-body{ background:#9FE3D4; color:#6FC8B5; }
 .balloon.bcol-5 .bal-body{ background:#FFC49B; color:#EDA173; }
-@keyframes balFloat{ 0%,100%{ transform:translateY(0) rotate(-1.2deg); }
-  50%{ transform:translateY(-13px) rotate(1.2deg); } }
+@keyframes balFloat{
+  0%,100%{ transform:translate(0, 0) rotate(-1.2deg); }
+  50%{ transform:translate(var(--bsway,5px), calc(var(--bamp,13px) * -1)) rotate(1.2deg); } }
 .balloon.popped{ pointer-events:none; animation:balPop .42s ease-out forwards; }
 @keyframes balPop{ 0%{ transform:scale(1); opacity:1; } 45%{ transform:scale(1.22); opacity:.9; }
   100%{ transform:scale(.2); opacity:0; } }
@@ -2084,7 +2117,16 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
       staggers them 170ms apart so they arrive as a wave. This only works because the float moved
       to .bal-lift - see the note in the module. */
 .balloon{ animation:none; transition:opacity .5s ease, transform 1s cubic-bezier(.17,.78,.32,1); }
-.bal-lift{ display:block; animation:balFloat 3.4s ease-in-out infinite;
+/* [S01r6c] A DEEPER, LESS MECHANICAL FLOAT - AND THE TARGETS STILL DO NOT TRAVEL.
+   Every balloon ran the same 3.4s/13px cycle, separated only by a delay, so the set moved in
+   lockstep and read like a metronome rather than like air. Each now carries its own duration and
+   amplitude (--bt, --bamp, set per balloon in the module) and a small horizontal sway, so no two
+   agree for long.
+   What they deliberately do NOT do is drift upward across the page. This is a tap game for a
+   seven-year-old: a target that travels is a target that gets missed, and a balloon that leaves the
+   field takes its word with it. The "keeps going up" the SME asked for is carried by .bal-sky
+   behind them, which has no targets to lose. */
+.bal-lift{ display:block; animation:balFloat var(--bt,3.4s) ease-in-out infinite;
            animation-delay:calc(var(--bi,0) * -0.47s); }
 /* 680px clears the stage: a balloon rests ~20px from the top and stands ~206px tall, and
    .slide-stage is overflow:hidden, so at +680 the whole thing sits below the clip and the
@@ -9018,6 +9060,35 @@ const SlideModules = {
       let li = 0, found = 0, need = 0, spares = [], cells = [];
       state.attempts = 0; state.locked = false; state.ownsAudio = true;
 
+      /* [S01r6c] The sky the balloons float in. Built here rather than in markup because it is
+         generated - a fixed set of <i> would either repeat visibly or need thirty hand-written
+         elements. Behind the field and pointer-events:none (see the CSS): these are scenery, and a
+         child must never be able to chase one or lose a tap to it. */
+      const sky = document.createElement("div");
+      sky.className = "bal-sky"; sky.setAttribute("aria-hidden", "true");
+      if(!document.documentElement.classList.contains("no-anim")){
+        const R = (a, b)=> a + Math.random() * (b - a);
+        const HUES = ["#FFD36E","#8FD0FF","#C2B0F2","#FFB0C8","#9FE3D4","#FFC49B"];
+        /* [S01r6c] Sized against the PLAYABLE balloons, which are 164px wide: at 26-62px the first
+           pass read as faint blobs and the rising was barely perceptible. 38-92px is legible as a
+           balloon and still less than half a target, so it cannot be mistaken for one. */
+        for(let i = 0; i < 16; i++){
+          const n = document.createElement("i");
+          const size = R(38, 92);
+          /* a NEGATIVE delay starts each one mid-flight, so the sky is already populated on the
+             first frame instead of filling up over the first minute */
+          const dur = R(17, 34);
+          n.style.cssText =
+            "--x:" + R(-4, 96).toFixed(1) + "%;" +
+            "--s:" + size.toFixed(0) + "px;" +
+            "--c:" + HUES[i % HUES.length] + ";" +
+            "--t:" + dur.toFixed(1) + "s;--d:-" + R(0, dur).toFixed(1) + "s;" +
+            "--sway:" + R(-34, 34).toFixed(0) + "px;" +
+            "--o:" + R(0.34, 0.62).toFixed(2) + ";";
+          sky.appendChild(n);
+        }
+      }
+      host.appendChild(sky);
       const field = document.createElement("div"); field.className = "balloon-field";
       /* [S01r5g] SWIFTEE HOLDING THE BALLOONS, bottom-left, exactly where the SME's reference puts
          her. TWO images, not one: a GIF cannot be paused, so the animated frame and a still of its
@@ -9214,6 +9285,11 @@ const SlideModules = {
              .seq-hidden, and a mechanic that invents its own name captures BLANK instead. */
           b.className = "balloon bcol-" + (i % 6) + " seq-hidden";
           b.style.setProperty("--bi", String(i));
+          /* [S01r6c] its own float, so the set does not breathe in lockstep. Ranges are deliberately
+             narrow: this is buoyancy, not drift - the balloon must still be where the child aimed. */
+          b.style.setProperty("--bt",  (3.0 + Math.random() * 2.4).toFixed(2) + "s");
+          b.style.setProperty("--bamp", (11 + Math.random() * 9).toFixed(0) + "px");
+          b.style.setProperty("--bsway", (Math.random() * 12 - 6).toFixed(0) + "px");
           fillBalloon(b, it);
           field.insertBefore(b, sw);
           const cell = { b, it };

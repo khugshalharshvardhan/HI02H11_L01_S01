@@ -6311,6 +6311,35 @@ const SlideModules = {
       let li = 0, found = 0, need = 0, spares = [], cells = [];
       state.attempts = 0; state.locked = false; state.ownsAudio = true;
 
+      /* [S01r6c] The sky the balloons float in. Built here rather than in markup because it is
+         generated - a fixed set of <i> would either repeat visibly or need thirty hand-written
+         elements. Behind the field and pointer-events:none (see the CSS): these are scenery, and a
+         child must never be able to chase one or lose a tap to it. */
+      const sky = document.createElement("div");
+      sky.className = "bal-sky"; sky.setAttribute("aria-hidden", "true");
+      if(!document.documentElement.classList.contains("no-anim")){
+        const R = (a, b)=> a + Math.random() * (b - a);
+        const HUES = ["#FFD36E","#8FD0FF","#C2B0F2","#FFB0C8","#9FE3D4","#FFC49B"];
+        /* [S01r6c] Sized against the PLAYABLE balloons, which are 164px wide: at 26-62px the first
+           pass read as faint blobs and the rising was barely perceptible. 38-92px is legible as a
+           balloon and still less than half a target, so it cannot be mistaken for one. */
+        for(let i = 0; i < 16; i++){
+          const n = document.createElement("i");
+          const size = R(38, 92);
+          /* a NEGATIVE delay starts each one mid-flight, so the sky is already populated on the
+             first frame instead of filling up over the first minute */
+          const dur = R(17, 34);
+          n.style.cssText =
+            "--x:" + R(-4, 96).toFixed(1) + "%;" +
+            "--s:" + size.toFixed(0) + "px;" +
+            "--c:" + HUES[i % HUES.length] + ";" +
+            "--t:" + dur.toFixed(1) + "s;--d:-" + R(0, dur).toFixed(1) + "s;" +
+            "--sway:" + R(-34, 34).toFixed(0) + "px;" +
+            "--o:" + R(0.34, 0.62).toFixed(2) + ";";
+          sky.appendChild(n);
+        }
+      }
+      host.appendChild(sky);
       const field = document.createElement("div"); field.className = "balloon-field";
       /* [S01r5g] SWIFTEE HOLDING THE BALLOONS, bottom-left, exactly where the SME's reference puts
          her. TWO images, not one: a GIF cannot be paused, so the animated frame and a still of its
@@ -6507,6 +6536,11 @@ const SlideModules = {
              .seq-hidden, and a mechanic that invents its own name captures BLANK instead. */
           b.className = "balloon bcol-" + (i % 6) + " seq-hidden";
           b.style.setProperty("--bi", String(i));
+          /* [S01r6c] its own float, so the set does not breathe in lockstep. Ranges are deliberately
+             narrow: this is buoyancy, not drift - the balloon must still be where the child aimed. */
+          b.style.setProperty("--bt",  (3.0 + Math.random() * 2.4).toFixed(2) + "s");
+          b.style.setProperty("--bamp", (11 + Math.random() * 9).toFixed(0) + "px");
+          b.style.setProperty("--bsway", (Math.random() * 12 - 6).toFixed(0) + "px");
           fillBalloon(b, it);
           field.insertBefore(b, sw);
           const cell = { b, it };

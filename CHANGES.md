@@ -3103,3 +3103,63 @@ signals carry `phase` and the receipt counts by it. Distribution is now
 - HTML byte-identical across the four; `app.js` parses clean (`node --check`)
 - No new clips and no new art — one clip per teach page was *removed* from the flow
 - **dist 9.79 MB — 215 KB under the cap**; manifests regenerated
+
+---
+
+# r6c — a sky for page 14, and balloons that keep rising in it
+
+SME: *"we will need those balloons to keep going up and floating there, also a plain background but
+attractive."*
+
+## The background
+
+`#EAF2FB` flat → a single soft vertical sky, deeper at the top and bright near the floor, with one
+wide bloom low down where the balloons rise from. **Plain is the operative word**: this page already
+carries eight coloured balloons, a mascot and a burst on every pop, so the background's job is to sit
+still and let them read. No pattern, no texture, nothing that competes with a balloon for attention.
+
+## "Keep going up" — and the decision inside it
+
+A field of sixteen pastel balloons now drifts continuously up the page behind the play area, each
+with its own size, lane, speed, sway and opacity, started mid-flight so the sky is populated on the
+first frame rather than filling up over the first minute.
+
+**They are scenery, and the playable balloons deliberately do NOT travel.** That is the whole design,
+not a shortcut:
+
+> This is a tap game for a seven-year-old. A target that travels is a target that gets missed, and a
+> balloon that rises out of the field takes its word with it — the child would lose the answer they
+> were reaching for. So the continuous rising is carried by a layer that has no targets to lose, and
+> the play balloons stay exactly where the child aimed.
+
+Verified: the hit boxes move **0px in either axis** over three seconds, and all eight remain
+reachable at their centre; the scenery layer is `pointer-events:none`, so a tap can never be spent
+on it.
+
+## The play balloons float better where they are
+
+They all ran the same 3.4s / 13px cycle separated only by a delay, so the set breathed in lockstep
+and read like a metronome. Each now carries its own duration, amplitude and a small horizontal sway:
+
+```
+balloon 0  17px / 3.45s      balloon 4  11px / 3.92s
+balloon 1  16px / 3.93s      balloon 5  18px / 4.50s
+balloon 2  18px / 4.66s      balloon 6  17px / 5.00s
+balloon 3  12px / 4.35s      balloon 7  13px / 5.36s
+```
+
+Measured travel of the visible body: **10.9–18.0px**, matching what each was assigned, and no two in
+step. The ranges are deliberately narrow — this is buoyancy, not drift.
+
+## Sizing the scenery took two passes
+
+At 26–62px the drifting balloons read as faint blobs and the rising was barely perceptible. They are
+now 38–92px against the 164px play balloons: legible as balloons, still less than half a target, so
+they cannot be mistaken for one.
+
+## Receipt
+
+- Guards pass on all four trees; HTML byte-identical; `app.js` parses clean
+- No new assets — the sky and its balloons are CSS and generated markup
+- **dist 9.79 MB — 215 KB under the cap**
+- Honours `no-anim` and `prefers-reduced-motion`: the drifting layer is dropped entirely
