@@ -3042,3 +3042,64 @@ each gate plays once), but the label should follow the page. Distribution is now
 wrong, so they fell back to the generated voice. They go on the re-record list with the two from r5x
 (`vo_p8_prompt`, `vo_w_kamal`) and the seven script mismatches — **twelve lines in total**, all
 listed in the manifest.
+
+---
+
+# r6b — the card lands on the words that name it, and two pages move again
+
+## 1 · The letter is cued INSIDE the explanation, not after it
+
+r6a moved the card to the end of the teach sequence and gave it its own spoken अक्षर. The SME's
+refinement: show it **when the voice says "च की आवाज़ बार-बार आई"**, pulsating, and drop that
+last clip.
+
+So the card is no longer a beat of its own. `reveal_at` names a token in the explanation script, and
+the mark step — which already walks that script with `karaokePlay` to pace the highlighting — brings
+the card in when the voice reaches it. Three clips back down to **two**.
+
+**Why the token is the bare अक्षर and that is safe:** `findTok` matches a token EXACTLY before it
+falls back to a substring, so the standalone च is found and the च sitting inside चूहे / चार / चने /
+चबाए never steals the cue.
+
+**The pulse costs nothing.** `.opt-cell.ss-lit` already carries `ssLitPulse`; revealing with that
+class is the pulsation.
+
+Measured, all three:
+
+```
+page 1   vo_line_l2 → vo_t3_explain; card at 5.15s of a 7.60s clip, on "च की आवाज़ बार-बार"
+page 3   vo_line_l3 → vo_t5_explain; card at 5.60s of 8.12s, on "म की आवाज़ बार-बार"
+page 5   vo_line_l1 → vo_t1_explain; card at 6.23s of 8.56s, on "प की आवाज़ बार-बार"
+no separate bare-letter clip on any page; pulse animation confirmed as ssLitPulse
+```
+
+The landing point sits a little later than a flat `token/total × duration` estimate would put it,
+because `karaokePlay` weights tokens by अक्षर and follows the clip's speech map rather than dividing
+the time uniformly. That is the behaviour we want — it tracks the voice, not the arithmetic.
+
+**One safety net:** if the clip stalls, or the token never matches, the card is shown when the clip
+ends. It is the point of the page; it must not be possible to lose it to a bad match.
+
+## 2 · Pages 8 and 9 move to just before page 12
+
+| page | was | |
+|---|---|---|
+| 8 | 10 | P1 |
+| 9 | 11 | P7 |
+| 10 | 8 | **G3** — "which sound repeats?" |
+| 11 | 9 | **P4** — the न question |
+
+G3 and P4 now sit immediately before the sort pair, and the three tap-the-words pages (G2, P1, P7)
+end up together at 7–9.
+
+**G3 is relabelled `practice`,** for the same reason r5z relabelled the sort pair: it now follows two
+practice pages, and a slide still labelled `guided` would report a phase that has already passed —
+signals carry `phase` and the receipt counts by it. Distribution is now
+**tutorial 6 · guided 1 · practice 8**.
+
+## Receipt
+
+- 15 slides, order verified page by page; all three guards pass on all four trees
+- HTML byte-identical across the four; `app.js` parses clean (`node --check`)
+- No new clips and no new art — one clip per teach page was *removed* from the flow
+- **dist 9.79 MB — 215 KB under the cap**; manifests regenerated

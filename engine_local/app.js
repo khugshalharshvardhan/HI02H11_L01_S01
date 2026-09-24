@@ -6056,6 +6056,24 @@ const SlideModules = {
           state.demoRunning = false; setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true); };
 
         const STEPS = d.teach_seq.slice();
+        /* [S01r6b] The letter card used to be revealed only by the `letter` step. It is now also
+           revealed from INSIDE the mark step, on the token where the voice names the sound, so the
+           two need one shared definition rather than a copy each. Idempotent: whichever beat gets
+           there first shows the card, the other is a no-op. */
+        let _cardShown = false;
+        const showLetterCard = ()=>{
+          if(_cardShown) return; _cardShown = true;
+          cells.forEach(x => { x.c.classList.remove("seq-hidden"); x.c.classList.add("ss-show"); });
+          const t = cells.find(x => x.opt.letter === d.target_sound) || cells[0];
+          /* [S01r4f] NOT `.correct`. That class paints the card green AND hangs a checkmark badge off
+             it, which on a teach slide reads as "you answered right" when nothing has been answered.
+             `ss-lit` is neutral emphasis - and it carries the amber ssLitPulse, which is the
+             pulsation the SME asked for; no extra class is needed for that. */
+          if(t){ t.c.classList.add("ss-lit");
+                 if(!d.mark_bare) t.c.classList.add("reveal-pulse");
+                 cells.forEach(x => { if(x !== t) x.c.classList.add("faded"); }); }
+          SwiftPAL.emit("sentence_sound_demo", { slide_id: slide.id, phase: slide.phase, sound: d.target_sound });
+        };
         const run = (i)=>{
           if(!alive()) return;
           if(i >= STEPS.length){ finish(); return; }
@@ -6072,7 +6090,7 @@ const SlideModules = {
           if(st.step === "clear_words"){ clearWords(); next(); return; }
           if(st.step === "pause"){ setTimeout(()=> run(i + 1), st.ms || 700); return; }
           if(st.step === "letter"){
-            cells.forEach(x => { x.c.classList.remove("seq-hidden"); x.c.classList.add("ss-show"); });
+            showLetterCard();
             const t = cells.find(x => x.opt.letter === d.target_sound) || cells[0];
             /* [S01r4f] NOT `.correct`. That class paints the card green AND hangs a checkmark badge
                off it (.opt-cell.correct::after), which on a teach slide reads as "you answered right"
@@ -6081,10 +6099,6 @@ const SlideModules = {
             /* [S01r4g] `reveal-pulse` animates a GREEN box-shadow - a leftover from when this card
                was `.correct`. On an amber card it is both the wrong colour and one more thing moving
                on a page asked to simply highlight. Dropped wherever the letter is marked bare. */
-            if(t){ t.c.classList.add("ss-lit");
-                   if(!d.mark_bare) t.c.classList.add("reveal-pulse");
-                   cells.forEach(x => { if(x !== t) x.c.classList.add("faded"); }); }
-            SwiftPAL.emit("sentence_sound_demo", { slide_id: slide.id, phase: slide.phase, sound: d.target_sound });
             /* `silent` shows the letter without speaking it. The deck asked for the bare sound on this
                beat; a later review asked for the sentence and the explanation ONLY, so the card can
                arrive without a clip. Absent => unchanged (the target sound plays, as before). */
@@ -6144,13 +6158,25 @@ const SlideModules = {
                 at.push(k); from = k + 1;
               });
               const last = at[at.length - 1];
+              /* [S01r6b] SME: "when the VO says '<letter> की आवाज़ बार-बार आई' then show the letter on
+                 screen and pulsate it". `reveal_at` names the token to wait for - the standalone
+                 अक्षर, which findTok matches EXACTLY before it falls back to a substring, so the same
+                 letter sitting inside चूहे / चार / चने never steals the cue. The card therefore lands
+                 on the word that names it instead of after the clip, and r6a's separate spoken
+                 letter beat is retired with it. */
+              const revealIdx = st.reveal_at ? findTok(st.reveal_at, 0) : -1;
               karaokePlay(a, toks, (k)=>{
                 let n = -1;
                 for(let j = 0; j < at.length; j++) if(k >= at[j]) n = j;
                 /* past the last named word the voice has moved on to the explanation, so drop the
                    travelling emphasis - the marks themselves stay lit for the rest of the clip */
                 if(n >= 0) markUpTo(n, k <= last);
-              }, ()=>{ chips.forEach(c => c.classList.remove("mark-now")); next(); });
+                if(revealIdx >= 0 && k >= revealIdx) showLetterCard();
+              }, ()=>{ chips.forEach(c => c.classList.remove("mark-now"));
+                       /* a clip that stalls, or a token that never matched, must not cost the child
+                          the card entirely - it is the point of the page */
+                       if(st.reveal_at) showLetterCard();
+                       next(); });
               return;
             }
             karaokePlay(a, listed, (k)=> markUpTo(k, true),

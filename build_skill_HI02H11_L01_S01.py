@@ -430,9 +430,11 @@ def build_card():
                                                   #  word-level highlighting."
             {"step": "pause", "ms": 900},         # "a brief pause ... a moment to notice"
             {"step": "mark", "audio": "vo_t3_explain",
-             "words": ["चूहे", "चार", "चने", "चबाए।"]},   # VO 2
-            {"step": "pause", "ms": 500},         # let the marked line settle before the card lands
-            {"step": "letter"},                   # the card appears AND says च (audio.target)
+             "words": ["चूहे", "चार", "चने", "चबाए।"],   # VO 2
+            # [r6b] SME: show the card WHEN the voice says "च की आवाज़ बार-बार आई", and pulsate
+            # it - so the card is cued to that token INSIDE this clip rather than following it,
+            # and r6a's separate spoken letter beat is gone. The pulse is .ss-lit's own.
+             "reveal_at": "च"},
         ]))
     # new page 3 (was page 5) — च; the ant is gone, the mouse the sentence is ABOUT takes its place
     slides.append(meet_letter("T4", "च", "चूहा", "obj_chuha",
@@ -457,11 +459,11 @@ def build_card():
             # "लाए" is listed nowhere here, on purpose: "Do not highlight लाए, because it does not
             # contain the target sound म."
             {"step": "mark", "audio": "vo_t5_explain",
-             "words": ["मेरे", "मामा", "मीठी", "मलाई"]},
-            {"step": "pause", "ms": 500},
-            # [r5z] see T3: the card arrives AFTER the highlighting and says its
-            # letter (audio.target), which is the alignment the SME asked for.
-            {"step": "letter"},
+             "words": ["मेरे", "मामा", "मीठी", "मलाई"],
+            # [r6b] SME: show the card WHEN the voice says "म की आवाज़ बार-बार आई", and pulsate
+            # it - so the card is cued to that token INSIDE this clip rather than following it,
+            # and r6a's separate spoken letter beat is gone. The pulse is .ss-lit's own.
+             "reveal_at": "म"},
         ]))
     # new page 5 (was page 7) — म
     slides.append(meet_letter("T6", "म", "मूली", "obj_muli",
@@ -498,11 +500,11 @@ def build_card():
             # paced across it. Same shape here, using the clip that exists.
             # When vo_t1_words.ogg is finally produced the SME may want the two-beat script back.
             {"step": "mark", "audio": "vo_t1_explain",
-             "words": ["पीतल", "पतीले", "पपीता", "पीला-पीला।"]},
-            {"step": "pause", "ms": 500},
-            # [r5z] see T3: the card arrives AFTER the highlighting and says its
-            # letter (audio.target), which is the alignment the SME asked for.
-            {"step": "letter"},
+             "words": ["पीतल", "पतीले", "पपीता", "पीला-पीला।"],
+            # [r6b] SME: show the card WHEN the voice says "प की आवाज़ बार-बार आई", and pulsate
+            # it - so the card is cued to that token INSIDE this clip rather than following it,
+            # and r6a's separate spoken letter beat is gone. The pulse is .ss-lit's own.
+             "reveal_at": "प"},
         ]))
     # new page 7 (was page 3) — प
     slides.append(meet_letter("T2", "प", "पपीता", "obj_papita",
@@ -521,7 +523,7 @@ def build_card():
          "more": "vo_g2_more"}))
     # new page 10 (was page 10) — same sentence as the च teach page, now as a question
     slides.append(pick_sound(
-        "G3", "guided", VO["vo_g3_prompt"],
+        "G3", "practice", VO["vo_g3_prompt"],
         ["चूहे", "ने", "चार", "चने", "चबाए।"], "vo_line_l2", "च",
         [{"letter": "च", "audio": "vo_ltr_ch"},
          {"letter": "ल", "audio": "vo_ltr_l"},
@@ -710,9 +712,8 @@ def build_card():
     # cutting them apart to express an order would scatter that. The order lives HERE instead, as one
     # readable line, and the assert makes a typo a build failure rather than a missing page.
     ORDER = ["T3", "T4", "T5", "T6", "T1", "T2",   # 1-6   teach: sentence, letter, x3
-             "G2",                                  # 7     tap the प words
-             "G3", "P4",                            # 8-9   the two "which sound repeats?" questions
-             "P1", "P7",                            # 10-11 tap the म words, tap the च words
+             "G2", "P1", "P7",                      # 7-9   the three tap-the-words pages together
+             "G3", "P4",                            # 10-11 the two "which sound repeats?" questions
              "G5D", "G5",                           # 12-13 watch the sort, then do the sort
              "G1",                                  # 14    balloons
              "P8"]                                  # 15    celebration

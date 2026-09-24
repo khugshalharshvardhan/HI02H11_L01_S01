@@ -115,14 +115,8 @@
               "चार",
               "चने",
               "चबाए।"
-            ]
-          },
-          {
-            "step": "pause",
-            "ms": 500
-          },
-          {
-            "step": "letter"
+            ],
+            "reveal_at": "च"
           }
         ],
         "mark_bare": true,
@@ -226,14 +220,8 @@
               "मामा",
               "मीठी",
               "मलाई"
-            ]
-          },
-          {
-            "step": "pause",
-            "ms": 500
-          },
-          {
-            "step": "letter"
+            ],
+            "reveal_at": "म"
           }
         ],
         "mark_bare": true,
@@ -340,14 +328,8 @@
               "पतीले",
               "पपीता",
               "पीला-पीला।"
-            ]
-          },
-          {
-            "step": "pause",
-            "ms": 500
-          },
-          {
-            "step": "letter"
+            ],
+            "reveal_at": "प"
           }
         ],
         "mark_bare": true,
@@ -449,8 +431,112 @@
       }
     },
     {
+      "id": "P1",
+      "phase": "practice",
+      "eis": "iconic",
+      "type": "TAP_ALL_WITH_SOUND",
+      "prompt_hi": "“म” की आवाज़ वाले शब्दों पर टैप कीजिए।",
+      "audio": {
+        "prompt": "vo_p1_prompt",
+        "target": "vo_snd_m",
+        "hint": "vo_p1_hint",
+        "more": "vo_p1_more",
+        "try_again": "vo_p1_try",
+        "reveal": "vo_p1_reveal",
+        "done": "vo_p1_done"
+      },
+      "data": {
+        "target_sound": "म",
+        "items": [
+          {
+            "word_hi": "मामा",
+            "img": "obj_mama",
+            "emoji": "👨",
+            "audio": "vo_w_mama",
+            "has": true
+          },
+          {
+            "word_hi": "चिड़िया",
+            "img": "obj_chidiya",
+            "emoji": "🐦",
+            "audio": "vo_w_chidiya",
+            "has": false
+          },
+          {
+            "word_hi": "मूली",
+            "img": "obj_muli",
+            "emoji": "🥕",
+            "audio": "vo_w_muli",
+            "has": true
+          },
+          {
+            "word_hi": "लड्डू",
+            "img": "obj_laddu",
+            "emoji": "🍬",
+            "audio": "vo_w_laddu",
+            "has": false
+          }
+        ],
+        "allow_hand": true,
+        "reveal_seq": true,
+        "signal_name": "tap_all_sound_first_try"
+      }
+    },
+    {
+      "id": "P7",
+      "phase": "practice",
+      "eis": "iconic",
+      "type": "TAP_ALL_WITH_SOUND",
+      "prompt_hi": "“च” की आवाज़ वाले शब्दों पर टैप कीजिए।",
+      "audio": {
+        "prompt": "vo_p7_prompt",
+        "target": "vo_snd_ch",
+        "hint": "vo_p7_hint",
+        "more": "vo_p7_more",
+        "try_again": "vo_p7_try",
+        "reveal": "vo_p7_reveal",
+        "done": "vo_p7_done"
+      },
+      "data": {
+        "target_sound": "च",
+        "items": [
+          {
+            "word_hi": "चाँद",
+            "img": "obj_chand",
+            "emoji": "🌙",
+            "audio": "vo_w_chand",
+            "has": true
+          },
+          {
+            "word_hi": "माला",
+            "img": "obj_mala",
+            "emoji": "📿",
+            "audio": "vo_w_mala",
+            "has": false
+          },
+          {
+            "word_hi": "चश्मा",
+            "img": "obj_chashma",
+            "emoji": "👓",
+            "audio": "vo_w_chashma",
+            "has": true
+          },
+          {
+            "word_hi": "लाल",
+            "img": "obj_laal",
+            "emoji": "🔴",
+            "audio": "vo_w_laal",
+            "has": false
+          }
+        ],
+        "allow_hand": true,
+        "reveal_seq": true,
+        "signal_name": "tap_all_sound_first_try"
+      }
+    },
+    {
       "id": "G3",
-      "phase": "guided",
+      "phase": "practice",
       "eis": "symbolic",
       "type": "SENTENCE_SOUND",
       "prompt_hi": "इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
@@ -556,110 +642,6 @@
         "seq_say_whole": true,
         "fixed_order": true,
         "mark_initial": true
-      }
-    },
-    {
-      "id": "P1",
-      "phase": "practice",
-      "eis": "iconic",
-      "type": "TAP_ALL_WITH_SOUND",
-      "prompt_hi": "“म” की आवाज़ वाले शब्दों पर टैप कीजिए।",
-      "audio": {
-        "prompt": "vo_p1_prompt",
-        "target": "vo_snd_m",
-        "hint": "vo_p1_hint",
-        "more": "vo_p1_more",
-        "try_again": "vo_p1_try",
-        "reveal": "vo_p1_reveal",
-        "done": "vo_p1_done"
-      },
-      "data": {
-        "target_sound": "म",
-        "items": [
-          {
-            "word_hi": "मामा",
-            "img": "obj_mama",
-            "emoji": "👨",
-            "audio": "vo_w_mama",
-            "has": true
-          },
-          {
-            "word_hi": "चिड़िया",
-            "img": "obj_chidiya",
-            "emoji": "🐦",
-            "audio": "vo_w_chidiya",
-            "has": false
-          },
-          {
-            "word_hi": "मूली",
-            "img": "obj_muli",
-            "emoji": "🥕",
-            "audio": "vo_w_muli",
-            "has": true
-          },
-          {
-            "word_hi": "लड्डू",
-            "img": "obj_laddu",
-            "emoji": "🍬",
-            "audio": "vo_w_laddu",
-            "has": false
-          }
-        ],
-        "allow_hand": true,
-        "reveal_seq": true,
-        "signal_name": "tap_all_sound_first_try"
-      }
-    },
-    {
-      "id": "P7",
-      "phase": "practice",
-      "eis": "iconic",
-      "type": "TAP_ALL_WITH_SOUND",
-      "prompt_hi": "“च” की आवाज़ वाले शब्दों पर टैप कीजिए।",
-      "audio": {
-        "prompt": "vo_p7_prompt",
-        "target": "vo_snd_ch",
-        "hint": "vo_p7_hint",
-        "more": "vo_p7_more",
-        "try_again": "vo_p7_try",
-        "reveal": "vo_p7_reveal",
-        "done": "vo_p7_done"
-      },
-      "data": {
-        "target_sound": "च",
-        "items": [
-          {
-            "word_hi": "चाँद",
-            "img": "obj_chand",
-            "emoji": "🌙",
-            "audio": "vo_w_chand",
-            "has": true
-          },
-          {
-            "word_hi": "माला",
-            "img": "obj_mala",
-            "emoji": "📿",
-            "audio": "vo_w_mala",
-            "has": false
-          },
-          {
-            "word_hi": "चश्मा",
-            "img": "obj_chashma",
-            "emoji": "👓",
-            "audio": "vo_w_chashma",
-            "has": true
-          },
-          {
-            "word_hi": "लाल",
-            "img": "obj_laal",
-            "emoji": "🔴",
-            "audio": "vo_w_laal",
-            "has": false
-          }
-        ],
-        "allow_hand": true,
-        "reveal_seq": true,
-        "signal_name": "tap_all_sound_first_try"
       }
     },
     {
@@ -976,8 +958,8 @@
   ],
   "phase_distribution": {
     "tutorial": 6,
-    "guided": 2,
-    "practice": 7
+    "guided": 1,
+    "practice": 8
   },
   "signals_expected": [
     "slide_entered",
