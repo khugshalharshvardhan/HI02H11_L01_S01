@@ -1966,32 +1966,11 @@ body.is-start .phase-gate{
    competes with a balloon for attention. */
 body.bal-page{ background:linear-gradient(180deg,#CFE6FF 0%,#E4F1FF 46%,#F4FAFF 100%); }
 body.bal-page .stage{ background:transparent !important; }
-/* the bloom, and the layer the drifting background balloons live in */
-.bal-sky{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
-  background:radial-gradient(ellipse 58% 34% at 50% 104%,
-    rgba(255,255,255,.85) 0%, rgba(255,255,255,.34) 44%, rgba(255,255,255,0) 74%); }
-/* [S01r6c] THE PART THAT ACTUALLY KEEPS GOING UP. These are decoration, not targets: they are
-   behind the field (z-index 0 against the balloons' own stacking) and pointer-events:none, so a
-   child can never chase one or lose a tap to it. That separation is the whole design - see the
-   note on .balloon below for why the PLAYABLE balloons must not travel. */
-.bal-sky i{ position:absolute; bottom:-22%; left:var(--x); width:var(--s); height:calc(var(--s) * 1.18);
-  border-radius:50% 50% 48% 48% / 42% 42% 58% 58%; background:var(--c); opacity:0;
-  animation:balRise var(--t) linear infinite; animation-delay:var(--d); }
-.bal-sky i::after{ content:""; position:absolute; left:50%; top:16%; width:26%; height:30%;
-  transform:translateX(-58%) rotate(-18deg); border-radius:50%;
-  background:rgba(255,255,255,.55); }
-/* the string */
-.bal-sky i::before{ content:""; position:absolute; left:50%; top:100%; width:2px; height:26%;
-  transform:translateX(-50%); background:rgba(255,255,255,.55); border-radius:2px; }
-@keyframes balRise{
-  0%{ transform:translate(0, 0) rotate(-3deg); opacity:0; }
-  8%{ opacity:var(--o,.5); }
-  50%{ transform:translate(calc(var(--sway,18px) * 1), -62vh) rotate(3deg); }
-  88%{ opacity:var(--o,.5); }
-  100%{ transform:translate(0, -128vh) rotate(-3deg); opacity:0; }
-}
-html.no-anim .bal-sky i{ display:none; }
-@media (prefers-reduced-motion: reduce){ .bal-sky i{ display:none; } }
+/* [S01r6d] THE DRIFTING BALLOONS ARE GONE. r6c put sixteen of them rising behind the field; the SME
+   read them as disturbing, and they were - sixteen soft shapes crossing behind eight bright ones is
+   movement competing with the thing the child is supposed to be reading. The SKY ITSELF stays: the
+   gradient and the bloom were the "plain but attractive" half of that request, and nothing about
+   them moves. */
 /* [S01r5i] LIFT THE FIELD DIRECTLY, because centring cannot do it any more. Once the balloons
    grew to 164px the field became 542px tall against a 438px content box, so there is no free space
    left for `align-content:center` to share out - the field simply starts at the top of the box and
@@ -2113,14 +2092,31 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
    agree for long.
    What they deliberately do NOT do is drift upward across the page. This is a tap game for a
    seven-year-old: a target that travels is a target that gets missed, and a balloon that leaves the
-   field takes its word with it. The "keeps going up" the SME asked for is carried by .bal-sky
-   behind them, which has no targets to lose. */
+   field takes its word with it. [S01r6d] r6c carried the "keeps going up" on a .bal-sky layer behind
+   them; the SME found that disturbing and it is gone. The rising now happens where it belongs - in
+   each balloon's ENTRANCE, once, on its way to its slot. */
 .bal-lift{ display:block; animation:balFloat var(--bt,3.4s) ease-in-out infinite;
            animation-delay:calc(var(--bi,0) * -0.47s); }
 /* 680px clears the stage: a balloon rests ~20px from the top and stands ~206px tall, and
    .slide-stage is overflow:hidden, so at +680 the whole thing sits below the clip and the
    child sees it enter from off-screen rather than fade up from inside the card. */
-.balloon.seq-hidden{ opacity:0; transform:translateY(680px) scale(.9); pointer-events:none; }
+.balloon.seq-hidden{ opacity:0; transform:translate(var(--ex,0px), 680px) scale(.9); pointer-events:none; }
+/* [S01r6d] EACH BALLOON FLIES ITS OWN WAY IN. SME: "come from the bottom of the screen, they can
+   come from anywhere, while coming they can go right left then in the position."
+   A transition cannot describe a path with a middle, so the entrance is a keyframed animation: it
+   starts below the floor at --ex, swings to --emx around the halfway mark, and lands on 0,0 - which
+   is the balloon's own flex slot, so nothing has to know where that is. `forwards` holds the landed
+   state until .bal-arrived takes over and the idle float resumes.
+   --ex is chosen in the module against Swiftie's measured box, not guessed here. */
+@keyframes balEnter{
+  0%   { opacity:0; transform:translate(var(--ex,0px), 680px) scale(.86) rotate(var(--er,-6deg)); }
+  12%  { opacity:1; }
+  55%  { transform:translate(var(--emx,0px), 210px) scale(.98) rotate(calc(var(--er,-6deg) * -0.6)); }
+  80%  { transform:translate(calc(var(--emx,0px) * 0.25), 34px) scale(1.03) rotate(2deg); }
+  100% { opacity:1; transform:translate(0, 0) scale(1) rotate(0deg); }
+}
+.balloon.bal-entering{ animation:balEnter var(--edur,1.5s) cubic-bezier(.22,.72,.30,1) forwards; }
+html.no-anim .balloon.bal-entering{ animation:none; opacity:1; transform:none; }
 
 .balloon .bal-body{ box-shadow:none; border-radius:0; }
 /* the six bcol rules set a background at (0,3,0); match that weight to clear it - a plain

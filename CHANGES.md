@@ -3163,3 +3163,63 @@ they cannot be mistaken for one.
 - No new assets — the sky and its balloons are CSS and generated markup
 - **dist 9.79 MB — 215 KB under the cap**
 - Honours `no-anim` and `prefers-reduced-motion`: the drifting layer is dropped entirely
+
+---
+
+# r6d — the sky empties, and the balloons arrive one at a time, named
+
+## 1 · The drifting balloons are gone
+
+r6c put sixteen of them rising behind the field. The SME read them as disturbing, and they were:
+sixteen soft shapes crossing behind eight bright ones is movement competing with the thing the child
+is meant to be reading.
+
+**The sky itself stays.** The gradient and the bloom were the "plain but attractive" half of that
+request and nothing about them moves — only the balloons behind were the problem.
+
+## 2 · One at a time, each one named
+
+SME: *"I want balloon come on the screen one by one by taking the name of the balloon like patang
+ghar machli."*
+
+The old reveal dropped all eight in on a 170ms stagger, silently. Each balloon now flies in and
+**says its own word**, and the next waits for that clip to finish. Measured order:
+
+```
+vo_g1_prompt → पतंग → आम → पपीता → केला → पत्ता → घर → पानी → मछली
+balloons on screen: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+```
+
+That is **eight free exposures to the words before a single tap** — the page now teaches on the way
+in rather than only testing.
+
+Taps are held until the whole set has landed, so a board that is still arriving cannot be answered
+against.
+
+## 3 · From below, from anywhere, wandering — and never through Swiftie
+
+A transition cannot describe a path with a middle, so the entrance is a keyframed animation: it
+starts below the floor at `--ex`, swings across to `--emx` around halfway, and lands on `0,0` — which
+is the balloon's own flex slot, so nothing has to know where that is. Each gets its own start, swing,
+tilt and duration (1.25–1.75s).
+
+**Swiftie is the one hard constraint, and it took two passes.** The first version tested only the
+START position against her box, which let one balloon begin 18px from her edge — a miss that still
+reads as a near-collision. It now tests **every point of the path** (start *and* the top of the
+swing) against her measured rect, with a 40px margin, and pushes any offender in from her right.
+Her box is measured rather than assumed, because the field reflows with `--scale`.
+
+Verified over **six fresh random layouts — 48 balloons, 96 path points, 0 overlaps.**
+
+## The cost, stated plainly
+
+**The intro now runs about 15 seconds** — the prompt, then eight words. That is the direct
+consequence of naming each balloon as it arrives, and it is time the child spends listening rather
+than doing. It buys eight word exposures; if it proves too long in front of children, the lever is to
+drop the per-balloon clip on the SECOND round only, where the words are already familiar.
+
+## Receipt
+
+- Guards pass on all four trees; HTML byte-identical; `app.js` parses clean
+- No new assets — the entrance is CSS, and the words are clips the page already shipped
+- **dist 9.79 MB — 210 KB under the cap**

@@ -6311,35 +6311,6 @@ const SlideModules = {
       let li = 0, found = 0, need = 0, spares = [], cells = [];
       state.attempts = 0; state.locked = false; state.ownsAudio = true;
 
-      /* [S01r6c] The sky the balloons float in. Built here rather than in markup because it is
-         generated - a fixed set of <i> would either repeat visibly or need thirty hand-written
-         elements. Behind the field and pointer-events:none (see the CSS): these are scenery, and a
-         child must never be able to chase one or lose a tap to it. */
-      const sky = document.createElement("div");
-      sky.className = "bal-sky"; sky.setAttribute("aria-hidden", "true");
-      if(!document.documentElement.classList.contains("no-anim")){
-        const R = (a, b)=> a + Math.random() * (b - a);
-        const HUES = ["#FFD36E","#8FD0FF","#C2B0F2","#FFB0C8","#9FE3D4","#FFC49B"];
-        /* [S01r6c] Sized against the PLAYABLE balloons, which are 164px wide: at 26-62px the first
-           pass read as faint blobs and the rising was barely perceptible. 38-92px is legible as a
-           balloon and still less than half a target, so it cannot be mistaken for one. */
-        for(let i = 0; i < 16; i++){
-          const n = document.createElement("i");
-          const size = R(38, 92);
-          /* a NEGATIVE delay starts each one mid-flight, so the sky is already populated on the
-             first frame instead of filling up over the first minute */
-          const dur = R(17, 34);
-          n.style.cssText =
-            "--x:" + R(-4, 96).toFixed(1) + "%;" +
-            "--s:" + size.toFixed(0) + "px;" +
-            "--c:" + HUES[i % HUES.length] + ";" +
-            "--t:" + dur.toFixed(1) + "s;--d:-" + R(0, dur).toFixed(1) + "s;" +
-            "--sway:" + R(-34, 34).toFixed(0) + "px;" +
-            "--o:" + R(0.34, 0.62).toFixed(2) + ";";
-          sky.appendChild(n);
-        }
-      }
-      host.appendChild(sky);
       const field = document.createElement("div"); field.className = "balloon-field";
       /* [S01r5g] SWIFTEE HOLDING THE BALLOONS, bottom-left, exactly where the SME's reference puts
          her. TWO images, not one: a GIF cannot be paused, so the animated frame and a still of its
@@ -6439,6 +6410,8 @@ const SlideModules = {
       };
 
       let busy = false;
+
+      let revealing = false;
       const wireTap = (cell)=>{
         const b = cell.b;
         b.onclick = ()=>{
@@ -6528,7 +6501,7 @@ const SlideModules = {
         const its = (L.items || []).slice();
         spares = (L.spares || []).slice();
         need = its.filter(it => it.has === true).length;
-        found = 0; state.locked = false; busy = false;
+        found = 0; state.locked = false; busy = false; revealing = false;
         [...field.querySelectorAll(".balloon")].forEach(b => b.remove());
         cells = its.map((it, i) => {
           const b = document.createElement("div");
@@ -6547,8 +6520,59 @@ const SlideModules = {
           wireTap(cell);
           return cell;
         });
-        const reveal = ()=>{ if(!alive()) return;
-          cells.forEach(({ b }, i) => setTimeout(()=> b.classList.remove("seq-hidden"), i * 170)); };
+        /* [S01r6d] ONE AT A TIME, EACH ANNOUNCED. SME: "I want balloon come on the screen one by one
+           by taking the name of the balloon like patang ghar machli."
+           The old reveal dropped all eight in on a 170ms stagger, silently. Now each balloon flies in
+           and says its own word, and the next one waits for that clip - so the child hears पतंग, घर,
+           मछली as the board is built, which is eight free exposures to the words before a single tap.
+           Taps are held until the whole set has landed (`busy`), so a board still arriving cannot be
+           answered against. */
+        const swRect = ()=>{ try{ return sw.getBoundingClientRect(); }catch(e){ return null; } };
+        const flightPath = (b)=>{
+          /* Start below the floor, somewhere else horizontally, and swing on the way up. The one
+             hard constraint is Swiftie: she stands at the lower left, and a balloon rising through
+             her reads as a collision. Measure her box and push any start that would cross it to the
+             RIGHT of her, rather than trusting a fixed safe range - the field reflows with --scale. */
+          const R = (lo, hi)=> lo + Math.random() * (hi - lo);
+          const bb = b.getBoundingClientRect(), sr = swRect();
+          let ex  = R(-210, 210);
+          let emx = -ex * R(0.25, 0.55);                  /* swing back across on the way up */
+          if(sr && sr.width){
+            /* Test the WHOLE path, not just the start: the balloon is at rest+ex when it appears and
+               rest+emx at the top of its swing, so either can put it over her. Clear her right edge
+               by a visible margin - an 18px miss still reads as a near-collision on screen. */
+            const PAD = 40;
+            const leftAt = (dx)=> bb.left + dx;
+            const crosses = (dx)=> (bb.right + dx) > (sr.left - PAD) && leftAt(dx) < (sr.right + PAD);
+            if(crosses(ex) || crosses(emx)){
+              ex = Math.min((sr.right + PAD) - bb.left + R(10, 90), 260);  /* come in from her right */
+              if(ex < 0) ex = R(60, 180);
+              emx = -ex * R(0.18, 0.38);
+              if(crosses(emx)) emx = Math.abs(emx);       /* and do not swing back into her */
+            }
+          }
+          b.style.setProperty("--ex", ex.toFixed(0) + "px");
+          b.style.setProperty("--emx", emx.toFixed(0) + "px");
+          b.style.setProperty("--er", R(-9, 9).toFixed(0) + "deg");
+          b.style.setProperty("--edur", R(1.25, 1.75).toFixed(2) + "s");
+        };
+        const reveal = ()=>{
+          if(!alive() || revealing) return;
+          revealing = true; busy = true;
+          const step = (i)=>{
+            if(!alive()) return;
+            if(i >= cells.length){ busy = false; return; }
+            const { b, it } = cells[i];
+            flightPath(b);
+            b.classList.remove("seq-hidden");
+            b.classList.add("bal-entering");
+            /* name it as it flies: the word starts with the balloon, not after it has landed */
+            const w = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
+            const after = ()=> setTimeout(()=> step(i + 1), 120);
+            if(w) play(w, after); else setTimeout(after, 520);
+          };
+          step(0);
+        };
         const say = lvlAudio("prompt") || audioFor(slide, "prompt") || null;
         play(say, reveal);
         setTimeout(()=>{ if(alive()) reveal(); }, 9000);   /* FAIL-SAFE: balloons always arrive */

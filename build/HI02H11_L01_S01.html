@@ -1977,32 +1977,11 @@ body.is-start .phase-gate{
    competes with a balloon for attention. */
 body.bal-page{ background:linear-gradient(180deg,#CFE6FF 0%,#E4F1FF 46%,#F4FAFF 100%); }
 body.bal-page .stage{ background:transparent !important; }
-/* the bloom, and the layer the drifting background balloons live in */
-.bal-sky{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
-  background:radial-gradient(ellipse 58% 34% at 50% 104%,
-    rgba(255,255,255,.85) 0%, rgba(255,255,255,.34) 44%, rgba(255,255,255,0) 74%); }
-/* [S01r6c] THE PART THAT ACTUALLY KEEPS GOING UP. These are decoration, not targets: they are
-   behind the field (z-index 0 against the balloons' own stacking) and pointer-events:none, so a
-   child can never chase one or lose a tap to it. That separation is the whole design - see the
-   note on .balloon below for why the PLAYABLE balloons must not travel. */
-.bal-sky i{ position:absolute; bottom:-22%; left:var(--x); width:var(--s); height:calc(var(--s) * 1.18);
-  border-radius:50% 50% 48% 48% / 42% 42% 58% 58%; background:var(--c); opacity:0;
-  animation:balRise var(--t) linear infinite; animation-delay:var(--d); }
-.bal-sky i::after{ content:""; position:absolute; left:50%; top:16%; width:26%; height:30%;
-  transform:translateX(-58%) rotate(-18deg); border-radius:50%;
-  background:rgba(255,255,255,.55); }
-/* the string */
-.bal-sky i::before{ content:""; position:absolute; left:50%; top:100%; width:2px; height:26%;
-  transform:translateX(-50%); background:rgba(255,255,255,.55); border-radius:2px; }
-@keyframes balRise{
-  0%{ transform:translate(0, 0) rotate(-3deg); opacity:0; }
-  8%{ opacity:var(--o,.5); }
-  50%{ transform:translate(calc(var(--sway,18px) * 1), -62vh) rotate(3deg); }
-  88%{ opacity:var(--o,.5); }
-  100%{ transform:translate(0, -128vh) rotate(-3deg); opacity:0; }
-}
-html.no-anim .bal-sky i{ display:none; }
-@media (prefers-reduced-motion: reduce){ .bal-sky i{ display:none; } }
+/* [S01r6d] THE DRIFTING BALLOONS ARE GONE. r6c put sixteen of them rising behind the field; the SME
+   read them as disturbing, and they were - sixteen soft shapes crossing behind eight bright ones is
+   movement competing with the thing the child is supposed to be reading. The SKY ITSELF stays: the
+   gradient and the bloom were the "plain but attractive" half of that request, and nothing about
+   them moves. */
 /* [S01r5i] LIFT THE FIELD DIRECTLY, because centring cannot do it any more. Once the balloons
    grew to 164px the field became 542px tall against a 438px content box, so there is no free space
    left for `align-content:center` to share out - the field simply starts at the top of the box and
@@ -2124,14 +2103,31 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
    agree for long.
    What they deliberately do NOT do is drift upward across the page. This is a tap game for a
    seven-year-old: a target that travels is a target that gets missed, and a balloon that leaves the
-   field takes its word with it. The "keeps going up" the SME asked for is carried by .bal-sky
-   behind them, which has no targets to lose. */
+   field takes its word with it. [S01r6d] r6c carried the "keeps going up" on a .bal-sky layer behind
+   them; the SME found that disturbing and it is gone. The rising now happens where it belongs - in
+   each balloon's ENTRANCE, once, on its way to its slot. */
 .bal-lift{ display:block; animation:balFloat var(--bt,3.4s) ease-in-out infinite;
            animation-delay:calc(var(--bi,0) * -0.47s); }
 /* 680px clears the stage: a balloon rests ~20px from the top and stands ~206px tall, and
    .slide-stage is overflow:hidden, so at +680 the whole thing sits below the clip and the
    child sees it enter from off-screen rather than fade up from inside the card. */
-.balloon.seq-hidden{ opacity:0; transform:translateY(680px) scale(.9); pointer-events:none; }
+.balloon.seq-hidden{ opacity:0; transform:translate(var(--ex,0px), 680px) scale(.9); pointer-events:none; }
+/* [S01r6d] EACH BALLOON FLIES ITS OWN WAY IN. SME: "come from the bottom of the screen, they can
+   come from anywhere, while coming they can go right left then in the position."
+   A transition cannot describe a path with a middle, so the entrance is a keyframed animation: it
+   starts below the floor at --ex, swings to --emx around the halfway mark, and lands on 0,0 - which
+   is the balloon's own flex slot, so nothing has to know where that is. `forwards` holds the landed
+   state until .bal-arrived takes over and the idle float resumes.
+   --ex is chosen in the module against Swiftie's measured box, not guessed here. */
+@keyframes balEnter{
+  0%   { opacity:0; transform:translate(var(--ex,0px), 680px) scale(.86) rotate(var(--er,-6deg)); }
+  12%  { opacity:1; }
+  55%  { transform:translate(var(--emx,0px), 210px) scale(.98) rotate(calc(var(--er,-6deg) * -0.6)); }
+  80%  { transform:translate(calc(var(--emx,0px) * 0.25), 34px) scale(1.03) rotate(2deg); }
+  100% { opacity:1; transform:translate(0, 0) scale(1) rotate(0deg); }
+}
+.balloon.bal-entering{ animation:balEnter var(--edur,1.5s) cubic-bezier(.22,.72,.30,1) forwards; }
+html.no-anim .balloon.bal-entering{ animation:none; opacity:1; transform:none; }
 
 .balloon .bal-body{ box-shadow:none; border-radius:0; }
 /* the six bcol rules set a background at (0,3,0); match that weight to clear it - a plain
@@ -9060,35 +9056,6 @@ const SlideModules = {
       let li = 0, found = 0, need = 0, spares = [], cells = [];
       state.attempts = 0; state.locked = false; state.ownsAudio = true;
 
-      /* [S01r6c] The sky the balloons float in. Built here rather than in markup because it is
-         generated - a fixed set of <i> would either repeat visibly or need thirty hand-written
-         elements. Behind the field and pointer-events:none (see the CSS): these are scenery, and a
-         child must never be able to chase one or lose a tap to it. */
-      const sky = document.createElement("div");
-      sky.className = "bal-sky"; sky.setAttribute("aria-hidden", "true");
-      if(!document.documentElement.classList.contains("no-anim")){
-        const R = (a, b)=> a + Math.random() * (b - a);
-        const HUES = ["#FFD36E","#8FD0FF","#C2B0F2","#FFB0C8","#9FE3D4","#FFC49B"];
-        /* [S01r6c] Sized against the PLAYABLE balloons, which are 164px wide: at 26-62px the first
-           pass read as faint blobs and the rising was barely perceptible. 38-92px is legible as a
-           balloon and still less than half a target, so it cannot be mistaken for one. */
-        for(let i = 0; i < 16; i++){
-          const n = document.createElement("i");
-          const size = R(38, 92);
-          /* a NEGATIVE delay starts each one mid-flight, so the sky is already populated on the
-             first frame instead of filling up over the first minute */
-          const dur = R(17, 34);
-          n.style.cssText =
-            "--x:" + R(-4, 96).toFixed(1) + "%;" +
-            "--s:" + size.toFixed(0) + "px;" +
-            "--c:" + HUES[i % HUES.length] + ";" +
-            "--t:" + dur.toFixed(1) + "s;--d:-" + R(0, dur).toFixed(1) + "s;" +
-            "--sway:" + R(-34, 34).toFixed(0) + "px;" +
-            "--o:" + R(0.34, 0.62).toFixed(2) + ";";
-          sky.appendChild(n);
-        }
-      }
-      host.appendChild(sky);
       const field = document.createElement("div"); field.className = "balloon-field";
       /* [S01r5g] SWIFTEE HOLDING THE BALLOONS, bottom-left, exactly where the SME's reference puts
          her. TWO images, not one: a GIF cannot be paused, so the animated frame and a still of its
@@ -9188,6 +9155,8 @@ const SlideModules = {
       };
 
       let busy = false;
+
+      let revealing = false;
       const wireTap = (cell)=>{
         const b = cell.b;
         b.onclick = ()=>{
@@ -9277,7 +9246,7 @@ const SlideModules = {
         const its = (L.items || []).slice();
         spares = (L.spares || []).slice();
         need = its.filter(it => it.has === true).length;
-        found = 0; state.locked = false; busy = false;
+        found = 0; state.locked = false; busy = false; revealing = false;
         [...field.querySelectorAll(".balloon")].forEach(b => b.remove());
         cells = its.map((it, i) => {
           const b = document.createElement("div");
@@ -9296,8 +9265,59 @@ const SlideModules = {
           wireTap(cell);
           return cell;
         });
-        const reveal = ()=>{ if(!alive()) return;
-          cells.forEach(({ b }, i) => setTimeout(()=> b.classList.remove("seq-hidden"), i * 170)); };
+        /* [S01r6d] ONE AT A TIME, EACH ANNOUNCED. SME: "I want balloon come on the screen one by one
+           by taking the name of the balloon like patang ghar machli."
+           The old reveal dropped all eight in on a 170ms stagger, silently. Now each balloon flies in
+           and says its own word, and the next one waits for that clip - so the child hears पतंग, घर,
+           मछली as the board is built, which is eight free exposures to the words before a single tap.
+           Taps are held until the whole set has landed (`busy`), so a board still arriving cannot be
+           answered against. */
+        const swRect = ()=>{ try{ return sw.getBoundingClientRect(); }catch(e){ return null; } };
+        const flightPath = (b)=>{
+          /* Start below the floor, somewhere else horizontally, and swing on the way up. The one
+             hard constraint is Swiftie: she stands at the lower left, and a balloon rising through
+             her reads as a collision. Measure her box and push any start that would cross it to the
+             RIGHT of her, rather than trusting a fixed safe range - the field reflows with --scale. */
+          const R = (lo, hi)=> lo + Math.random() * (hi - lo);
+          const bb = b.getBoundingClientRect(), sr = swRect();
+          let ex  = R(-210, 210);
+          let emx = -ex * R(0.25, 0.55);                  /* swing back across on the way up */
+          if(sr && sr.width){
+            /* Test the WHOLE path, not just the start: the balloon is at rest+ex when it appears and
+               rest+emx at the top of its swing, so either can put it over her. Clear her right edge
+               by a visible margin - an 18px miss still reads as a near-collision on screen. */
+            const PAD = 40;
+            const leftAt = (dx)=> bb.left + dx;
+            const crosses = (dx)=> (bb.right + dx) > (sr.left - PAD) && leftAt(dx) < (sr.right + PAD);
+            if(crosses(ex) || crosses(emx)){
+              ex = Math.min((sr.right + PAD) - bb.left + R(10, 90), 260);  /* come in from her right */
+              if(ex < 0) ex = R(60, 180);
+              emx = -ex * R(0.18, 0.38);
+              if(crosses(emx)) emx = Math.abs(emx);       /* and do not swing back into her */
+            }
+          }
+          b.style.setProperty("--ex", ex.toFixed(0) + "px");
+          b.style.setProperty("--emx", emx.toFixed(0) + "px");
+          b.style.setProperty("--er", R(-9, 9).toFixed(0) + "deg");
+          b.style.setProperty("--edur", R(1.25, 1.75).toFixed(2) + "s");
+        };
+        const reveal = ()=>{
+          if(!alive() || revealing) return;
+          revealing = true; busy = true;
+          const step = (i)=>{
+            if(!alive()) return;
+            if(i >= cells.length){ busy = false; return; }
+            const { b, it } = cells[i];
+            flightPath(b);
+            b.classList.remove("seq-hidden");
+            b.classList.add("bal-entering");
+            /* name it as it flies: the word starts with the balloon, not after it has landed */
+            const w = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
+            const after = ()=> setTimeout(()=> step(i + 1), 120);
+            if(w) play(w, after); else setTimeout(after, 520);
+          };
+          step(0);
+        };
         const say = lvlAudio("prompt") || audioFor(slide, "prompt") || null;
         play(say, reveal);
         setTimeout(()=>{ if(alive()) reveal(); }, 9000);   /* FAIL-SAFE: balloons always arrive */
