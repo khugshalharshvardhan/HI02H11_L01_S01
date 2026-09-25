@@ -120,9 +120,24 @@ DUR  = (CARD.get("assets") or {}).get("audio_dur") or {}
 # otherwise be reported as drift. vo_snd_ch is the visible case: a 2.36s carrier cut to 0.75s.
 # Kept in step with BARE_SOUND_IDS in build_skill_HI02H11_L01_S01.py.
 TRIMMED_ON_PURPOSE = {"vo_snd_ch", "vo_snd_l", "vo_snd_r",
-                      "vo_ltr_ch", "vo_ltr_l", "vo_ltr_r", "vo_ltr_p", "vo_ltr_m", "vo_ltr_n"}
+                      "vo_ltr_ch", "vo_ltr_l", "vo_ltr_r", "vo_ltr_p", "vo_ltr_m", "vo_ltr_n",
+                      # [r6n] the cover: the delivered take is cut at a measured sentence boundary
+                      # (8.50s of 16.92s) to drop the two sentences the SME asked to remove.
+                      "vo_landing"}
+
+# [r6n] LINES THE SME HAS ASKED FOR THAT NO CUT CAN PRODUCE.
+# The card's audio_text has to describe what the clip actually SAYS - it is the karaoke timeline and
+# the guards key off it - so a requested re-wording cannot live there until it has been recorded.
+# Without somewhere else to put it, honouring that rule would silently drop the request: the shipped
+# clip matches its own text, the brief says "delivered", and the line the SME typed is gone.
+# So it is held here and the brief asks for THIS, not for what currently ships.
+RESCRIPT_REQUESTED = {
+    "vo_landing": "नमस्ते दोस्तो! आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि यानी आवाज़ के बारे में।",
+}
 
 def vo_status(aid, line, dur):
+    if aid in RESCRIPT_REQUESTED:
+        return "RE-RECORD - SME asked for a new line (column D is the line to record)"
     master = os.path.join(HUMAN_VO, aid + ".wav")
     if not os.path.exists(master):
         return "machine TTS - replace"
@@ -164,6 +179,11 @@ def audio_manifest():
         ws.cell(r, 3).value = str(aid) + ".wav"
         # [r6l] and column F stops claiming the whole lesson is unrecorded — see vo_status above
         ws.cell(r, 6).value = vo_status(aid, (TEXT.get(aid) or ""), DUR.get(aid))
+        # [r6n] a requested re-wording is what the studio should READ, so it replaces the shipped
+        # line in column D. The card keeps saying what the current clip says; only the brief differs.
+        if aid in RESCRIPT_REQUESTED:
+            ws.cell(r, 4).value = RESCRIPT_REQUESTED[aid]
+            ws.cell(r, 7).value = len(RESCRIPT_REQUESTED[aid])
         places = use.get(aid)
         if places:
             ws.cell(r, 5).value = "; ".join(places[:4]) + (" (+%d more)" % (len(places) - 4) if len(places) > 4 else "")

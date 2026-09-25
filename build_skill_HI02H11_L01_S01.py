@@ -50,12 +50,24 @@ VO = {
     # So until the studio delivers a new take, the card is right and the audio is stale - see the
     # stale-take warning added to check_clip_lengths below, which now prints exactly this mismatch
     # on every build rather than leaving it to be noticed by ear.
-    # [r6m] SME: "when Swift say नमस्ते दोस्तो THEN this VO will come ... ONLY THIS, NO EXTRA VO
-    # AUDIO." So the greeting stays and the lesson statement follows it - and that is the whole
-    # clip. What r6l removed stays removed: the demo line "काला कौआ काँव-काँव करता" and the
-    # explanation of क that followed it. Both taught क, which is not this lesson's sound, and
-    # together they were about eleven of the old take's seventeen seconds.
-    "vo_landing": "नमस्ते दोस्तो! आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि यानी आवाज़ के बारे में।",
+    # [r6n] THIS IS WHAT THE CLIP NOW ACTUALLY SAYS, and the two must agree - the text is the
+    # recording script AND the karaoke timeline, so a card describing words the audio does not
+    # speak is the exact defect check_clip_lengths and the r6l stale-take warning exist to catch.
+    #
+    # The SME asked three times for the cover to stop playing the extra material, so rather than
+    # wait on a studio the delivered take was CUT rather than re-recorded. It is their own voice,
+    # and the cut is at a measured sentence boundary, not a guess: every one of the take's five
+    # sentence ends lands on a detected pause, and sentence 3 ends at 8.22s against a 0.80s pause.
+    # Cutting at 8.50s keeps the greeting and the lesson statement and drops the two sentences the
+    # SME did not want - "सुनो—काला कौआ काँव-काँव करता।" and the explanation of क, which together
+    # were 8.4 of the take's 16.9 seconds. The untrimmed master is kept in _assets_round4.
+    #
+    # NOT the wording the SME typed. They asked for "आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि
+    # यानी आवाज़ के बारे में।"; the recorded sentence means the same thing but is worded differently,
+    # and no cut can produce words that were never spoken. That line is still on the recording brief
+    # (see RESCRIPT_REQUESTED in make_manifests.py) so it is not quietly dropped - this is what
+    # ships until one 7-second take replaces it.
+    "vo_landing": "नमस्ते दोस्त! मैं हूँ Swiftee। आज हम जानेंगे कि वाक्य में कौन-सी ध्वनि बार-बार सुनाई देती है।",
 
     # ---- the sentences ------------------------------------------------------------------
     "vo_line_l1": "पीतल के पतीले में पपीता पीला-पीला।",
