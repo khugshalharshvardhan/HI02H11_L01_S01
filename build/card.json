@@ -19,17 +19,7 @@
     "kind": "sentence_sound",
     "hide_title": true,
     "sync_audio": "vo_landing",
-    "cues": [
-      {
-        "at": "ध्वनि",
-        "do": "crow"
-      }
-    ],
-    "cover_img": "cover_hero",
-    "picture_img": "obj_kauaa",
-    "picture_emoji": "🐦‍⬛",
-    "picture_sfx": "sfx_kanv",
-    "picture_sfx_times": 2
+    "cover_img": "cover_hero"
   },
   "phase_transition_audio": {
     "tutorial": "vo_pt_tutorial",
@@ -1107,7 +1097,7 @@
       "vo_g5_prompt": "हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए।",
       "vo_g5_show": "हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
       "vo_g5_try": "यह डिब्बा सही नहीं है। शब्द की आवाज़ फिर सुनो।",
-      "vo_landing": "आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि यानी आवाज़ के बारे में।",
+      "vo_landing": "नमस्ते दोस्तो! आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि यानी आवाज़ के बारे में।",
       "vo_line_l1": "पीतल के पतीले में पपीता पीला-पीला।",
       "vo_line_l2": "चूहे ने चार चने चबाए।",
       "vo_line_l3": "मेरे मामा मीठी मलाई लाए।",

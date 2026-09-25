@@ -50,7 +50,12 @@ VO = {
     # So until the studio delivers a new take, the card is right and the audio is stale - see the
     # stale-take warning added to check_clip_lengths below, which now prints exactly this mismatch
     # on every build rather than leaving it to be noticed by ear.
-    "vo_landing": "आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि यानी आवाज़ के बारे में।",
+    # [r6m] SME: "when Swift say नमस्ते दोस्तो THEN this VO will come ... ONLY THIS, NO EXTRA VO
+    # AUDIO." So the greeting stays and the lesson statement follows it - and that is the whole
+    # clip. What r6l removed stays removed: the demo line "काला कौआ काँव-काँव करता" and the
+    # explanation of क that followed it. Both taught क, which is not this lesson's sound, and
+    # together they were about eleven of the old take's seventeen seconds.
+    "vo_landing": "नमस्ते दोस्तो! आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि यानी आवाज़ के बारे में।",
 
     # ---- the sentences ------------------------------------------------------------------
     "vo_line_l1": "पीतल के पतीले में पपीता पीला-पीला।",
@@ -777,24 +782,22 @@ def build_card():
         # ध्वनि (token 8 of 14, 57% in), which is exactly where the voice names it.
         # the timeline is read off this clip, so every beat lands when its own word is spoken
         "sync_audio": "vo_landing",
-        # [r6l] The `light` cue went with the strip it lit - there is no .lh-strip under the cover
-        # artwork, and its own anchor was the bare क the new line does not contain. The crow stays:
-        # it is the one cue with something to do, and the board it lands on is painted, not built.
-        "cues": [{"at": "ध्वनि", "do": "crow"}],
         # [r6e] SME artwork for the cover: one painted board carrying the title and the crow, fitted
-        # to the card. The word strip and the crow element are NOT rendered when this is set - both are
-        # already in the painting. picture_img / picture_emoji stay declared because picture_sfx still
-        # fires on the crow's cue, and the emoji is the no-art fallback the engine expects beside it.
+        # to the card. The word strip and the crow element are NOT rendered when this is set - both
+        # are already in the painting.
         "cover_img": "cover_hero",
-        "picture_img": "obj_kauaa",
-        "picture_emoji": EMOJI["obj_kauaa"],
-        "picture_sfx": "sfx_kanv",
-        # [r5p] SME: "the voice of crow should play 2 times". The line the cover reads is
-        # "काँव-काँव" - two calls - and the trimmed recording holds one, so the sound contradicted
-        # the sentence on the one page whose subject IS that sound. The count lives here rather
-        # than in the engine because it belongs to this line; the engine spaces the repeats by the
-        # clip's own audio_dur.
-        "picture_sfx_times": 2,
+        # [r6m] THE CROW IS SILENT NOW. SME, asked directly: the cover plays the spoken line "only
+        # this, no extra VO audio" - caw included. r5p's two caws existed to match the word
+        # "काँव-काँव" in the old demo sentence, and r6l took that sentence out, so the sound had
+        # already lost the line it was echoing.
+        # picture_img / picture_emoji go with it. r6e kept them ONLY because picture_sfx fired off
+        # the crow's cue; with no cue and no .lh-pic to render under the artwork, they would be
+        # three keys that do nothing, which is how a card starts lying about what a page does. The
+        # crow is still on the cover - it is painted into cover_hero - and obj_kauaa/sfx_kanv are
+        # still declared and shipped, because the balloon page uses the picture and the sound
+        # effect stays available to the lesson.
+        # `cues` is gone entirely rather than left empty: the crow was its last entry, and r6l had
+        # already retired the `light` cue with the word strip it lit.
     }
 
     card = {
