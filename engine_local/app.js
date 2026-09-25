@@ -6495,6 +6495,35 @@ const SlideModules = {
          before the fix: 7 of 8 balloons on the board after one correct pop, so every correct answer
          quietly cost the child a balloon. Nothing in it depends on the level, only on `sw`. */
       const swRect = ()=>{ try{ return sw.getBoundingClientRect(); }catch(e){ return null; } };
+      /* [S01r6j] Release everything still flying, then hand over. Lives up here beside flightPath
+         because wireTap's round-complete path calls it, and r6e is the standing lesson about what
+         happens when one of these helpers is scoped inside renderLevel instead.
+         `:not(.popped)` because a popped balloon has already gone - balPop took it - and animating
+         a burst balloon back into the air would undo the child's own answer in front of them.
+         Every balloon gets its own drift, spin, duration and delay: eight identical exits would read
+         as one sheet of balloons sliding off, which is the lockstep problem r6c fixed at the other
+         end of the round. The callback is timed off the slowest of them rather than a fixed guess,
+         and it re-checks alive() - a child who leaves mid-exit must not land on a rebuilt board. */
+      const clearField = (done)=>{
+        const live = [...field.querySelectorAll(".balloon:not(.popped)")];
+        if(!live.length){ done(); return; }
+        const R = (lo, hi)=> lo + Math.random() * (hi - lo);
+        let last = 0;
+        live.forEach((b)=>{
+          const dur = R(1.15, 1.55), del = R(0, 0.34);
+          b.style.setProperty("--lx",   R(-58, 58).toFixed(0) + "px");
+          b.style.setProperty("--lr",   R(-11, 11).toFixed(0) + "deg");
+          b.style.setProperty("--ldur", dur.toFixed(2) + "s");
+          b.style.setProperty("--ldel", del.toFixed(2) + "s");
+          /* bal-entering is dropped, not left to fight: both rules set `animation` on the same
+             element. For a settled balloon this is seamless - balLeave's 0% is translate(0,0), which
+             is exactly where balEnter's `forwards` fill left it. */
+          b.classList.remove("bal-entering", "bal-hot");
+          b.classList.add("bal-leaving");
+          last = Math.max(last, (dur + del) * 1000);
+        });
+        setTimeout(()=>{ if(alive()) done(); }, last + 90);
+      };
       const flightPath = (b)=>{
         /* Start below the floor, somewhere else horizontally, and swing on the way up. The one
            hard constraint is Swiftie: she stands at the lower left, and a balloon rising through
@@ -6552,6 +6581,13 @@ const SlideModules = {
                  What each bcol- DOES still set is `color`, so that is the accent to throw. */
               const _bb = b.querySelector(".bal-body");
               const hue = _bb ? getComputedStyle(_bb).color : "#FFC93C";
+              /* [S01r6j] bal-entering comes OFF before popped goes on. A refilled balloon carries
+                 it for up to 1.75s (r6e), and a child can certainly tap one inside that window -
+                 but `.balloon.bal-entering` sits BELOW `.balloon.popped` in the stylesheet at equal
+                 specificity, so it won the `animation` property and balPop never ran: the balloon
+                 the child had just correctly popped stayed on screen at full opacity, merely
+                 untappable. Popping is the one piece of feedback this game cannot afford to lose. */
+              b.classList.remove("bal-entering");
               b.classList.add("popped"); sparkle(b, hue); burstRing(b);
               /* [S01r4v] the SME's own pop recording, trimmed 1.97s -> 0.21s with the peak 30ms in.
                  sfxCorrect stays - the pop and the "that was right" ding are two different messages. */
@@ -6567,7 +6603,8 @@ const SlideModules = {
                 play(lvlAudio(last ? "done" : "correct") || lvlAudio("correct") || null,
                      ()=>{ if(!alive()) return;
                            if(last) setTimeout(()=> completeSlide(state.attempts === 0), 700);
-                           else     setTimeout(()=> { li++; renderLevel(); }, 500); });
+                           /* [S01r6j] let the board go up before the next one comes up */
+                           else     setTimeout(()=> clearField(()=> { li++; renderLevel(); }), 500); });
               } else {
                 /* [S01r5o] the popped balloon is REFILLED rather than left as a hole: the SME asked
                    for "at that place other balloon will appear with other image". It always refills
