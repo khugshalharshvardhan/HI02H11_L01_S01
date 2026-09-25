@@ -121,23 +121,22 @@ DUR  = (CARD.get("assets") or {}).get("audio_dur") or {}
 # Kept in step with BARE_SOUND_IDS in build_skill_HI02H11_L01_S01.py.
 TRIMMED_ON_PURPOSE = {"vo_snd_ch", "vo_snd_l", "vo_snd_r",
                       "vo_ltr_ch", "vo_ltr_l", "vo_ltr_r", "vo_ltr_p", "vo_ltr_m", "vo_ltr_n",
-                      # [r6n] the cover: the delivered take is cut at a measured sentence boundary
-                      # (8.50s of 16.92s) to drop the two sentences the SME asked to remove.
-                      "vo_landing"}
+                      }
 
-# [r6n] LINES THE SME HAS ASKED FOR THAT NO CUT CAN PRODUCE.
-# The card's audio_text has to describe what the clip actually SAYS - it is the karaoke timeline and
-# the guards key off it - so a requested re-wording cannot live there until it has been recorded.
-# Without somewhere else to put it, honouring that rule would silently drop the request: the shipped
-# clip matches its own text, the brief says "delivered", and the line the SME typed is gone.
-# So it is held here and the brief asks for THIS, not for what currently ships.
-RESCRIPT_REQUESTED = {
-    "vo_landing": "नमस्ते दोस्तो! आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि यानी आवाज़ के बारे में।",
-}
+# [r6o] LINES THAT SHIP SYNTHESISED BECAUSE NO HUMAN TAKE OF THEM EXISTS.
+# r6n held the SME's requested wording here instead, because the clip still spoke the old line and
+# the card had to describe what was actually said. That is no longer the case: vo_landing now IS
+# their line, so the card, the clip and the brief all carry the same words and there is nothing to
+# hold apart. What is left to record is the VOICE.
+# This is the one clip in the lesson that is not the SME's own, and the cover is the first thing a
+# child hears - which is exactly where a different timbre is most audible - so it gets its own
+# status rather than being lumped in with "build differs from the delivered take", which would read
+# as drift rather than as a deliberate, flagged substitution.
+SYNTHESISED = {"vo_landing"}
 
 def vo_status(aid, line, dur):
-    if aid in RESCRIPT_REQUESTED:
-        return "RE-RECORD - SME asked for a new line (column D is the line to record)"
+    if aid in SYNTHESISED:
+        return "SYNTHESISED - record a human take of the line in column D"
     master = os.path.join(HUMAN_VO, aid + ".wav")
     if not os.path.exists(master):
         return "machine TTS - replace"
@@ -179,11 +178,6 @@ def audio_manifest():
         ws.cell(r, 3).value = str(aid) + ".wav"
         # [r6l] and column F stops claiming the whole lesson is unrecorded — see vo_status above
         ws.cell(r, 6).value = vo_status(aid, (TEXT.get(aid) or ""), DUR.get(aid))
-        # [r6n] a requested re-wording is what the studio should READ, so it replaces the shipped
-        # line in column D. The card keeps saying what the current clip says; only the brief differs.
-        if aid in RESCRIPT_REQUESTED:
-            ws.cell(r, 4).value = RESCRIPT_REQUESTED[aid]
-            ws.cell(r, 7).value = len(RESCRIPT_REQUESTED[aid])
         places = use.get(aid)
         if places:
             ws.cell(r, 5).value = "; ".join(places[:4]) + (" (+%d more)" % (len(places) - 4) if len(places) > 4 else "")
