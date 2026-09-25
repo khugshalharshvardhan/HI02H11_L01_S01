@@ -859,6 +859,14 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
    line-height:1 means the glyph box cannot push the 62px height around, and the arrow's ink is
    about half its font-size, so 52px of glyph is ~26px of visible arrow in a 62px pill. */
 .nav-btn::after{content:"→";font-size:52px;line-height:1;}
+/* [S01r6k] ...and then आगे takes over the asking. The transform is restated in every frame because
+   .nav-btn is centred BY transform (translateX(-50%)) - a keyframe that sets only scale would drop
+   the centring and the button would jump half its width to the right on the first beat. */
+@keyframes navIdlePulse{
+  0%,100%{ transform:translateX(-50%) scale(1);    box-shadow:0 6px 6px rgba(0,0,0,.25), 0 0 0 0   rgba(252,183,23,.55); }
+  50%    { transform:translateX(-50%) scale(1.055); box-shadow:0 6px 6px rgba(0,0,0,.25), 0 0 0 16px rgba(252,183,23,0); }
+}
+.nav-btn.active.idle-pulse{ animation:navIdlePulse 1.2s ease-in-out infinite; }
 
 /* ===== HINT / FEEDBACK OVERLAY — kit-style card + clean Swiftee ===== */
 .hint-overlay{position:absolute;inset:0;display:none;align-items:flex-start;justify-content:center;padding-top:120px;z-index:60;background:rgba(11,61,140,.28);}
@@ -1291,6 +1299,27 @@ body.tut-page{background:#FFFFFF;}
 .sg-vo.playing .wv2{animation:wv2 1.2s steps(1) infinite;}
 .tut-audio.playing .wv1{animation:wv1 1.2s steps(1) infinite;}
 .tut-audio.playing .wv2{animation:wv2 1.2s steps(1) infinite;}
+/* [S01r6k] THE SPEAKER IS NOT TAPPABLE WHILE SWIFTIE IS TALKING, AND NOW IT SAYS SO.
+   SME: "when swifty is speaking do not allow user to tap on the speaker button, once swifty is done
+   then active the VO button."
+   Half of this was already true and invisible: replaySlideAudio has refused on `isPlaying` since
+   [24a N8]. So the child's tap was already being dropped - with the chip at full brightness and a
+   pointer cursor, which is the worst of both, because a control that looks live and does nothing
+   reads as broken rather than busy. The refusal is now honest.
+   NOT hung off body.vo-lock, deliberately. That rule is POINTER-EVENTS ONLY and the ban on dimming
+   under it has been re-stated three times (see the note at the top of the vo-lock block): what Yasir
+   screenshotted was a PALE BOARD reading as a frozen game. This is the opposite case and the one the
+   note explicitly leaves open - a cue on the single control it concerns, not on the board. The board
+   stays exactly as bright as it was.
+   Its own class rather than `.playing`: .playing is set on `on && !isMuted`, but the JS refusal keys
+   off isPlaying alone, so with sound off the two would disagree and the chip would look live while
+   still refusing. .vo-busy follows isPlaying exactly.
+   The sound-wave arcs keep animating underneath, so the chip still reads as "speaking" rather than
+   merely switched off. */
+.audio-chip.vo-busy, .tut-audio.vo-busy, .sg-vo.vo-busy{
+  pointer-events:none; cursor:default; opacity:.45;
+  transition:opacity .18s ease; }
+.audio-chip, .tut-audio, .sg-vo{ transition:opacity .22s ease; }
 @keyframes wv1{0%{opacity:0;}33%{opacity:1;}100%{opacity:1;}}
 @keyframes wv2{0%{opacity:0;}66%{opacity:1;}100%{opacity:1;}}
 
@@ -1903,7 +1932,16 @@ body.is-start .phase-gate{
   0%,100%{ transform:scale(1);        box-shadow:0 0 0 0 rgba(194,89,10,.30), 0 12px 28px rgba(11,61,140,.14); }
   50%    { transform:scale(1.045);    box-shadow:0 0 0 12px rgba(194,89,10,0), 0 12px 28px rgba(11,61,140,.14); }
 }
-.opt-cell.ss-lit{ animation:ssLitPulse 1.6s ease-in-out infinite; border-color:var(--tgt-ink); background:#FFF7EC;
+/* [S01r6k] THREE BEATS, THEN IT SETTLES. SME: "च will pulse only 2-3 times and then stop, and then
+   the next button will active and this button will have pulse effect after 3 seconds of inactivity."
+   It ran `infinite`, so the letter kept beating for the whole rest of the slide and was still
+   beating while आगे waited - two things asking for attention at once, and the one that was asking
+   was the one the child had already looked at. Three iterations is ~4.8s, comfortably longer than
+   the explanation that follows the reveal.
+   No `forwards`: the fill must NOT be held. ssLitPulse's 100% is the neutral frame, and the card's
+   static lit state - amber border, warm fill, its resting shadow - lives in this same rule and is
+   what the card must be left in. */
+.opt-cell.ss-lit{ animation:ssLitPulse 1.6s ease-in-out 3; border-color:var(--tgt-ink); background:#FFF7EC;
   box-shadow:0 5px 12px rgba(194,89,10,.16); }
 
 /* ---- MEET_LETTER VO-synced reveal -------------------------------------------------------------- */
@@ -2325,6 +2363,55 @@ html.no-anim .balloon.bal-leaving{ animation:none; opacity:0; }
   background:url("assets/UI/play_btn.svg") center/contain no-repeat;
   box-shadow:none; display:block; }
 .sg-card.lh-card .sg-btn::after{ content:none; }
+/* [S01r6k] A FACE ON THE BUTTON. SME: "give the play button 3d look, currently it feel too blank."
+   It was blank for a traceable reason: the generic .sg-btn carries a drop shadow AND two inset
+   shadows (a lit top edge, a shaded bottom edge) which are what make every other button in the game
+   look pressable, and r6h's `box-shadow:none` switched all three off so the supplied SVG could sit
+   on a clean disc. The SVG has its own inner shadow but nothing OUTSIDE it, so the button read as a
+   sticker printed on the card rather than an object resting on it.
+   The artwork is not touched - it is the SME's, and the triangle's placement inside it is the
+   designer's. The depth is added around and over it instead:
+     * box-shadow, not filter:drop-shadow - the button's border-box IS the disc (border-radius:50%,
+       a square box, a square SVG at `contain`), so a box-shadow already has the right silhouette and
+       it composes with the halo the idle pulse animates. A filter would blur the halo too.
+     * ::before is a LIGHTING layer, not decoration: a highlight where a dome would catch the light
+       and a shade where it would fall away. It covers the triangle as well, which is correct - the
+       whole face is lit from one place. ::after is spoken for (the generic play glyph, disabled just
+       above), so the bevel lives on ::before. */
+.sg-card.lh-card .sg-btn{
+  box-shadow:0 10px 16px rgba(12,46,92,.30), 0 3px 5px rgba(12,46,92,.22);
+  transition:box-shadow .13s ease, transform .13s ease; }
+.sg-card.lh-card .sg-btn::before{
+  content:""; position:absolute; left:0; top:0; width:100%; height:100%;
+  border-radius:50%; pointer-events:none;
+  background:
+    radial-gradient(ellipse 64% 46% at 50% 13%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 64%),
+    radial-gradient(ellipse 84% 58% at 50% 103%, rgba(122,74,4,.32) 0%, rgba(122,74,4,0) 60%); }
+/* pressed: it goes DOWN and its shadow shortens, which is the whole of what "3d" means to a child */
+.sg-card.lh-card .sg-btn:active{ transform:translateX(-50%) translateY(5px);
+  box-shadow:0 3px 6px rgba(12,46,92,.28); }
+/* [S01r6k] AND THE IDLE PULSE ASKS LOUDER. SME: "in case of inactivity increase the pulse effect
+   currently its too subtle and does not feels like we have to tap on it." It was scale 1.00 -> 1.03
+   over 1.4s - about a 3px swell on a 104px button, which is below what reads as movement at arm's
+   length. Now a knock rather than a breath: it overshoots to 1.10, dips under 1.0 on the way back so
+   there is a rebound to see, and throws a gold ring outward on every beat. The resting depth is
+   carried inside the halo keyframes because an animated box-shadow replaces the property outright -
+   leaving it out would flatten the button for exactly as long as it was asking to be pressed. */
+@keyframes sgBtnPulseStrong{
+  0%,100%{ transform:translateX(-50%) scale(1); }
+  30%    { transform:translateX(-50%) scale(1.10); }
+  58%    { transform:translateX(-50%) scale(.985); }
+}
+@keyframes sgBtnHalo{
+  0%   { box-shadow:0 10px 16px rgba(12,46,92,.30), 0 0 0 0   rgba(248,190,42,.55); }
+  72%  { box-shadow:0 10px 16px rgba(12,46,92,.30), 0 0 0 26px rgba(248,190,42,0); }
+  100% { box-shadow:0 10px 16px rgba(12,46,92,.30), 0 0 0 0   rgba(248,190,42,0); }
+}
+.sg-card.lh-card .sg-btn.idle-pulse{
+  animation:sgBtnPulseStrong 1.15s cubic-bezier(.34,.62,.3,1) infinite,
+            sgBtnHalo        1.15s ease-out infinite; }
+/* a disabled button must not look raised OR eager - r6h already greys it; kill the depth with it */
+.sg-card.lh-card .sg-btn.sg-waiting::before{ content:none; }
 /* while the greeting runs the button is genuinely disabled, so it has to LOOK it. Desaturating the
    art says "not yet" without swapping in a second graphic. */
 .sg-card.lh-card .sg-btn.sg-waiting{ background:url("assets/UI/play_btn.svg") center/contain no-repeat;
@@ -2909,7 +2996,13 @@ function setPlaying(on){
   // tut frame, so the in-card .tut-audio is the only visible affordance and must react to VO too).
   isPlaying=on;
   if(on) _voStart = Date.now();   // drag VO-gate 4s safety: stamp when a VO began so a stalled clip can't soft-lock the tiles
-  document.querySelectorAll(".audio-chip, .tut-audio, .sg-vo").forEach(c => c.classList.toggle("playing", on && !isMuted));
+  document.querySelectorAll(".audio-chip, .tut-audio, .sg-vo").forEach(c => {
+    c.classList.toggle("playing", on && !isMuted);
+    /* [S01r6k] ...and `vo-busy` on `on` ALONE, the way vo-lock below is. The replay refusal keys off
+       isPlaying without consulting mute, so a chip styled off `playing` would look live and still
+       refuse whenever the child had the sound off. */
+    c.classList.toggle("vo-busy", !!on);
+  });
   /* [30g] VO LOCK — UNTAPPABLE, ZERO VISUAL. Yasir 2026-07-30: "cards untappable when VO being
      played, you dont need to show any affect for untappable, just make it untappable."
      28u bundled a lock (pointer-events:none) with a pale board (opacity:.55). 30f removed BOTH, which
@@ -3619,7 +3712,39 @@ function setNavActive(on){
   btn.disabled = !on;
   btn.classList.toggle("active", on);
   clearTimeout(state.navNudgeTimer);
+  /* [S01r6k] every mount and every gate change comes through here, so this is the one place that
+     guarantees a pulse cannot outlive the slide that asked for it. Modules re-arm AFTER calling
+     setNavActive(true), which is the order finish() uses. */
+  stopNavPulse();
   /* [20a nudge-03] no auto-nudge on आगे — buttons are known affordances (ruling); nudge is for learning elements only. */
+}
+/* [S01r6k] आगे ASKS, AFTER THREE QUIET SECONDS. SME, for pages 1/3/5: "the next button will active
+   and this button will have pulse effect AFTER 3 SECONDS OF INACTIVITY."
+   This is a deliberate exception to the [20a nudge-03] ruling noted in setNavActive - "no auto-nudge
+   on आगे, buttons are known affordances". That ruling is about the HAND. These three pages end with
+   the letter card sitting lit and nothing else on screen moving, and the SME has now asked twice
+   (r5r on the cover, here) for a pulse rather than a hand in exactly that situation. So: a pulse on
+   the button itself, no hand, and only where a module asks for it.
+   It waits out speech instead of firing through it - a pulse under the explanation would be asking
+   the child to leave before the page has finished talking - and it re-arms on every touch, so "three
+   seconds of inactivity" means what it says rather than three seconds after the slide settled. */
+function armNavPulse(ms){
+  const btn = $("navBtn"); if(!btn) return;
+  state.navPulseArmed = true;
+  clearTimeout(state.navPulseTimer);
+  btn.classList.remove("idle-pulse");
+  const tick = ()=>{
+    if(!state.navPulseArmed) return;
+    const b = $("navBtn"); if(!b || b.disabled) return;
+    if(isPlaying || state.hintActive){ state.navPulseTimer = setTimeout(tick, 600); return; }
+    b.classList.add("idle-pulse");
+  };
+  state.navPulseTimer = setTimeout(tick, ms || 3000);
+}
+function stopNavPulse(){
+  state.navPulseArmed = false;
+  clearTimeout(state.navPulseTimer);
+  const btn = $("navBtn"); if(btn) btn.classList.remove("idle-pulse");
 }
 function nudgeNavBtn(){
   const btn = $("navBtn");
@@ -4040,6 +4165,8 @@ function armIdleVo(){
 // drag slides — the same trap the drag mechanics warn about). armIdleVo() itself re-checks phase, so
 // a pointerdown on a tutorial slide is a cheap no-op.
 document.addEventListener("pointerdown", ()=>{ armIdleVo(); }, true);
+/* [S01r6k] ...and the same gesture restarts आगे's three seconds, but only on a slide that armed it. */
+document.addEventListener("pointerdown", ()=>{ if(state.navPulseArmed) armNavPulse(3000); }, true);
 
 /* ---------- 7. HINT / FEEDBACK BOX ----------
    No button: the popup plays its VO, then auto-dismisses. onEnd runs after it
@@ -8950,7 +9077,8 @@ const SlideModules = {
         const alive = ()=> CARD.slides[state.idx] === slide;
         let done = false;
         const finish = ()=>{ if(done) return; done = true;
-          state.demoRunning = false; setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true); };
+          state.demoRunning = false; setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true);
+          armNavPulse(3000);   /* [S01r6k] pages 1/3/5 - the letter has stopped beating by now */ };
 
         const STEPS = d.teach_seq.slice();
         /* [S01r6b] The letter card used to be revealed only by the `letter` step. It is now also
@@ -10226,7 +10354,13 @@ function boot(){
     play(landSrc, ()=>{ window.__greetingDone = true;
                         if(window.__setStartBtnReady) window.__setStartBtnReady(true);
                         if(window.__armStartNudge) window.__armStartNudge(); }); };
-  const sgVo = $("sgVo"); if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); playLanding(); };
+  /* [S01r6k] The cover speaker never had the guard the in-lesson chips have had since [24a N8], so
+     tapping it mid-greeting restarted a 15s clip from the top - and taking the greeting back to zero
+     is precisely the trap r5y was: the button that releases the cover is held disabled for as long
+     as the greeting runs. CSS now makes it untappable while the clip sounds; this is the backstop,
+     because a gate that exists only in a stylesheet is one `!important` away from being gone. */
+  const sgVo = $("sgVo");
+  if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); if(isPlaying) return; playLanding(); };
   // ---- [engine JS] r4/P2 boot loader: loader.gif until assets warm, then it dismisses ITSELF into
   // the landing (NO tap gate). DUAL auto-dismiss (window 'load' OR a 2.5s watchdog — never strand the
   // child), deduped by .done. The same handler adds body.loaded (unblocks the concept-strip stagger)

@@ -848,6 +848,14 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
    line-height:1 means the glyph box cannot push the 62px height around, and the arrow's ink is
    about half its font-size, so 52px of glyph is ~26px of visible arrow in a 62px pill. */
 .nav-btn::after{content:"→";font-size:52px;line-height:1;}
+/* [S01r6k] ...and then आगे takes over the asking. The transform is restated in every frame because
+   .nav-btn is centred BY transform (translateX(-50%)) - a keyframe that sets only scale would drop
+   the centring and the button would jump half its width to the right on the first beat. */
+@keyframes navIdlePulse{
+  0%,100%{ transform:translateX(-50%) scale(1);    box-shadow:0 6px 6px rgba(0,0,0,.25), 0 0 0 0   rgba(252,183,23,.55); }
+  50%    { transform:translateX(-50%) scale(1.055); box-shadow:0 6px 6px rgba(0,0,0,.25), 0 0 0 16px rgba(252,183,23,0); }
+}
+.nav-btn.active.idle-pulse{ animation:navIdlePulse 1.2s ease-in-out infinite; }
 
 /* ===== HINT / FEEDBACK OVERLAY — kit-style card + clean Swiftee ===== */
 .hint-overlay{position:absolute;inset:0;display:none;align-items:flex-start;justify-content:center;padding-top:120px;z-index:60;background:rgba(11,61,140,.28);}
@@ -1280,6 +1288,27 @@ body.tut-page{background:#FFFFFF;}
 .sg-vo.playing .wv2{animation:wv2 1.2s steps(1) infinite;}
 .tut-audio.playing .wv1{animation:wv1 1.2s steps(1) infinite;}
 .tut-audio.playing .wv2{animation:wv2 1.2s steps(1) infinite;}
+/* [S01r6k] THE SPEAKER IS NOT TAPPABLE WHILE SWIFTIE IS TALKING, AND NOW IT SAYS SO.
+   SME: "when swifty is speaking do not allow user to tap on the speaker button, once swifty is done
+   then active the VO button."
+   Half of this was already true and invisible: replaySlideAudio has refused on `isPlaying` since
+   [24a N8]. So the child's tap was already being dropped - with the chip at full brightness and a
+   pointer cursor, which is the worst of both, because a control that looks live and does nothing
+   reads as broken rather than busy. The refusal is now honest.
+   NOT hung off body.vo-lock, deliberately. That rule is POINTER-EVENTS ONLY and the ban on dimming
+   under it has been re-stated three times (see the note at the top of the vo-lock block): what Yasir
+   screenshotted was a PALE BOARD reading as a frozen game. This is the opposite case and the one the
+   note explicitly leaves open - a cue on the single control it concerns, not on the board. The board
+   stays exactly as bright as it was.
+   Its own class rather than `.playing`: .playing is set on `on && !isMuted`, but the JS refusal keys
+   off isPlaying alone, so with sound off the two would disagree and the chip would look live while
+   still refusing. .vo-busy follows isPlaying exactly.
+   The sound-wave arcs keep animating underneath, so the chip still reads as "speaking" rather than
+   merely switched off. */
+.audio-chip.vo-busy, .tut-audio.vo-busy, .sg-vo.vo-busy{
+  pointer-events:none; cursor:default; opacity:.45;
+  transition:opacity .18s ease; }
+.audio-chip, .tut-audio, .sg-vo{ transition:opacity .22s ease; }
 @keyframes wv1{0%{opacity:0;}33%{opacity:1;}100%{opacity:1;}}
 @keyframes wv2{0%{opacity:0;}66%{opacity:1;}100%{opacity:1;}}
 
@@ -1892,7 +1921,16 @@ body.is-start .phase-gate{
   0%,100%{ transform:scale(1);        box-shadow:0 0 0 0 rgba(194,89,10,.30), 0 12px 28px rgba(11,61,140,.14); }
   50%    { transform:scale(1.045);    box-shadow:0 0 0 12px rgba(194,89,10,0), 0 12px 28px rgba(11,61,140,.14); }
 }
-.opt-cell.ss-lit{ animation:ssLitPulse 1.6s ease-in-out infinite; border-color:var(--tgt-ink); background:#FFF7EC;
+/* [S01r6k] THREE BEATS, THEN IT SETTLES. SME: "च will pulse only 2-3 times and then stop, and then
+   the next button will active and this button will have pulse effect after 3 seconds of inactivity."
+   It ran `infinite`, so the letter kept beating for the whole rest of the slide and was still
+   beating while आगे waited - two things asking for attention at once, and the one that was asking
+   was the one the child had already looked at. Three iterations is ~4.8s, comfortably longer than
+   the explanation that follows the reveal.
+   No `forwards`: the fill must NOT be held. ssLitPulse's 100% is the neutral frame, and the card's
+   static lit state - amber border, warm fill, its resting shadow - lives in this same rule and is
+   what the card must be left in. */
+.opt-cell.ss-lit{ animation:ssLitPulse 1.6s ease-in-out 3; border-color:var(--tgt-ink); background:#FFF7EC;
   box-shadow:0 5px 12px rgba(194,89,10,.16); }
 
 /* ---- MEET_LETTER VO-synced reveal -------------------------------------------------------------- */
@@ -2314,6 +2352,55 @@ html.no-anim .balloon.bal-leaving{ animation:none; opacity:0; }
   background:url("assets/UI/play_btn.svg") center/contain no-repeat;
   box-shadow:none; display:block; }
 .sg-card.lh-card .sg-btn::after{ content:none; }
+/* [S01r6k] A FACE ON THE BUTTON. SME: "give the play button 3d look, currently it feel too blank."
+   It was blank for a traceable reason: the generic .sg-btn carries a drop shadow AND two inset
+   shadows (a lit top edge, a shaded bottom edge) which are what make every other button in the game
+   look pressable, and r6h's `box-shadow:none` switched all three off so the supplied SVG could sit
+   on a clean disc. The SVG has its own inner shadow but nothing OUTSIDE it, so the button read as a
+   sticker printed on the card rather than an object resting on it.
+   The artwork is not touched - it is the SME's, and the triangle's placement inside it is the
+   designer's. The depth is added around and over it instead:
+     * box-shadow, not filter:drop-shadow - the button's border-box IS the disc (border-radius:50%,
+       a square box, a square SVG at `contain`), so a box-shadow already has the right silhouette and
+       it composes with the halo the idle pulse animates. A filter would blur the halo too.
+     * ::before is a LIGHTING layer, not decoration: a highlight where a dome would catch the light
+       and a shade where it would fall away. It covers the triangle as well, which is correct - the
+       whole face is lit from one place. ::after is spoken for (the generic play glyph, disabled just
+       above), so the bevel lives on ::before. */
+.sg-card.lh-card .sg-btn{
+  box-shadow:0 10px 16px rgba(12,46,92,.30), 0 3px 5px rgba(12,46,92,.22);
+  transition:box-shadow .13s ease, transform .13s ease; }
+.sg-card.lh-card .sg-btn::before{
+  content:""; position:absolute; left:0; top:0; width:100%; height:100%;
+  border-radius:50%; pointer-events:none;
+  background:
+    radial-gradient(ellipse 64% 46% at 50% 13%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 64%),
+    radial-gradient(ellipse 84% 58% at 50% 103%, rgba(122,74,4,.32) 0%, rgba(122,74,4,0) 60%); }
+/* pressed: it goes DOWN and its shadow shortens, which is the whole of what "3d" means to a child */
+.sg-card.lh-card .sg-btn:active{ transform:translateX(-50%) translateY(5px);
+  box-shadow:0 3px 6px rgba(12,46,92,.28); }
+/* [S01r6k] AND THE IDLE PULSE ASKS LOUDER. SME: "in case of inactivity increase the pulse effect
+   currently its too subtle and does not feels like we have to tap on it." It was scale 1.00 -> 1.03
+   over 1.4s - about a 3px swell on a 104px button, which is below what reads as movement at arm's
+   length. Now a knock rather than a breath: it overshoots to 1.10, dips under 1.0 on the way back so
+   there is a rebound to see, and throws a gold ring outward on every beat. The resting depth is
+   carried inside the halo keyframes because an animated box-shadow replaces the property outright -
+   leaving it out would flatten the button for exactly as long as it was asking to be pressed. */
+@keyframes sgBtnPulseStrong{
+  0%,100%{ transform:translateX(-50%) scale(1); }
+  30%    { transform:translateX(-50%) scale(1.10); }
+  58%    { transform:translateX(-50%) scale(.985); }
+}
+@keyframes sgBtnHalo{
+  0%   { box-shadow:0 10px 16px rgba(12,46,92,.30), 0 0 0 0   rgba(248,190,42,.55); }
+  72%  { box-shadow:0 10px 16px rgba(12,46,92,.30), 0 0 0 26px rgba(248,190,42,0); }
+  100% { box-shadow:0 10px 16px rgba(12,46,92,.30), 0 0 0 0   rgba(248,190,42,0); }
+}
+.sg-card.lh-card .sg-btn.idle-pulse{
+  animation:sgBtnPulseStrong 1.15s cubic-bezier(.34,.62,.3,1) infinite,
+            sgBtnHalo        1.15s ease-out infinite; }
+/* a disabled button must not look raised OR eager - r6h already greys it; kill the depth with it */
+.sg-card.lh-card .sg-btn.sg-waiting::before{ content:none; }
 /* while the greeting runs the button is genuinely disabled, so it has to LOOK it. Desaturating the
    art says "not yet" without swapping in a second graphic. */
 .sg-card.lh-card .sg-btn.sg-waiting{ background:url("assets/UI/play_btn.svg") center/contain no-repeat;

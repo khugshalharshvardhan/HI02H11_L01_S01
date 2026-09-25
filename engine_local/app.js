@@ -88,7 +88,13 @@ function setPlaying(on){
   // tut frame, so the in-card .tut-audio is the only visible affordance and must react to VO too).
   isPlaying=on;
   if(on) _voStart = Date.now();   // drag VO-gate 4s safety: stamp when a VO began so a stalled clip can't soft-lock the tiles
-  document.querySelectorAll(".audio-chip, .tut-audio, .sg-vo").forEach(c => c.classList.toggle("playing", on && !isMuted));
+  document.querySelectorAll(".audio-chip, .tut-audio, .sg-vo").forEach(c => {
+    c.classList.toggle("playing", on && !isMuted);
+    /* [S01r6k] ...and `vo-busy` on `on` ALONE, the way vo-lock below is. The replay refusal keys off
+       isPlaying without consulting mute, so a chip styled off `playing` would look live and still
+       refuse whenever the child had the sound off. */
+    c.classList.toggle("vo-busy", !!on);
+  });
   /* [30g] VO LOCK — UNTAPPABLE, ZERO VISUAL. Yasir 2026-07-30: "cards untappable when VO being
      played, you dont need to show any affect for untappable, just make it untappable."
      28u bundled a lock (pointer-events:none) with a pale board (opacity:.55). 30f removed BOTH, which
@@ -798,7 +804,39 @@ function setNavActive(on){
   btn.disabled = !on;
   btn.classList.toggle("active", on);
   clearTimeout(state.navNudgeTimer);
+  /* [S01r6k] every mount and every gate change comes through here, so this is the one place that
+     guarantees a pulse cannot outlive the slide that asked for it. Modules re-arm AFTER calling
+     setNavActive(true), which is the order finish() uses. */
+  stopNavPulse();
   /* [20a nudge-03] no auto-nudge on आगे — buttons are known affordances (ruling); nudge is for learning elements only. */
+}
+/* [S01r6k] आगे ASKS, AFTER THREE QUIET SECONDS. SME, for pages 1/3/5: "the next button will active
+   and this button will have pulse effect AFTER 3 SECONDS OF INACTIVITY."
+   This is a deliberate exception to the [20a nudge-03] ruling noted in setNavActive - "no auto-nudge
+   on आगे, buttons are known affordances". That ruling is about the HAND. These three pages end with
+   the letter card sitting lit and nothing else on screen moving, and the SME has now asked twice
+   (r5r on the cover, here) for a pulse rather than a hand in exactly that situation. So: a pulse on
+   the button itself, no hand, and only where a module asks for it.
+   It waits out speech instead of firing through it - a pulse under the explanation would be asking
+   the child to leave before the page has finished talking - and it re-arms on every touch, so "three
+   seconds of inactivity" means what it says rather than three seconds after the slide settled. */
+function armNavPulse(ms){
+  const btn = $("navBtn"); if(!btn) return;
+  state.navPulseArmed = true;
+  clearTimeout(state.navPulseTimer);
+  btn.classList.remove("idle-pulse");
+  const tick = ()=>{
+    if(!state.navPulseArmed) return;
+    const b = $("navBtn"); if(!b || b.disabled) return;
+    if(isPlaying || state.hintActive){ state.navPulseTimer = setTimeout(tick, 600); return; }
+    b.classList.add("idle-pulse");
+  };
+  state.navPulseTimer = setTimeout(tick, ms || 3000);
+}
+function stopNavPulse(){
+  state.navPulseArmed = false;
+  clearTimeout(state.navPulseTimer);
+  const btn = $("navBtn"); if(btn) btn.classList.remove("idle-pulse");
 }
 function nudgeNavBtn(){
   const btn = $("navBtn");
@@ -1219,6 +1257,8 @@ function armIdleVo(){
 // drag slides — the same trap the drag mechanics warn about). armIdleVo() itself re-checks phase, so
 // a pointerdown on a tutorial slide is a cheap no-op.
 document.addEventListener("pointerdown", ()=>{ armIdleVo(); }, true);
+/* [S01r6k] ...and the same gesture restarts आगे's three seconds, but only on a slide that armed it. */
+document.addEventListener("pointerdown", ()=>{ if(state.navPulseArmed) armNavPulse(3000); }, true);
 
 /* ---------- 7. HINT / FEEDBACK BOX ----------
    No button: the popup plays its VO, then auto-dismisses. onEnd runs after it
@@ -6129,7 +6169,8 @@ const SlideModules = {
         const alive = ()=> CARD.slides[state.idx] === slide;
         let done = false;
         const finish = ()=>{ if(done) return; done = true;
-          state.demoRunning = false; setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true); };
+          state.demoRunning = false; setNavActive(true); $("navBtn").onclick = ()=> completeSlide(true);
+          armNavPulse(3000);   /* [S01r6k] pages 1/3/5 - the letter has stopped beating by now */ };
 
         const STEPS = d.teach_seq.slice();
         /* [S01r6b] The letter card used to be revealed only by the `letter` step. It is now also
@@ -7405,7 +7446,13 @@ function boot(){
     play(landSrc, ()=>{ window.__greetingDone = true;
                         if(window.__setStartBtnReady) window.__setStartBtnReady(true);
                         if(window.__armStartNudge) window.__armStartNudge(); }); };
-  const sgVo = $("sgVo"); if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); playLanding(); };
+  /* [S01r6k] The cover speaker never had the guard the in-lesson chips have had since [24a N8], so
+     tapping it mid-greeting restarted a 15s clip from the top - and taking the greeting back to zero
+     is precisely the trap r5y was: the button that releases the cover is held disabled for as long
+     as the greeting runs. CSS now makes it untappable while the clip sounds; this is the backstop,
+     because a gate that exists only in a stylesheet is one `!important` away from being gone. */
+  const sgVo = $("sgVo");
+  if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); if(isPlaying) return; playLanding(); };
   // ---- [engine JS] r4/P2 boot loader: loader.gif until assets warm, then it dismisses ITSELF into
   // the landing (NO tap gate). DUAL auto-dismiss (window 'load' OR a 2.5s watchdog — never strand the
   // child), deduped by .done. The same handler adds body.loaded (unblocks the concept-strip stagger)
