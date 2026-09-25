@@ -39,9 +39,18 @@ OUT = os.path.join(FLN_ROOT, "KG", CODE)
 # ══════════════════════════════════════════════════════════════════════════════════════════
 VO = {
     # ---- landing ------------------------------------------------------------------------
-    # [r4 · row 15] verbatim from deck page 1, "Final VO"
-    "vo_landing": "नमस्ते दोस्त! मैं हूँ Swiftee। आज हम जानेंगे कि वाक्य में कौन-सी ध्वनि बार-बार सुनाई देती है। "
-                  "सुनो—काला कौआ काँव-काँव करता। इस वाक्य में क की ध्वनि यानी आवाज़ बार-बार आ रही है।",
+    # [r6l] SME, verbatim: the cover VO and text become this one sentence. It replaces the four-part
+    # r4 greeting (introduction, topic, the demo line "काला कौआ काँव-काँव करता", then the explanation
+    # of क) - 170 characters and ~17 seconds of it - with a single statement of what the lesson is
+    # about. That is a real improvement to the cover: the demo sentence was teaching क, which is not
+    # this lesson's sound, and a child had to sit through all of it before the button would release.
+    #
+    # THE RECORDED CLIP STILL HOLDS THE OLD LINE. It is human VO and is not regenerated here: the
+    # no-TTS ruling [30o] applies most sharply to the cover, which is the first thing anyone hears.
+    # So until the studio delivers a new take, the card is right and the audio is stale - see the
+    # stale-take warning added to check_clip_lengths below, which now prints exactly this mismatch
+    # on every build rather than leaving it to be noticed by ear.
+    "vo_landing": "आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि यानी आवाज़ के बारे में।",
 
     # ---- the sentences ------------------------------------------------------------------
     "vo_line_l1": "पीतल के पतीले में पपीता पीला-पीला।",
@@ -758,17 +767,20 @@ def build_card():
         # every word, and the crow the line describes.
         "kind": "sentence_sound",
         "hide_title": True,
-        "words": ["काला", "कौआ", "काँव-काँव", "करता।"],
-        "target_sound": "क",
-        # [r4b] mark the CONSONANT ONLY - क, not का. Spiked in the real font first: all four words
-        # keep their exact advance width and the colour lands on the क alone.
-        "mark_bare": True,
+        # [r6l] `words`, `target_sound` and `mark_bare` are GONE with the demo sentence. They
+        # described "काला कौआ काँव-काँव करता" and the क inside it, which the new cover line does not
+        # say - and they were already inert on screen, because r6e's cover artwork replaces the word
+        # strip. Leaving them would not have been merely untidy: the engine builds one karaoke cue
+        # per word, findTok cannot find a word the clip never speaks, and the -1 fallback CLAMPS each
+        # one to a position instead of dropping it - which pushes the crow's own cue later and later
+        # through `from`. With them gone the crow cue searches from 0 and lands on the line's only
+        # ध्वनि (token 8 of 14, 57% in), which is exactly where the voice names it.
         # the timeline is read off this clip, so every beat lands when its own word is spoken
         "sync_audio": "vo_landing",
-        # ...after the four sentence words, which are cued from `words` automatically:
-        #   "क"     -> the greeting's own «इस वाक्य में क की ध्वनि…», where every क lights at once
-        #   "ध्वनि" -> the crow arrives (and calls) while the sentence stays up; the VO plays on
-        "cues": [{"at": "क", "do": "light"}, {"at": "ध्वनि", "do": "crow"}],
+        # [r6l] The `light` cue went with the strip it lit - there is no .lh-strip under the cover
+        # artwork, and its own anchor was the bare क the new line does not contain. The crow stays:
+        # it is the one cue with something to do, and the board it lands on is painted, not built.
+        "cues": [{"at": "ध्वनि", "do": "crow"}],
         # [r6e] SME artwork for the cover: one painted board carrying the title and the crow, fitted
         # to the card. The word strip and the crow element are NOT rendered when this is set - both are
         # already in the painting. picture_img / picture_emoji stay declared because picture_sfx still
@@ -1102,7 +1114,7 @@ def check_clip_lengths(out_dir, card):
     one that merely sounds rushed — so a failure here is a real defect, never a judgement call.
     """
     text = (card.get("assets") or {}).get("audio_text") or {}
-    short, missing = [], []
+    short, missing, stale = [], [], []
     for aid, line in sorted(text.items()):
         if aid in BARE_SOUND_IDS:
             continue            # their text is a placeholder by design - the other guard owns them
@@ -1119,6 +1131,22 @@ def check_clip_lengths(out_dir, card):
         floor = max(0.3, 0.55 * (n / 14.0))
         if sec < floor:
             short.append("%s = %.2fs (needs >=%.2fs for %d chars)" % (aid, sec, floor, n))
+        # [r6l] ...and the same arithmetic run the other way. n/14 is this guard's own estimate of
+        # how long the line SHOULD take; 2.5x that is generous enough to absorb a slow reading and
+        # every danda pause (vo_landing's old take was 16.9s against a 12.1s estimate, i.e. 1.4x, and
+        # was correct), while still catching a clip carrying a line that is no longer there.
+        elif sec > 2.5 * max(1.0, n / 14.0):
+            stale.append("%s = %.2fs for a %d-char line (~%.1fs expected)" % (aid, sec, n, n / 14.0))
+    if stale:
+        print("  !!  STALE TAKE? %d clip(s) far longer than their line needs:" % len(stale))
+        for t in stale:
+            print("        " + t)
+        print("      Each of these is a clip that was recorded for a DIFFERENT, longer line. The")
+        print("      guard above catches a clip too short to hold its text; this is the other half,")
+        print("      and it is the case that actually happened twice on this lesson - a line was")
+        print("      re-scripted and the recording was not, so the card and the audio disagreed with")
+        print("      nothing to show for it. A WARNING and not a failure: real speech has pauses, and")
+        print("      a line written short but read slowly is not a defect. Listen before re-recording.")
     if short:
         raise AssertionError("\n".join([
             "CLIP TOO SHORT FOR ITS LINE — %d clip(s):" % len(short)]

@@ -24,7 +24,7 @@ WHY THIS FILE EXISTS rather than a one-off run:
 The audio sheet's own format - columns, colours, the pink MISSING fill - is the shared tool's and is
 deliberately not re-invented here; only the usage column is rewritten.
 """
-import io, importlib.util, json, os, sys
+import filecmp, io, importlib.util, json, os, sys
 
 SKILL_BUILD = r"C:\Users\harsh\.claude\skills\swiftpal-game-revise\scripts\build"
 BUNDLE = (sys.argv[1] if len(sys.argv) > 1 else "build").rstrip("/\\")
@@ -97,6 +97,46 @@ def image_usage():
     return use
 
 
+# [r6l] WHICH LINES ACTUALLY NEED RECORDING.
+# The shared make_vo_sheets.py stamps every row "machine TTS - replace", because it was written for a
+# bundle whose audio is all generated and it has no way to know a studio delivery has landed. After
+# r5x that is wrong for 80 of the 81 rows, and wrong in the expensive direction: handed over as-is,
+# the brief asks for the whole lesson to be re-recorded when a single line has changed.
+#
+# So the column is rewritten from evidence rather than assumption:
+#   * no master in the delivery folder            -> it really is a generated clip
+#   * master present but build/ holds something else -> the two have drifted; say so
+#   * master present, shipping, and the card's line still fits it -> done, leave it alone
+#   * master present and shipping, but the clip is far longer than the line now needs -> the line was
+#     re-scripted under a finished take. Same 2.5x ratio the build's own stale-take warning uses, so
+#     the sheet and the build can never disagree about which lines are outstanding.
+HUMAN_VO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "_assets_round4", "voiceovers_SME_20260922")
+TEXT = (CARD.get("assets") or {}).get("audio_text") or {}
+DUR  = (CARD.get("assets") or {}).get("audio_dur") or {}
+# Clips that are SUPPOSED to differ from their master. These carry a bare अक्षर on the SME's own
+# ruling ("play only these च, ल, र sound not more than that"), and the delivered takes are the full
+# "<letter> से <word>" carrier — so build/ holds a trim, by design, and every one of them would
+# otherwise be reported as drift. vo_snd_ch is the visible case: a 2.36s carrier cut to 0.75s.
+# Kept in step with BARE_SOUND_IDS in build_skill_HI02H11_L01_S01.py.
+TRIMMED_ON_PURPOSE = {"vo_snd_ch", "vo_snd_l", "vo_snd_r",
+                      "vo_ltr_ch", "vo_ltr_l", "vo_ltr_r", "vo_ltr_p", "vo_ltr_m", "vo_ltr_n"}
+
+def vo_status(aid, line, dur):
+    master = os.path.join(HUMAN_VO, aid + ".wav")
+    if not os.path.exists(master):
+        return "machine TTS - replace"
+    if aid in TRIMMED_ON_PURPOSE:
+        return "delivered - build holds a deliberate TRIM; do NOT re-record"
+    shipped = os.path.join(BUNDLE, "assets", "Audio", aid + ".ogg")
+    if not (os.path.exists(shipped) and filecmp.cmp(master, shipped, shallow=False)):
+        return "RE-RECORD - build differs from the delivered take"
+    n = len((line or "").strip())
+    if n and dur and dur > 2.5 * max(1.0, n / 14.0):
+        return "RE-RECORD - the line was re-scripted after this take"
+    return "delivered - do NOT re-record"
+
+
 # ── 1 · audio ────────────────────────────────────────────────────────────────────────────────────
 def audio_manifest():
     out = os.path.join(BUNDLE, "assets", "Audio", "audio_manifest.xlsx")
@@ -122,6 +162,8 @@ def audio_manifest():
         # SME reported in r5e. So the sheet asks for what a studio should actually deliver - a WAV -
         # and intake_vo.py does the renaming into build/.
         ws.cell(r, 3).value = str(aid) + ".wav"
+        # [r6l] and column F stops claiming the whole lesson is unrecorded — see vo_status above
+        ws.cell(r, 6).value = vo_status(aid, (TEXT.get(aid) or ""), DUR.get(aid))
         places = use.get(aid)
         if places:
             ws.cell(r, 5).value = "; ".join(places[:4]) + (" (+%d more)" % (len(places) - 4) if len(places) > 4 else "")
