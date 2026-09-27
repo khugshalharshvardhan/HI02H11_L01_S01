@@ -1987,6 +1987,21 @@ body.is-start .phase-gate{
 .bal-swiftee{ position:absolute; left:-240px; top:372px; width:248px; height:250px;
   cursor:pointer; z-index:3; }
 .bal-swiftee:active{ transform:scale(.97); }
+/* [S01r6q] SME: "when all the levels of the balloon game end, Swiftie will also fly along with the
+   balloons." She is already holding a bunch of them in the art, so this is the picture finishing
+   its own sentence - she has been standing there holding balloons for the whole game and now lets
+   them carry her off.
+   She leaves a beat AFTER the board does (the module delays her), so a child sees the balloons go
+   and then notices her going too, rather than everything sliding off at once. Slower and with less
+   sway than a balloon: she is heavier, and a mascot doing a balloon's jiggle reads as comic. */
+@keyframes swFlyAway{
+  0%   { transform:translate(0, 0) rotate(0deg);        opacity:1; }
+  14%  { transform:translate(0, 22px) rotate(-2deg);    opacity:1; }
+  100% { transform:translate(-40px, -820px) rotate(6deg); opacity:0; }
+}
+.bal-swiftee.sw-flyaway{ animation:swFlyAway 2.1s cubic-bezier(.45,0,.75,.6) forwards;
+  pointer-events:none; }
+html.no-anim .bal-swiftee.sw-flyaway{ animation:none; opacity:0; }
 /* the reference screen carries no audio chip; she replaces it - see the onclick in the module */
 .stage.vo-only .audio-chip{ display:none !important; }
 /* [S01r5i] ---- page 14 polish -----------------------------------------------------------------
@@ -2025,6 +2040,36 @@ body.bal-page .stage{ background:transparent !important; }
    movement competing with the thing the child is supposed to be reading. The SKY ITSELF stays: the
    gradient and the bloom were the "plain but attractive" half of that request, and nothing about
    them moves. */
+/* [S01r6q] ...AND THESE ARE NOT THOSE. SME: "a number of balloons will come from bottom to top and
+   only 8 of them will stay on the screen (out of which we have to tap)."
+   The distinction from r6c, which is the whole reason this is safe to add back: those sixteen ran
+   CONTINUOUSLY, behind the board, for as long as the child was playing - so they competed with the
+   balloons being read. These run ONLY during the entrance, each one crosses once and is deleted,
+   and by the time the board is answerable the sky is empty again. Movement while the board is being
+   built is the opposite of movement while it is being read.
+   Inert by construction: pointer-events:none, z-index below the field, no word, no audio, and they
+   cannot be tapped or counted. */
+.bal-drift{ position:absolute; left:0; top:0; width:100%; height:100%;
+  pointer-events:none; z-index:0; }
+/* the SAME artwork the playable balloons use, recoloured by the same hue-rotate the bcol-* classes
+   use. A CSS blob was tried first and read as a rendering fault rather than a balloon - at this size
+   and opacity there is nothing to tell a rounded rectangle from a bug. No overflow:hidden here
+   either: .stage already clips, so they leave at the screen's edge rather than at an invisible
+   inner boundary, which is what made the first attempt look like half-drawn shapes. */
+.bal-drift i{ position:absolute; bottom:-26%; left:var(--dx,50%);
+  width:var(--ds,96px); height:calc(var(--ds,96px) * 1.1463);
+  background:url("assets/UI/balloon.webp") center/contain no-repeat;
+  filter:hue-rotate(var(--dh,0deg)) drop-shadow(0 8px 14px rgba(11,61,140,.16));
+  opacity:0; animation:balDrift var(--dt,7s) linear forwards; }
+@keyframes balDrift{
+  0%   { transform:translate(0, 0) rotate(-4deg);                    opacity:0; }
+  10%  { opacity:var(--do,.55); }
+  55%  { transform:translate(var(--dsw,26px), -70vh) rotate(4deg); }
+  90%  { opacity:var(--do,.55); }
+  100% { transform:translate(0, -135vh) rotate(-4deg);               opacity:0; }
+}
+html.no-anim .bal-drift{ display:none; }
+@media (prefers-reduced-motion: reduce){ .bal-drift{ display:none; } }
 /* [S01r5i] LIFT THE FIELD DIRECTLY, because centring cannot do it any more. Once the balloons
    grew to 164px the field became 542px tall against a 438px content box, so there is no free space
    left for `align-content:center` to share out - the field simply starts at the top of the box and
@@ -2033,7 +2078,22 @@ body.bal-page .stage{ background:transparent !important; }
    field sits 156px below the stage top and only 52px above its bottom, so -50px evens that out and
    is the "a little more in air" the SME asked for. Swiftie rides up with it (she is positioned
    inside the field) and still clears the stage floor by ~72px. */
-.stage.vo-only .balloon-field{ padding-top:0; align-content:center; margin-top:-50px; }
+.stage.vo-only .balloon-field{ padding-top:0; align-content:center; margin-top:-54px; }
+/* [S01r6q] the field grows with the balloons: 4 x 206 + 3 x 34 of gap + padding. Widening it is
+   what reclaims the dead space - the balloons stay four to a row, they are simply bigger and spread
+   across more of the stage. The row gap tightens because height is the scarce axis here, not width. */
+/* [S01r6q] .bal-body carries the ARTWORK and is sized in px, so widening .balloon alone only
+   padded the cell - measured, the balloon stayed 164 wide inside a 206 box. Both move together.
+   208/238 keeps balloon.webp's 164:188 aspect exactly, so nothing stretches. */
+.stage.vo-only .balloon .bal-body{ width:206px; height:236px; }
+/* The field box stays roughly centred; PADDING is what puts the balloons clear of Swiftie. It has
+   to be padding and not a margin: Swiftie is absolutely positioned against the field's padding box,
+   whose left edge padding does not move - so this slides the balloons right and leaves her put,
+   which a narrower or re-centred box could not do. */
+.stage.vo-only .balloon-field{ max-width:none; padding-left:250px; gap:2px 34px; }
+/* Swiftie is positioned INSIDE the field (left:-240px), so a wider field drags her left and off the
+   stage. Her offset is re-pinned by the same amount the field's left edge moved. */
+.stage.vo-only .bal-swiftee{ left:-6px; }
 /* this page has no आगे button, so the 100px the stage reserves for one is dead space pinning
    the balloons high-left of centre. Reclaim it and let the field centre in what is left. */
 /* [S01r5g] SME: lift the whole group. The field is vertically centred in what the stage leaves,
@@ -2041,7 +2101,11 @@ body.bal-page .stage{ background:transparent !important; }
    [S01r5i] "a little more in air" - 96 -> 156px, another ~30px of lift. Swiftie rides up with the
    field (she is positioned inside it), which also takes her feet off the bottom edge. The limit is
    her, not the balloons: she ends ~145px short of the stage floor at this value. */
-.stage.vo-only .slide-stage{ padding-bottom:96px; overflow:visible; }
+/* [S01r6q] ...and the 150px side padding comes off on THIS page. That padding was the real cap on
+   the field: measured, it held the host to 1033 of the stage's 1333, which is where most of the
+   "empty space" the SME saw was actually coming from - not from the balloons being small. */
+.stage.vo-only .slide-stage{ padding-bottom:96px; overflow:visible;
+  padding-left:20px; padding-right:20px; }
 /* [S01r5i] overflow:visible is what LETS the lift above happen. .slide-stage clips at y=175 while
    the header strip above it (prompt band, hint, chip) is empty on this page - all three are
    display:none under .vo-only - so the clip was cutting the top row's balloons for no reason: at
@@ -2077,7 +2141,13 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
      80px of side padding too: content 740 takes 4 (4x150+3x44=732) and refuses 5 (926). At 780 the
      content was 700 and the set silently broke 3/3/2, overflowing further than before the fix. */
   max-width:838px; margin:0 auto; }
-.balloon{ position:relative; width:164px; cursor:pointer; flex:0 0 auto;
+/* [S01r6q] SME: "increase the size of balloon, currently they feel small and there are empty
+   space." Measured on the running page before changing anything: the stage is 1333 design px wide
+   and the field was capped at 838, so 287px on EACH side was dead. Width is where the room is;
+   height is not, which is why the field's own max-width moves with this and the vertical rhythm
+   below is re-tuned rather than left to overflow further (see the r5i note above - at 164px the
+   field already overran its content box by 104px). */
+.balloon{ position:relative; width:206px; cursor:pointer; flex:0 0 auto;
   animation:balFloat 3.4s ease-in-out infinite;
   animation-delay:calc(var(--bi,0) * -0.47s);
   transition:opacity .42s ease, transform .42s ease; }

@@ -1998,6 +1998,21 @@ body.is-start .phase-gate{
 .bal-swiftee{ position:absolute; left:-240px; top:372px; width:248px; height:250px;
   cursor:pointer; z-index:3; }
 .bal-swiftee:active{ transform:scale(.97); }
+/* [S01r6q] SME: "when all the levels of the balloon game end, Swiftie will also fly along with the
+   balloons." She is already holding a bunch of them in the art, so this is the picture finishing
+   its own sentence - she has been standing there holding balloons for the whole game and now lets
+   them carry her off.
+   She leaves a beat AFTER the board does (the module delays her), so a child sees the balloons go
+   and then notices her going too, rather than everything sliding off at once. Slower and with less
+   sway than a balloon: she is heavier, and a mascot doing a balloon's jiggle reads as comic. */
+@keyframes swFlyAway{
+  0%   { transform:translate(0, 0) rotate(0deg);        opacity:1; }
+  14%  { transform:translate(0, 22px) rotate(-2deg);    opacity:1; }
+  100% { transform:translate(-40px, -820px) rotate(6deg); opacity:0; }
+}
+.bal-swiftee.sw-flyaway{ animation:swFlyAway 2.1s cubic-bezier(.45,0,.75,.6) forwards;
+  pointer-events:none; }
+html.no-anim .bal-swiftee.sw-flyaway{ animation:none; opacity:0; }
 /* the reference screen carries no audio chip; she replaces it - see the onclick in the module */
 .stage.vo-only .audio-chip{ display:none !important; }
 /* [S01r5i] ---- page 14 polish -----------------------------------------------------------------
@@ -2036,6 +2051,36 @@ body.bal-page .stage{ background:transparent !important; }
    movement competing with the thing the child is supposed to be reading. The SKY ITSELF stays: the
    gradient and the bloom were the "plain but attractive" half of that request, and nothing about
    them moves. */
+/* [S01r6q] ...AND THESE ARE NOT THOSE. SME: "a number of balloons will come from bottom to top and
+   only 8 of them will stay on the screen (out of which we have to tap)."
+   The distinction from r6c, which is the whole reason this is safe to add back: those sixteen ran
+   CONTINUOUSLY, behind the board, for as long as the child was playing - so they competed with the
+   balloons being read. These run ONLY during the entrance, each one crosses once and is deleted,
+   and by the time the board is answerable the sky is empty again. Movement while the board is being
+   built is the opposite of movement while it is being read.
+   Inert by construction: pointer-events:none, z-index below the field, no word, no audio, and they
+   cannot be tapped or counted. */
+.bal-drift{ position:absolute; left:0; top:0; width:100%; height:100%;
+  pointer-events:none; z-index:0; }
+/* the SAME artwork the playable balloons use, recoloured by the same hue-rotate the bcol-* classes
+   use. A CSS blob was tried first and read as a rendering fault rather than a balloon - at this size
+   and opacity there is nothing to tell a rounded rectangle from a bug. No overflow:hidden here
+   either: .stage already clips, so they leave at the screen's edge rather than at an invisible
+   inner boundary, which is what made the first attempt look like half-drawn shapes. */
+.bal-drift i{ position:absolute; bottom:-26%; left:var(--dx,50%);
+  width:var(--ds,96px); height:calc(var(--ds,96px) * 1.1463);
+  background:url("assets/UI/balloon.webp") center/contain no-repeat;
+  filter:hue-rotate(var(--dh,0deg)) drop-shadow(0 8px 14px rgba(11,61,140,.16));
+  opacity:0; animation:balDrift var(--dt,7s) linear forwards; }
+@keyframes balDrift{
+  0%   { transform:translate(0, 0) rotate(-4deg);                    opacity:0; }
+  10%  { opacity:var(--do,.55); }
+  55%  { transform:translate(var(--dsw,26px), -70vh) rotate(4deg); }
+  90%  { opacity:var(--do,.55); }
+  100% { transform:translate(0, -135vh) rotate(-4deg);               opacity:0; }
+}
+html.no-anim .bal-drift{ display:none; }
+@media (prefers-reduced-motion: reduce){ .bal-drift{ display:none; } }
 /* [S01r5i] LIFT THE FIELD DIRECTLY, because centring cannot do it any more. Once the balloons
    grew to 164px the field became 542px tall against a 438px content box, so there is no free space
    left for `align-content:center` to share out - the field simply starts at the top of the box and
@@ -2044,7 +2089,22 @@ body.bal-page .stage{ background:transparent !important; }
    field sits 156px below the stage top and only 52px above its bottom, so -50px evens that out and
    is the "a little more in air" the SME asked for. Swiftie rides up with it (she is positioned
    inside the field) and still clears the stage floor by ~72px. */
-.stage.vo-only .balloon-field{ padding-top:0; align-content:center; margin-top:-50px; }
+.stage.vo-only .balloon-field{ padding-top:0; align-content:center; margin-top:-54px; }
+/* [S01r6q] the field grows with the balloons: 4 x 206 + 3 x 34 of gap + padding. Widening it is
+   what reclaims the dead space - the balloons stay four to a row, they are simply bigger and spread
+   across more of the stage. The row gap tightens because height is the scarce axis here, not width. */
+/* [S01r6q] .bal-body carries the ARTWORK and is sized in px, so widening .balloon alone only
+   padded the cell - measured, the balloon stayed 164 wide inside a 206 box. Both move together.
+   208/238 keeps balloon.webp's 164:188 aspect exactly, so nothing stretches. */
+.stage.vo-only .balloon .bal-body{ width:206px; height:236px; }
+/* The field box stays roughly centred; PADDING is what puts the balloons clear of Swiftie. It has
+   to be padding and not a margin: Swiftie is absolutely positioned against the field's padding box,
+   whose left edge padding does not move - so this slides the balloons right and leaves her put,
+   which a narrower or re-centred box could not do. */
+.stage.vo-only .balloon-field{ max-width:none; padding-left:250px; gap:2px 34px; }
+/* Swiftie is positioned INSIDE the field (left:-240px), so a wider field drags her left and off the
+   stage. Her offset is re-pinned by the same amount the field's left edge moved. */
+.stage.vo-only .bal-swiftee{ left:-6px; }
 /* this page has no आगे button, so the 100px the stage reserves for one is dead space pinning
    the balloons high-left of centre. Reclaim it and let the field centre in what is left. */
 /* [S01r5g] SME: lift the whole group. The field is vertically centred in what the stage leaves,
@@ -2052,7 +2112,11 @@ body.bal-page .stage{ background:transparent !important; }
    [S01r5i] "a little more in air" - 96 -> 156px, another ~30px of lift. Swiftie rides up with the
    field (she is positioned inside it), which also takes her feet off the bottom edge. The limit is
    her, not the balloons: she ends ~145px short of the stage floor at this value. */
-.stage.vo-only .slide-stage{ padding-bottom:96px; overflow:visible; }
+/* [S01r6q] ...and the 150px side padding comes off on THIS page. That padding was the real cap on
+   the field: measured, it held the host to 1033 of the stage's 1333, which is where most of the
+   "empty space" the SME saw was actually coming from - not from the balloons being small. */
+.stage.vo-only .slide-stage{ padding-bottom:96px; overflow:visible;
+  padding-left:20px; padding-right:20px; }
 /* [S01r5i] overflow:visible is what LETS the lift above happen. .slide-stage clips at y=175 while
    the header strip above it (prompt band, hint, chip) is empty on this page - all three are
    display:none under .vo-only - so the clip was cutting the top row's balloons for no reason: at
@@ -2088,7 +2152,13 @@ body.vo-lock .bal-swiftee .bsw-still{ opacity:0; }
      80px of side padding too: content 740 takes 4 (4x150+3x44=732) and refuses 5 (926). At 780 the
      content was 700 and the set silently broke 3/3/2, overflowing further than before the fix. */
   max-width:838px; margin:0 auto; }
-.balloon{ position:relative; width:164px; cursor:pointer; flex:0 0 auto;
+/* [S01r6q] SME: "increase the size of balloon, currently they feel small and there are empty
+   space." Measured on the running page before changing anything: the stage is 1333 design px wide
+   and the field was capped at 838, so 287px on EACH side was dead. Width is where the room is;
+   height is not, which is why the field's own max-width moves with this and the vertical rhythm
+   below is re-tuned rather than left to overflow further (see the r5i note above - at 164px the
+   field already overran its content box by 104px). */
+.balloon{ position:relative; width:206px; cursor:pointer; flex:0 0 auto;
   animation:balFloat 3.4s ease-in-out infinite;
   animation-delay:calc(var(--bi,0) * -0.47s);
   transition:opacity .42s ease, transform .42s ease; }
@@ -3103,6 +3173,10 @@ function play(src, onEnd){
    Silently no-ops if the file is missing or playback is blocked. */
 function playSfx(id){
   if(!id) return;
+  /* [S01r6q] SME: the bed drops for sfx as well as speech. Announced HERE rather than at each call
+     site so a sound effect added later cannot forget to do it. A time window rather than a flag
+     because this element is fire-and-forget - nothing here waits for it to end. */
+  try{ BAL_MUSIC.sfxUntil = Date.now() + BAL_MUSIC.sfxHold; }catch(e){}
   try{
     const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
     a.volume = 0.7;
@@ -3530,20 +3604,28 @@ function armSkyBurst(){
    would have made it the one asset that goes silent when the HTML is opened off a disk. The price is
    that the level has to be ramped by hand instead of with setTargetAtTime; balGate does that.
 
-   THREE RULES, and rules 1 and 2 are the SME's words:
-     1. "the audio will only sound when the vo is finish" - it stays silent until the opening
-        sequence has finished naming every balloon, which is balMusicOpen().
-     2. "when the ballon pop or swift ai is saying something they will sound correctly" - it drops to
-        SILENCE under any clip, not to r6g's 0.34 duck. Pops are exempt on purpose: playSfx runs on
-        its own element and never sets isPlaying, so a 0.2s pop cannot make the bed pump, and at 0.7
-        against the bed's 0.34 it cuts straight through anyway.
-     3. it honours mute, continuously rather than once at the start, and it never outlives the page. */
+   [S01r6q] THE TWO RULES r6i WAS BUILT ON ARE BOTH REVERSED, on the SME's instruction:
+     * "when we enter this game the bg music should play" - it no longer waits for the opening
+       sequence to finish naming the balloons. r6i held it silent for the whole intro, which on this
+       page is fifteen seconds of the game's first impression with no music at all. It now starts
+       with the page.
+     * "when VO (dialogues), sfx are playing reduce the volume of the bg music" - REDUCE, not
+       silence. r6i cut it to zero under every clip, which on a page that talks almost continuously
+       meant a bed that was mostly not there. It now ducks to a third and comes back.
+     * ...which brings pops in too, and they are the reason `sfxUntil` exists rather than a flag:
+       playSfx runs on its own element and never touches isPlaying, so there is no "ended" to listen
+       for. A short window after each pop is both simpler and better behaved - two pops in quick
+       succession extend one duck instead of stacking two.
+   Held over from r6i: it honours mute continuously rather than once at the start, it fades rather
+   than cuts, and it never outlives the page. */
 const BAL_MUSIC = {
   id: "sfx_bal_music",
-  vol: 0.34,           /* resting level, once the page has stopped talking */
-  up: 0.010,           /* per 40ms tick: ~1.4s to swell back in */
-  down: 0.100,         /* per 40ms tick: ~140ms to get out of a word's way */
-  el: null, gate: 0, open: false,
+  vol: 0.34,           /* resting level, when nothing else is sounding */
+  duck: 0.34,          /* of that, while a clip or a pop is sounding */
+  sfxHold: 420,        /* ms a pop keeps the bed down for */
+  up: 0.008,           /* per 40ms tick: ~1.1s to swell back */
+  down: 0.055,         /* per 40ms tick: ~170ms to get out of the way */
+  el: null, gate: 0, sfxUntil: 0,
 };
 function balMusicStart(){
   try{
@@ -3551,36 +3633,32 @@ function balMusicStart(){
     if(document.documentElement.classList.contains("no-anim")) return;
     const a = new Audio("assets/Audio/" + BAL_MUSIC.id + "." + AUDIO_EXT);
     a.loop = true; a.volume = 0; a.preload = "auto";
-    BAL_MUSIC.el = a; BAL_MUSIC.open = false;
+    BAL_MUSIC.el = a; BAL_MUSIC.sfxUntil = 0;
     /* ONE interval owns the level, and it recomputes the target every tick rather than being told
        when to duck. A clip can end half a dozen ways here - natural end, stopAudio, a superseded
        chain, a missing file, a refused autoplay - and only a poll sees all of them. Being told
-       would eventually leave the bed silent for the rest of the page after an ending nobody wired. */
+       would eventually leave the bed stuck down after an ending nobody wired. */
     BAL_MUSIC.gate = setInterval(()=>{
       const el = BAL_MUSIC.el; if(!el) return;
-      const target = (isMuted || !BAL_MUSIC.open || isPlaying) ? 0 : BAL_MUSIC.vol;
+      const busy = isPlaying || Date.now() < BAL_MUSIC.sfxUntil;
+      const target = isMuted ? 0 : (busy ? BAL_MUSIC.vol * BAL_MUSIC.duck : BAL_MUSIC.vol);
       const d = target - el.volume;
       const v = Math.max(0, Math.min(1, el.volume + (d > 0 ? Math.min(d, BAL_MUSIC.up)
                                                            : Math.max(d, -BAL_MUSIC.down))));
       try{ el.volume = v; }catch(e){}
     }, 40);
-  }catch(e){}
-}
-/* Opened once the board has finished introducing itself. Idempotent: round 2 calls it again and it
-   does nothing, which is what we want - the bed should carry ACROSS rounds, and it silences itself
-   under round 2's prompt through isPlaying without being told to. */
-function balMusicOpen(){
-  try{
-    const el = BAL_MUSIC.el;
-    if(!el || BAL_MUSIC.open) return;
-    BAL_MUSIC.open = true;
-    el.play().catch(()=>{});      /* refused autoplay is not an error worth surfacing - it is a bed */
+    /* STARTED LAST, AND IN ITS OWN TRY. play() is only specified to return a promise in modern
+       engines; where it does not, `.catch` on undefined throws - and with this call placed BEFORE
+       the interval, the outer try swallowed that and the gate above never ran. The bed then sat at
+       volume 0 for the life of the page with nothing logged anywhere. The ramp is armed first now,
+       so a refused autoplay cannot take it down. */
+    try{ const pr = a.play(); if(pr && pr.catch) pr.catch(()=>{}); }catch(e){}
   }catch(e){}
 }
 function balMusicStop(){
   try{
     const el = BAL_MUSIC.el; if(!el) return;
-    BAL_MUSIC.el = null; BAL_MUSIC.open = false;
+    BAL_MUSIC.el = null; BAL_MUSIC.sfxUntil = 0;
     clearInterval(BAL_MUSIC.gate);
     /* fade rather than cut, then stop for real - a paused element at volume 0 still holds a decoder */
     let v = el.volume;
@@ -9352,6 +9430,9 @@ const SlideModules = {
       let li = 0, found = 0, need = 0, spares = [], cells = [];
       state.attempts = 0; state.locked = false; state.ownsAudio = true;
 
+      /* [S01r6q] The layer the passing balloons cross. Behind the field and pointer-events:none,
+         so nothing in it can ever take a tap meant for a real balloon. */
+      const drift = document.createElement("div"); drift.className = "bal-drift";
       const field = document.createElement("div"); field.className = "balloon-field";
       /* [S01r5g] SWIFTEE HOLDING THE BALLOONS, bottom-left, exactly where the SME's reference puts
          her. TWO images, not one: a GIF cannot be paused, so the animated frame and a still of its
@@ -9370,11 +9451,12 @@ const SlideModules = {
         play(audioFor(slide, "prompt") || null, ()=>{});
       };
       field.appendChild(sw);
+      host.appendChild(drift);   /* [S01r6q] behind the field, so a passing balloon never covers a real one */
       host.appendChild(field);
       /* the deck's reference screen is a bare stage: no prompt band, no hint chip, no आगे */
       $("stage").classList.add("vo-only");
       document.body.classList.add("bal-page");
-      balMusicStart();          /* [S01r6i] loads the bed and holds it SILENT; balMusicOpen opens it */
+      balMusicStart();          /* [S01r6q] plays from arrival now, and ducks rather than stopping */
       $("hintBtn").classList.remove("show"); $("hintBtn").style.display = "none";
       $("navBtn").style.display = "none"; setNavActive(false);
 
@@ -9469,6 +9551,35 @@ const SlideModules = {
          as one sheet of balloons sliding off, which is the lockstep problem r6c fixed at the other
          end of the round. The callback is timed off the slowest of them rather than a fixed guess,
          and it re-checks alive() - a child who leaves mid-exit must not land on a rebuilt board. */
+      /* [S01r6q] SME: "a number of balloons will come from bottom to top and only 8 of them will
+         stay on the screen". These are the ones that do NOT stay: each rises from below the floor,
+         crosses the sky once and deletes itself.
+         Released alongside the eight real arrivals rather than in one burst, so the sky fills as
+         the board fills instead of emptying out before the last word is spoken. They stop when the
+         board is complete - see the note on .bal-drift in the stylesheet for why that limit is the
+         whole reason this is not r6c's rejected background. */
+      /* the same six hue-rotations the playable balloons use (bcol-0..5), so a passing balloon
+         is the same object in another colour rather than a different object entirely */
+      const DRIFT_HUES = [-8, 156, 207, 292, 118, -25];
+      const releaseDrift = (n)=>{
+        if(!alive() || document.documentElement.classList.contains("no-anim")) return;
+        const R = (lo, hi)=> lo + Math.random() * (hi - lo);
+        for(let i = 0; i < n; i++){
+          const b = document.createElement("i");
+          const dur = R(5.5, 8.5);
+          b.style.setProperty("--dx",  R(4, 92).toFixed(1) + "%");
+          b.style.setProperty("--ds",  R(64, 124).toFixed(0) + "px");
+          b.style.setProperty("--dh",  DRIFT_HUES[(Math.random() * DRIFT_HUES.length) | 0] + "deg");
+          b.style.setProperty("--dt",  dur.toFixed(2) + "s");
+          b.style.setProperty("--dsw", R(-40, 40).toFixed(0) + "px");
+          b.style.setProperty("--do",  R(0.38, 0.66).toFixed(2));
+          b.style.animationDelay = R(0, 0.5).toFixed(2) + "s";
+          drift.appendChild(b);
+          /* delete rather than let them pile up: this runs once per round and a round can be
+             replayed, so without this the layer grows for the life of the slide */
+          setTimeout(()=>{ try{ b.remove(); }catch(e){} }, (dur + 1.2) * 1000);
+        }
+      };
       const clearField = (done)=>{
         const live = [...field.querySelectorAll(".balloon:not(.popped)")];
         if(!live.length){ done(); return; }
@@ -9567,7 +9678,20 @@ const SlideModules = {
                 const last = (li >= LEVELS.length - 1);
                 play(lvlAudio(last ? "done" : "correct") || lvlAudio("correct") || null,
                      ()=>{ if(!alive()) return;
-                           if(last) setTimeout(()=> completeSlide(state.attempts === 0), 700);
+                           /* [S01r6q] SME: "when all the levels of the balloon game end, Swiftie
+                              will also fly along with the balloons." The last board used to just
+                              vanish with the slide - r6j gave the BETWEEN-round change its exit and
+                              left the final one a hard cut. Now the game ends the way each round
+                              does, and she goes with it: the board is released first and she
+                              follows 420ms later, so it reads as the balloons taking her rather
+                              than everything leaving at once.
+                              completeSlide waits for her, not just for them. */
+                           if(last) setTimeout(()=>{
+                             if(!alive()) return;
+                             try{ sw.classList.add("sw-flyaway"); }catch(e){}
+                             clearField(()=>{});
+                             setTimeout(()=>{ if(alive()) completeSlide(state.attempts === 0); }, 2200);
+                           }, 700);
                            /* [S01r6j] let the board go up before the next one comes up */
                            else     setTimeout(()=> clearField(()=> { li++; renderLevel(); }), 500); });
               } else {
@@ -9654,11 +9778,10 @@ const SlideModules = {
           revealing = true; busy = true;
           const step = (i)=>{
             if(!alive()) return;
-            if(i >= cells.length){ busy = false;
-              balMusicOpen();   /* [S01r6i] "the audio will only sound when the vo is finish" */
-              return; }
+            if(i >= cells.length){ busy = false; return; }
             const { b, it } = cells[i];
             flightPath(b);
+            releaseDrift(i === 0 ? 3 : 2);   /* [S01r6q] the ones that do not stay */
             b.classList.remove("seq-hidden");
             b.classList.add("bal-entering");
             /* name it as it flies: the word starts with the balloon, not after it has landed */
