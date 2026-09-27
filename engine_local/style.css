@@ -2017,24 +2017,18 @@ html.no-anim .bal-swiftee.sw-flyaway{ animation:none; opacity:0; }
    still and let them read. A single soft vertical sky (deeper at the top, bright near the floor)
    plus one wide bloom low down where the balloons rise from: no pattern, no texture, nothing that
    competes with a balloon for attention. */
-/* [S01r6p] ...and this is now the SME's own artwork, not my approximation of it. They supplied
-   "background for game.png" for this page: 1672x941, exactly the stage's 16:9.
-   IT IS DRAWN IN CSS RATHER THAN SHIPPED AS A FILE, and that is a measurement, not a shortcut. The
-   image is a PURE VERTICAL GRADIENT - every row of all 941 was checked and varies left-to-right by
-   only 4-9/255, uniformly, which is dither noise added on export to stop banding, not content. So
-   there is nothing in the file a gradient cannot reproduce, and the 14 stops below were FITTED to
-   its own row averages: max error 1.41/255, i.e. closer to the intended gradient than the exported
-   PNG is to itself. It costs 0 bytes against 58 KB of remaining headroom, where the file would have
-   cost most of it, and it stays sharp at any scale.
-   The original is kept at _assets_round4/bg_balloons_SOURCE.png. If it is ever replaced by a
-   background with actual detail in it, this rule must go back to being an <img> - a gradient cannot
-   track art it is only imitating. */
-body.bal-page{ background:linear-gradient(180deg,
-    #36B4FC 0%,   #3AB4FD 2.7%,  #52CEFD 17.9%, #67E1FD 31.6%,
-    #7EEFFC 42.8%, #92F4F6 49%,  #C5F9DF 63.2%, #E0FACB 71.7%,
-    #F3FAB5 79.5%, #FEFAA2 86.4%, #FEF997 91.4%, #FEF884 97.8%,
-    #FEF880 100%); }
-body.bal-page .stage{ background:transparent !important; }
+/* [S01r6r] THE SME'S SECOND BACKGROUND, and this one is a real picture. r6p's was a pure vertical
+   gradient, so it was drawn in CSS for nothing; this one has clouds, a horizon, grass and flowers,
+   and a gradient cannot imitate any of that - the r6p note said in as many words that if detailed
+   art ever arrived this rule goes back to being an image. It has.
+   1333x750 WebP at q80 = 28,772 bytes of the 47 KB that was free. Checked rather than assumed: the
+   open sky, which is where a smooth gradient would band, is within 4/255; all the encoder's error
+   sits in the tiny grass flowers along the bottom, which the balloons and Swiftie stand in front of.
+   ON .stage, NOT body. The art is exactly the stage's 16:9, so `100% 100%` maps it 1:1 and the
+   horizon lands where it was drawn to land. On body it would stretch to the window instead and the
+   horizon would wander with the browser size. body keeps the sky colour for any letterbox edge. */
+body.bal-page{ background:#3FB8FC; }
+body.bal-page .stage{ background:url("assets/UI/bg_balloons.webp") center/100% 100% no-repeat !important; }
 /* [S01r6d] THE DRIFTING BALLOONS ARE GONE. r6c put sixteen of them rising behind the field; the SME
    read them as disturbing, and they were - sixteen soft shapes crossing behind eight bright ones is
    movement competing with the thing the child is supposed to be reading. The SKY ITSELF stays: the
@@ -2056,10 +2050,17 @@ body.bal-page .stage{ background:transparent !important; }
    and opacity there is nothing to tell a rounded rectangle from a bug. No overflow:hidden here
    either: .stage already clips, so they leave at the screen's edge rather than at an invisible
    inner boundary, which is what made the first attempt look like half-drawn shapes. */
+/* [S01r6r] ATMOSPHERIC PERSPECTIVE, which is what stops a crowd of these reading as stickers laid
+   over a photograph. SME: "it should not feel like those balloons are not the part of background."
+   Each one is given a DEPTH in the module, and size, opacity and speed all follow it together: far
+   balloons are small, pale and slow, near ones large, solid and quick. Those three moving as one is
+   the whole cue - any one of them alone just looks like a balloon with the wrong settings.
+   No blur, deliberately: it would sell the depth a little harder and there are now ~70 of these on
+   screen at once, where a per-element blur filter is the one thing certain to cost frames. */
 .bal-drift i{ position:absolute; bottom:-26%; left:var(--dx,50%);
   width:var(--ds,96px); height:calc(var(--ds,96px) * 1.1463);
   background:url("assets/UI/balloon.webp") center/contain no-repeat;
-  filter:hue-rotate(var(--dh,0deg)) drop-shadow(0 8px 14px rgba(11,61,140,.16));
+  filter:hue-rotate(var(--dh,0deg)) drop-shadow(0 6px 12px rgba(11,61,140,.18));
   opacity:0; animation:balDrift var(--dt,7s) linear forwards; }
 @keyframes balDrift{
   0%   { transform:translate(0, 0) rotate(-4deg);                    opacity:0; }

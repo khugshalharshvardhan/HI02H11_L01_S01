@@ -6570,20 +6570,25 @@ const SlideModules = {
       const releaseDrift = (n)=>{
         if(!alive() || document.documentElement.classList.contains("no-anim")) return;
         const R = (lo, hi)=> lo + Math.random() * (hi - lo);
+        const L = (lo, hi, t)=> lo + (hi - lo) * t;
         for(let i = 0; i < n; i++){
           const b = document.createElement("i");
-          const dur = R(5.5, 8.5);
-          b.style.setProperty("--dx",  R(4, 92).toFixed(1) + "%");
-          b.style.setProperty("--ds",  R(64, 124).toFixed(0) + "px");
+          /* ONE depth drives size, opacity and speed together. Sampled t^1.6 rather than flat, so
+             most of the crowd sits in the distance and only a few come past close - which is what a
+             real sky of balloons looks like, and it also keeps the big expensive ones rare. */
+          const t = Math.pow(Math.random(), 1.6);
+          const dur = L(9.5, 4.6, t);
+          b.style.setProperty("--dx",  R(-4, 98).toFixed(1) + "%");
+          b.style.setProperty("--ds",  L(44, 152, t).toFixed(0) + "px");
           b.style.setProperty("--dh",  DRIFT_HUES[(Math.random() * DRIFT_HUES.length) | 0] + "deg");
           b.style.setProperty("--dt",  dur.toFixed(2) + "s");
-          b.style.setProperty("--dsw", R(-40, 40).toFixed(0) + "px");
-          b.style.setProperty("--do",  R(0.38, 0.66).toFixed(2));
-          b.style.animationDelay = R(0, 0.5).toFixed(2) + "s";
+          b.style.setProperty("--dsw", R(-46, 46).toFixed(0) + "px");
+          b.style.setProperty("--do",  L(0.30, 0.74, t).toFixed(2));
+          b.style.animationDelay = R(0, 1.6).toFixed(2) + "s";
           drift.appendChild(b);
-          /* delete rather than let them pile up: this runs once per round and a round can be
-             replayed, so without this the layer grows for the life of the slide */
-          setTimeout(()=>{ try{ b.remove(); }catch(e){} }, (dur + 1.2) * 1000);
+          /* delete rather than let them pile up: a round can be replayed, and at this density the
+             layer would otherwise grow without limit for the life of the slide */
+          setTimeout(()=>{ try{ b.remove(); }catch(e){} }, (dur + 2.4) * 1000);
         }
       };
       const clearField = (done)=>{
@@ -6787,7 +6792,12 @@ const SlideModules = {
             if(i >= cells.length){ busy = false; return; }
             const { b, it } = cells[i];
             flightPath(b);
-            releaseDrift(i === 0 ? 3 : 2);   /* [S01r6q] the ones that do not stay */
+            /* [S01r6r] SME: "there should be too many of the balloons, it should feel like the
+               balloons cover the screen." An opening wave on the first arrival, then a steady
+               stream behind each one after it - roughly 70 over the entrance, peaking around 40 on
+               screen at once. Exactly 8 of them stay, and those 8 are the ones in the field with a
+               word on them; everything here is in the layer behind, untappable and wordless. */
+            releaseDrift(i === 0 ? 22 : 6);
             b.classList.remove("seq-hidden");
             b.classList.add("bal-entering");
             /* name it as it flies: the word starts with the balloon, not after it has landed */
