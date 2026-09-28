@@ -9535,6 +9535,12 @@ const SlideModules = {
         ? d.levels
         : [{ target_sound: d.target_sound, items: d.items || [], spares: d.spares || [] }];
       let li = 0, found = 0, need = 0, spares = [], cells = [];
+      /* [S01r7f] SME: "if I choose the correct option like पपीता, don't show it again in the प
+         letter; similarly चूहा in the second stage." A found word is not a target any more - it is
+         a word the child has already answered, and putting it back up invites them to answer it
+         twice while the three they have not found stay hidden in the draw. Keyed on img because
+         that is what identifies the picture on the balloon. Cleared per round. */
+      let doneImgs = new Set();
       state.attempts = 0; state.locked = false; state.ownsAudio = true;
 
       /* [S01r6q] The layer the passing balloons cross. Behind the field and pointer-events:none,
@@ -9760,29 +9766,34 @@ const SlideModules = {
          looks the same but cannot be tapped is worse than useless - a child tapping one gets no
          reaction at all, which reads as the game being broken. Fullness now comes from the stream.
          The .bal-drift rules in the stylesheet go with it. */
+      /* [S01r7f] THE BOARD LEAVES BY RISING. SME: "when we complete one level, all the balloons
+         will go up out of the screen and then the च level will start."
+         r6j released them with a CSS keyframe, and r7c then disabled every animation on .balloon in
+         this mode so the rAF could own `transform` unopposed - which left this function setting
+         classes that did nothing. The balloons simply froze and then blinked out when the next round
+         rendered. Nothing failed loudly; it just stopped being an exit.
+         So the exit is now made of the same thing the game is made of: the loop keeps running and
+         every balloon is given a large upward speed, so they fly off the top exactly as they always
+         do, only faster. `done` waits for the field to be genuinely empty rather than for a guessed
+         duration, with a ceiling so a stalled frame cannot strand the round. */
       const clearField = (done)=>{
-        /* [S01r7c] the loop stops FIRST: balLeave animates `transform`, and the rAF would overwrite
-           it every frame, so the board would keep rising instead of being released. */
-        if(balTimer){ cancelAnimationFrame(balTimer); balTimer = 0; }
-        killStream();   /* [S01r7d] and nothing new arrives while the board is being released */
-        const live = [...field.querySelectorAll(".balloon:not(.popped)")];
-        if(!live.length){ done(); return; }
-        const R = (lo, hi)=> lo + Math.random() * (hi - lo);
-        let last = 0;
-        live.forEach((b)=>{
-          const dur = R(1.15, 1.55), del = R(0, 0.34);
-          b.style.setProperty("--lx",   R(-58, 58).toFixed(0) + "px");
-          b.style.setProperty("--lr",   R(-11, 11).toFixed(0) + "deg");
-          b.style.setProperty("--ldur", dur.toFixed(2) + "s");
-          b.style.setProperty("--ldel", del.toFixed(2) + "s");
-          /* bal-entering is dropped, not left to fight: both rules set `animation` on the same
-             element. For a settled balloon this is seamless - balLeave's 0% is translate(0,0), which
-             is exactly where balEnter's `forwards` fill left it. */
-          b.classList.remove("bal-entering", "bal-hot");
-          b.classList.add("bal-leaving");
-          last = Math.max(last, (dur + del) * 1000);
+        killStream();   /* nothing new arrives while the board is leaving */
+        if(!cells.length){ done(); return; }
+        cells.forEach((c, i)=>{
+          c.parked = false;
+          c.speed = 620 + Math.random() * 260 + i * 18;   /* staggered, so they do not leave as a wall */
         });
-        setTimeout(()=>{ if(alive()) done(); }, last + 90);
+        if(!balTimer) balTimer = requestAnimationFrame(balTick);
+        const t0 = Date.now();
+        const wait = setInterval(()=>{
+          if(!alive()){ clearInterval(wait); return; }
+          if(cells.length === 0 || Date.now() - t0 > 4000){
+            clearInterval(wait);
+            [...field.querySelectorAll(".balloon")].forEach(b => b.remove());
+            cells = [];
+            done();
+          }
+        }, 90);
       };
       const flightPath = (b)=>{
         /* Start below the floor, somewhere else horizontally, and swing on the way up. The one
@@ -9865,6 +9876,7 @@ const SlideModules = {
                  sfxCorrect stays - the pop and the "that was right" ding are two different messages. */
               playSfx("sfx_bal_pop"); sfxCorrect(); setSwMood("happy");
               found++;
+              doneImgs.add(it.img);              /* [S01r7f] never offered again this round */
               SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
               if(found >= need){
                 state.locked = true; setSwMood("celebrate"); confettiCannon();
@@ -9953,6 +9965,7 @@ const SlideModules = {
         const its = (L.items || []).slice();
         need = its.filter(it => it.has === true).length;
         found = 0; state.locked = false; busy = false; revealing = false;
+        doneImgs = new Set();                    /* [S01r7f] each round starts with all four open */
         killStream();
         [...field.querySelectorAll(".balloon")].forEach(b => b.remove());
         cells = [];
@@ -9982,7 +9995,8 @@ const SlideModules = {
         const spawnOne = (forceTarget)=>{
           if(!alive() || state.locked) return;
           const up = new Set(cells.map(c => c.it && c.it.img));
-          const free = (arr)=> arr.filter(x => !up.has(x.img));
+          /* already in the sky, OR already answered - both are reasons not to send it up */
+          const free = (arr)=> arr.filter(x => !up.has(x.img) && !doneImgs.has(x.img));
           const wantTarget = forceTarget || Math.random() < TARGET_SHARE;
           let pool = free(wantTarget ? targets : decoys);
           if(!pool.length) pool = free(wantTarget ? decoys : targets);   /* the other kind will do */
