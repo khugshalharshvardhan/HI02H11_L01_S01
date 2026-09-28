@@ -579,7 +579,7 @@ def build_card():
     # is the smallest set that shows "this one goes here, that one goes there".
     # Words chosen from art and clips this lesson ALREADY ships (पतंग on page 7, चाँद on page 12), so
     # the demo costs one new VO line and nothing else - dist has little headroom left.
-    slides.append(sort_two(
+    _sort_demo = sort_two(
         "G5D", "practice", VO["vo_g5_show"],
         [{"gender": "S", "label": "प"},
          {"gender": "P", "label": "च"}],
@@ -592,9 +592,9 @@ def build_card():
         # DO on a watch-first page, so a button that only says "I have finished watching" is a
         # gate with no question behind it. Scoped to this slide by its own flag rather than to
         # auto_demo, so a future demo page can still choose to wait for a tap.
-        auto_demo=True, auto_advance=True))
+        auto_demo=True, auto_advance=True)
 
-    slides.append(sort_two(
+    _sort_task = sort_two(
         "G5", "practice", VO["vo_g5_prompt"],
         # [r5n] SME: "keep only प and च, remove every other word". The boxes are read by a
         # pre-reader, and "प की आवाज़ वाला" is a sentence; the letter alone is the label.
@@ -609,7 +609,22 @@ def build_card():
          _item("चम्मच", "obj_chammach", "vo_w_chammach", gender="P")],
         {"prompt": "vo_g5_prompt", "target": "vo_snd_p", "hint": "vo_g5_hint",
          "try_again": "vo_g5_try", "correct": "vo_g5_correct"},
-        "sound_sort_first_try"))
+        "sound_sort_first_try")
+
+    # [r6s] THE WATCH AND THE DO BECOME ONE PAGE. SME: "when page 12's guided section ends, don't
+    # take the user to page 13 - the VO, text and all the elements of page 13 start from page 12
+    # itself, in one page."
+    # Both halves are still BUILT separately, and that matters: they are two different boards (two
+    # demo tiles against four to sort), two prompts and two sets of clips, so hand-merging them into
+    # one blob would have meant maintaining that merge by hand for ever. The task is carried INSIDE
+    # the demo as `then`, and the engine swaps it in exactly where it used to advance.
+    # Everything the second half needs travels with it - its own prompt line, its own clips, its own
+    # signal name - because the slide keeps its identity (G5D) across the handover, and nothing else
+    # in the engine would otherwise know the page had changed what it was asking.
+    _sort_demo["data"]["then"] = dict(_sort_task["data"],
+                                      prompt_hi=_sort_task.get("prompt_hi", ""),
+                                      audio=_sort_task.get("audio") or {})
+    slides.append(_sort_demo)
         # [r5n] drag_demo is GONE: the page before this one now teaches the gesture in full, so a
         # hand travelling over the live board would repeat a lesson the child has just watched.
 
@@ -744,7 +759,7 @@ def build_card():
     ORDER = ["T3", "T4", "T5", "T6", "T1", "T2",   # 1-6   teach: sentence, letter, x3
              "G2", "P1", "P7",                      # 7-9   the three tap-the-words pages together
              "G3", "P4",                            # 10-11 the two "which sound repeats?" questions
-             "G5D", "G5",                           # 12-13 watch the sort, then do the sort
+             "G5D",                                 # 12    watch the sort, then do it - ONE page [r6s]
              "G1",                                  # 14    balloons
              "P8"]                                  # 15    celebration
     _by_id = {s["id"]: s for s in slides}

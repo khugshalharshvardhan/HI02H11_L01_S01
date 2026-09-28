@@ -4858,7 +4858,13 @@ const SlideModules = {
   },
 
   SORT_GENDER: {
-    mount(host, slide){
+    /* [S01r6s] `inPage` marks the SECOND call of a two-part page - the handover below re-enters
+       this same mount with the task's data in place of the demo's. Without the restore, arriving
+       at the page a second time (a replay, a dev jump) would find slide.data already swapped and
+       drop the child straight into the task, having silently eaten the demonstration. */
+    mount(host, slide, inPage){
+      if(!slide.__d0){ slide.__d0 = slide.data; slide.__a0 = slide.audio; }
+      else if(!inPage){ slide.data = slide.__d0; slide.audio = slide.__a0; }
       const wrap = document.createElement("div"); wrap.className = "sort-stage";
       const binsRow = document.createElement("div"); binsRow.className = "sort-bins";
       slide.data.bins.forEach(b => {
@@ -4918,6 +4924,34 @@ const SlideModules = {
              gate with no question behind it - the SME asked for the page to hand over by itself.
              The stage class hides the pill for the whole slide (see .stage.auto-adv), so it never
              appears and then vanishes. The beat lets the last tile settle before the screen moves. */
+          /* [S01r6s] TWO HALVES, ONE PAGE. SME: "when page 12's guided section ends, don't take
+             the user to page 13 - page 13 starts from page 12 itself." So where this used to hand
+             the child to the next slide, it now rebuilds THIS one as the task.
+             The slide OBJECT is deliberately kept: every liveness guard in this engine is written
+             `CARD.slides[state.idx] === slide`, and mounting the follow-on as its own slide while
+             the index still pointed here would have made every one of those false the instant the
+             new board appeared - the second half would have rendered and then refused to respond.
+             Swapping the data under the same object keeps all of them true.
+             Everything the page ASKS also has to change with it, not just the board: the prompt
+             line, the clip set, and the आगे pill, which the demo had hidden for its whole life
+             because there was nothing to do (.stage.auto-adv). */
+          if(slide.data.then){
+            const nxt = slide.data.then;
+            slide.data = nxt;
+            slide.audio = nxt.audio || slide.audio;
+            $("promptText").textContent = nxt.prompt_hi || "";
+            { const _pb = $("promptText").parentElement;
+              if(_pb) _pb.style.display = (nxt.prompt_hi ? "" : "none"); }
+            $("stage").classList.remove("auto-adv");
+            state.locked = false; state.attempts = 0; state.hintActive = false;
+            state.ownsAudio = false; state.demoRunning = false; state.revealing = false;
+            setTimeout(()=>{
+              if(CARD.slides[state.idx] !== slide) return;
+              host.innerHTML = "";
+              SlideModules.SORT_GENDER.mount(host, slide, true);
+            }, 900);
+            return;
+          }
           if(slide.data.auto_advance){
             setTimeout(()=>{ if(CARD.slides[state.idx] === slide) completeSlide(true); }, 1100);
             return;

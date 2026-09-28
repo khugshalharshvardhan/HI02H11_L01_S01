@@ -665,68 +665,62 @@
         "signal_name": "sound_sort_demo",
         "drag_demo": false,
         "auto_demo": true,
-        "auto_advance": true
-      }
-    },
-    {
-      "id": "G5",
-      "phase": "practice",
-      "eis": "enactive",
-      "type": "SORT_VACHAN",
-      "prompt_hi": "हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए।",
-      "audio": {
-        "prompt": "vo_g5_prompt",
-        "target": "vo_snd_p",
-        "hint": "vo_g5_hint",
-        "try_again": "vo_g5_try",
-        "correct": "vo_g5_correct"
-      },
-      "data": {
-        "bins": [
-          {
-            "gender": "S",
-            "label": "प"
-          },
-          {
-            "gender": "P",
-            "label": "च"
+        "auto_advance": true,
+        "then": {
+          "bins": [
+            {
+              "gender": "S",
+              "label": "प"
+            },
+            {
+              "gender": "P",
+              "label": "च"
+            }
+          ],
+          "items": [
+            {
+              "word_hi": "पानी",
+              "img": "obj_pani",
+              "emoji": "💧",
+              "audio": "vo_w_pani",
+              "gender": "S"
+            },
+            {
+              "word_hi": "पायल",
+              "img": "obj_payal",
+              "emoji": "💍",
+              "audio": "vo_w_payal",
+              "gender": "S"
+            },
+            {
+              "word_hi": "चूहा",
+              "img": "obj_chuha",
+              "emoji": "🐭",
+              "audio": "vo_w_chuha",
+              "gender": "P"
+            },
+            {
+              "word_hi": "चम्मच",
+              "img": "obj_chammach",
+              "emoji": "🥄",
+              "audio": "vo_w_chammach",
+              "gender": "P"
+            }
+          ],
+          "reveal_seq": true,
+          "signal_name": "sound_sort_first_try",
+          "drag_demo": false,
+          "auto_demo": false,
+          "auto_advance": false,
+          "prompt_hi": "हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए।",
+          "audio": {
+            "prompt": "vo_g5_prompt",
+            "target": "vo_snd_p",
+            "hint": "vo_g5_hint",
+            "try_again": "vo_g5_try",
+            "correct": "vo_g5_correct"
           }
-        ],
-        "items": [
-          {
-            "word_hi": "पानी",
-            "img": "obj_pani",
-            "emoji": "💧",
-            "audio": "vo_w_pani",
-            "gender": "S"
-          },
-          {
-            "word_hi": "पायल",
-            "img": "obj_payal",
-            "emoji": "💍",
-            "audio": "vo_w_payal",
-            "gender": "S"
-          },
-          {
-            "word_hi": "चूहा",
-            "img": "obj_chuha",
-            "emoji": "🐭",
-            "audio": "vo_w_chuha",
-            "gender": "P"
-          },
-          {
-            "word_hi": "चम्मच",
-            "img": "obj_chammach",
-            "emoji": "🥄",
-            "audio": "vo_w_chammach",
-            "gender": "P"
-          }
-        ],
-        "reveal_seq": true,
-        "signal_name": "sound_sort_first_try",
-        "drag_demo": false,
-        "auto_demo": false,
-        "auto_advance": false
+        }
       }
     },
     {
@@ -938,7 +932,7 @@
   "phase_distribution": {
     "tutorial": 6,
     "guided": 1,
-    "practice": 8
+    "practice": 7
   },
   "signals_expected": [
     "slide_entered",

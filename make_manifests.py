@@ -71,6 +71,20 @@ def usage_map():
         for b in (d.get("bins") or []):
             if isinstance(b, dict):
                 add(b.get("audio"), "%s \u00b7 box %s" % (pg, b.get("label", "?")))
+        # [r6s] A PAGE CAN NOW CARRY A SECOND HALF. G5D demonstrates the sort and then BECOMES the
+        # sort, and everything that half needs \u2014 its own prompt, its own clips, its own board \u2014
+        # travels inside data["then"]. Without walking it, four clips that are very much heard on
+        # page 12 came out as "engine/shared", which is the one column a voice artist reads to know
+        # what they are naming. The unresolved count caught it the moment the merge landed.
+        t = d.get("then") or {}
+        for role, aid in (t.get("audio") or {}).items():
+            add(aid, "%s \u00b7 %s (2nd half)" % (pg, role))
+        for it in (t.get("items") or []):
+            if isinstance(it, dict):
+                add(it.get("audio"), "%s \u00b7 picture %s (2nd half)" % (pg, it.get("word_hi", "?")))
+        for b in (t.get("bins") or []):
+            if isinstance(b, dict):
+                add(b.get("audio"), "%s \u00b7 box %s (2nd half)" % (pg, b.get("label", "?")))
     return use
 
 

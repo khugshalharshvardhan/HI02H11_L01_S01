@@ -2027,7 +2027,14 @@ html.no-anim .bal-swiftee.sw-flyaway{ animation:none; opacity:0; }
    ON .stage, NOT body. The art is exactly the stage's 16:9, so `100% 100%` maps it 1:1 and the
    horizon lands where it was drawn to land. On body it would stretch to the window instead and the
    horizon would wander with the browser size. body keeps the sky colour for any letterbox edge. */
-body.bal-page{ background:#3FB8FC; }
+/* [S01r6s] THE LETTERBOX BARS CONTINUE THE PICTURE. SME: "there are blue bars outside the main
+   background of the game - use a gradient colour and try to match the original background so it
+   looks smooth." They were one flat #3FB8FC, which matched the sky at one height and nothing else,
+   so the seam showed wherever the scene had moved on - and this background runs from deep blue to
+   grass, so it was wrong down the whole lower half.
+   These stops are FITTED to the artwork's own left and right edge columns (max error 3.0/255), so at
+   every height the bar is the colour the picture is at that height and the join disappears. */
+body.bal-page{ background:linear-gradient(180deg, #10AEFC 0.0%, #13B0FD 10.0%, #24B4FE 13.9%, #3ABAFD 14.8%, #46BEFB 16.0%, #38B8FA 17.0%, #29B8FA 17.8%, #26B8FE 18.2%, #44C0FE 28.3%, #42C1FC 29.2%, #4CC4FD 32.0%, #52C6FC 36.7%, #82D8FE 55.4%, #8ADAF9 59.1%, #98DDFD 62.5%, #B4EAFB 76.2%, #B8EBFE 77.7%, #BEEDF0 78.0%, #BEEDD2 78.1%, #C6F072 78.4%, #CCEE3E 78.5%, #CDEC1E 78.6%, #D0EE0E 78.9%, #D0F00C 79.3%, #CEEE0A 79.8%, #C9EE0E 80.2%, #AFDA00 80.5%, #A8D500 80.6%, #A2D806 81.7%, #90CA03 82.2%, #8BCC03 82.6%, #8ECA02 83.0%, #A0D807 83.3%, #A5D404 83.7%, #BAE60B 84.1%, #BBE609 84.2%, #BDE406 84.8%, #B4DF01 86.4%, #B0DE05 86.8%, #ACDC05 86.9%, #9AD002 87.2%, #96D006 87.4%, #8ECA0A 87.6%, #7AB801 87.7%, #75BA07 88.1%, #72BB04 88.4%, #58A900 89.2%, #52AA02 89.6%, #54AB07 90.8%, #4CA603 91.2%, #42A002 91.5%, #3A990E 91.7%, #227F04 91.9%, #127004 92.0%, #04660C 92.7%, #06660D 93.5%, #005F06 93.9%, #086B12 94.1%, #066C14 94.3%, #02680F 94.9%, #08680C 95.3%, #0A660A 95.5%, #035802 95.7%, #025409 96.0%, #02580A 96.4%, #025306 97.7%, #03570E 98.1%, #00560F 98.7%, #035E18 99.3%, #025E18 100.0%); }
 body.bal-page .stage{ background:url("assets/UI/bg_balloons.webp") center/100% 100% no-repeat !important; }
 /* [S01r6d] THE DRIFTING BALLOONS ARE GONE. r6c put sixteen of them rising behind the field; the SME
    read them as disturbing, and they were - sixteen soft shapes crossing behind eight bright ones is
@@ -2434,9 +2441,9 @@ html.no-anim .balloon.bal-leaving{ animation:none; opacity:0; }
    shadow, and a second set underneath would print a ring around it.
    min-width:0 is still required - [30l] sets min-width:186px on .sg-btn, and a min-width FLOOR beats
    any width declaration however specific the selector. */
-.sg-card.lh-card .sg-btn{ bottom:54px; width:104px; height:104px; min-width:0; padding:0;
+.sg-card.lh-card .sg-btn{ bottom:36px; width:140px; height:140px; min-width:0; padding:0;
   box-sizing:border-box; border:0; border-radius:50%;
-  background:url("assets/UI/play_btn.svg") center/contain no-repeat;
+  background:url("assets/UI/btn-play-round.svg") center/contain no-repeat;
   box-shadow:none; display:block; }
 .sg-card.lh-card .sg-btn::after{ content:none; }
 /* [S01r6k] A FACE ON THE BUTTON. SME: "give the play button 3d look, currently it feel too blank."
@@ -2454,18 +2461,16 @@ html.no-anim .balloon.bal-leaving{ animation:none; opacity:0; }
        and a shade where it would fall away. It covers the triangle as well, which is correct - the
        whole face is lit from one place. ::after is spoken for (the generic play glyph, disabled just
        above), so the bevel lives on ::before. */
-.sg-card.lh-card .sg-btn{
-  box-shadow:0 10px 16px rgba(12,46,92,.30), 0 3px 5px rgba(12,46,92,.22);
-  transition:box-shadow .13s ease, transform .13s ease; }
-.sg-card.lh-card .sg-btn::before{
-  content:""; position:absolute; left:0; top:0; width:100%; height:100%;
-  border-radius:50%; pointer-events:none;
-  background:
-    radial-gradient(ellipse 64% 46% at 50% 13%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 64%),
-    radial-gradient(ellipse 84% 58% at 50% 103%, rgba(122,74,4,.32) 0%, rgba(122,74,4,0) 60%); }
-/* pressed: it goes DOWN and its shadow shortens, which is the whole of what "3d" means to a child */
-.sg-card.lh-card .sg-btn:active{ transform:translateX(-50%) translateY(5px);
-  box-shadow:0 3px 6px rgba(12,46,92,.28); }
+/* [S01r6s] r6k's CSS depth is GONE, because the supplied SVG now carries all of it - a white rim,
+   a darker crescent for the button's thickness, a gradient face, a gloss and its own feDropShadow.
+   Keeping the CSS bevel on top of that drew a second highlight over the artwork's own and a second
+   shadow under its own, which reads as a printing misregistration rather than as depth.
+   The box is 140px where it was 104: the SVG's viewBox pads for its shadow, so the disc itself is
+   86 of 116 units and `contain` in a 104px box would have rendered it at ~77px - visibly SMALLER
+   than what it replaced. 140 x 86/116 puts the disc back at ~104px. `bottom` drops by half the
+   growth so the disc stays where it was rather than climbing up the card. */
+.sg-card.lh-card .sg-btn{ transition:transform .13s ease; }
+.sg-card.lh-card .sg-btn:active{ transform:translateX(-50%) translateY(4px); }
 /* [S01r6k] AND THE IDLE PULSE ASKS LOUDER. SME: "in case of inactivity increase the pulse effect
    currently its too subtle and does not feels like we have to tap on it." It was scale 1.00 -> 1.03
    over 1.4s - about a 3px swell on a 104px button, which is below what reads as movement at arm's
@@ -2483,15 +2488,20 @@ html.no-anim .balloon.bal-leaving{ animation:none; opacity:0; }
   72%  { box-shadow:0 10px 16px rgba(12,46,92,.30), 0 0 0 26px rgba(248,190,42,0); }
   100% { box-shadow:0 10px 16px rgba(12,46,92,.30), 0 0 0 0   rgba(248,190,42,0); }
 }
+/* [S01r6s] the ring is dropped with the rest of the CSS depth - a hard gold halo expanding out of
+   a disc that already casts a soft blue shadow read as two different light sources. The KNOCK is
+   what the SME asked for in r6k ("it does not feel like we have to tap on it") and it stays. */
 .sg-card.lh-card .sg-btn.idle-pulse{
-  animation:sgBtnPulseStrong 1.15s cubic-bezier(.34,.62,.3,1) infinite,
-            sgBtnHalo        1.15s ease-out infinite; }
+  animation:sgBtnPulseStrong 1.15s cubic-bezier(.34,.62,.3,1) infinite; }
 /* a disabled button must not look raised OR eager - r6h already greys it; kill the depth with it */
-.sg-card.lh-card .sg-btn.sg-waiting::before{ content:none; }
+
 /* while the greeting runs the button is genuinely disabled, so it has to LOOK it. Desaturating the
    art says "not yet" without swapping in a second graphic. */
-.sg-card.lh-card .sg-btn.sg-waiting{ background:url("assets/UI/play_btn.svg") center/contain no-repeat;
-  filter:grayscale(.85) opacity(.5); box-shadow:none; }
+/* [S01r6s] the SME supplied a WAITING variant too, so the greyed-out state is drawn rather than
+   filtered. A grayscale() filter dimmed the drop shadow along with the face and left the button
+   looking like it had lifted off the card while disabled. */
+.sg-card.lh-card .sg-btn.sg-waiting{ background:url("assets/UI/btn-play-round-waiting.svg") center/contain no-repeat;
+  filter:none; box-shadow:none; }
 .sg-card.lh-card .sg-btn:active{ transform:translateX(-50%) translateY(3px); }
 /* [S01r6e] The supplied cover art fills the card's INNER box - the SME's words - not the card itself.
    The frame is painted into start_card.webp, not drawn in CSS, so `border-radius:inherit` resolved to
