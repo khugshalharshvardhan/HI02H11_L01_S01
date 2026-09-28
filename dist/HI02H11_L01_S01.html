@@ -3635,7 +3635,7 @@ function armSkyBurst(){
    than cuts, and it never outlives the page. */
 const BAL_MUSIC = {
   id: "sfx_bal_music",
-  vol: 0.34,           /* resting level, when nothing else is sounding */
+  vol: 0.272,          /* [S01r7e] SME: 20% quieter than r6q's 0.34 */
   duck: 0.34,          /* of that, while a clip or a pop is sounding */
   sfxHold: 420,        /* ms a pop keeps the bed down for */
   up: 0.008,           /* per 40ms tick: ~1.1s to swell back */
@@ -9662,7 +9662,25 @@ const SlideModules = {
          same place and hide each other's picture - reading those pictures is the whole game. They
          start at 20% to keep Swiftie's column clear; she stands in the lower left and a balloon
          rising through her reads as a fault. */
-      const LANES = 8;
+      /* [S01r7e] FOUR LANES, NOT EIGHT, AND THE ARITHMETIC IS THE REASON. A balloon is 206 design
+         px wide in a 1293px field; `left` positions its LEFT edge, so the usable span is 20% (clear
+         of Swiftie) to 84% (the last place a whole balloon still fits) - 828px. 828/206 = 4.
+         Eight lanes put them 103px apart, i.e. half a balloon, so neighbours ALWAYS overlapped
+         horizontally and only avoided it by being at different heights. That held at spawn and then
+         stopped holding, because balloons carry DIFFERENT SPEEDS: a fast one gains ~500px on a slow
+         one over a rise and simply climbs past it. Measured overlaps of 99-204px, every pair in
+         adjacent lanes.
+         At 21.3% apart the columns are 275px, wider than a balloon, so no two can overlap no matter
+         what their speeds do. Spacing beats policing. */
+      const LANES = 4, LANE_GAP = 21.3;
+      /* [S01r7e] SPEED BELONGS TO THE LANE, NOT THE BALLOON. With a speed per balloon, two in the
+         SAME column drift together - the one behind is simply faster and closes the gap, and the
+         spacing rule cannot help because it only holds at the moment of spawn. Measured that way:
+         columns correct, vertical gap 299px against a 278px balloon, and still an overlap a few
+         seconds later. One speed per column means nothing in a column can ever catch what is ahead
+         of it, while the columns still differ from each other so the field does not move as a
+         sheet - which is the reason the speeds were varied in the first place. */
+      const laneSpeed = Array.from({length: LANES}, ()=> 44 + Math.random() * 30);
       let laneBag = [], balTimer = 0, spawnTimer = 0;
       const nextLane = ()=>{
         if(!laneBag.length){
@@ -9674,8 +9692,43 @@ const SlideModules = {
         return laneBag.shift();
       };
       const fieldH = ()=> field.clientHeight || 660;
+      /* [S01r7e] SPAWN BELOW THE STAGE, NOT BELOW THE FIELD. SME: "the balloons are coming from the
+         upper section of the screen, they have to come from the bottom."
+         The field is not the screen: measured, it sits 102px down inside a 750px stage and is only
+         552 tall, so `fieldH() + 30` put a balloon's top 66px ABOVE the stage floor - two thirds of
+         it already visible at birth, which is exactly the "appearing halfway up" that was reported.
+         The distance to the STAGE's floor is what matters, and it is measured each time rather than
+         assumed, because --scale and the field's own offset both move with the window. */
+      const spawnY = ()=>{
+        try{
+          const sc = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+          const fr = field.getBoundingClientRect();
+          const sr = document.getElementById("stage").getBoundingClientRect();
+          return Math.max(120, (sr.bottom - fr.top) / sc + 40);   /* +40 so it is fully hidden */
+        }catch(e){ return fieldH() + 260; }
+      };
+      /* [S01r7e] A LANE IS ONLY FREE IF NOTHING IS STILL SITTING IN IT. SME: "do not overlap
+         balloons." Eight shuffled lanes stop two balloons sharing a column, but nothing stopped a
+         second balloon being launched into a lane whose last one had barely left the floor - they
+         then rose together, touching. A lane is now blocked until its lowest balloon has climbed a
+         full balloon-height clear of the spawn point. */
+      /* Only the SAME lane can now collide, and only vertically, so the check is just "has the
+         last balloon in this column climbed a full balloon-height clear of the spawn point". */
+      const laneClear = (ln)=>{
+        const floor = spawnY() - 330;
+        return !cells.some(c => c.lane === ln && c.y > floor);
+      };
       const placeLane = (c)=>{
-        c.b.style.setProperty("--lane", (20 + nextLane() * 9.3 + Math.random() * 2).toFixed(1) + "%");
+        let ln = -1;
+        for(let tries = 0; tries < LANES * 2; tries++){
+          const cand = nextLane();
+          if(laneClear(cand)){ ln = cand; break; }
+        }
+        if(ln < 0) return false;                       /* every lane busy - skip this spawn */
+        c.lane = ln;
+        /* jitter stays under the 69px of slack the 275px columns leave, so it can never eat the gap */
+        c.b.style.setProperty("--lane", (20 + ln * LANE_GAP + (Math.random() * 0.6 - 0.3)).toFixed(2) + "%");
+        return true;
       };
       const drawBal = (c, now)=>{
         const sway = Math.sin((now || 0) / 1000 * 1.1 + (c.phase || 0)) * (c.amp || 0);
@@ -9842,20 +9895,15 @@ const SlideModules = {
                    for "at that place other balloon will appear with other image". It always refills
                    with a NON-target word, so the number still to find stays exactly what the round
                    promised and the child cannot be handed a free extra. */
-                const spare = spares.length ? spares.shift() : null;
-                if(spare) setTimeout(()=>{
-                  if(!alive()) return;
-                  /* [S01r6e] SME: "when we pop a balloon the new balloon also come from the bottom
-                     of the screen". It used to fade back in on the spot, which read as the same
-                     balloon changing its mind rather than a new one arriving. It now takes the same
-                     flight the opening set takes - own start, own swing, and the same clearance
-                     around Swiftie, because flightPath measures her every time. */
-                  /* [S01r7c] the refill re-enters from the base the way everything else does, out
-                     of the same lane bag, so it cannot come back on top of another balloon */
-                  cell.it = spare; fillBalloon(b, spare);
-                  b.classList.remove("popped", "bal-hot");
-                  cell.parked = false;
-                  launch(cell, false);
+                /* [S01r7e] NO REFILL-IN-PLACE ANY MORE. Under the stream the spawner is what
+                   supplies balloons, so a popped one simply finishes its burst and is removed by
+                   the rise loop. The old path called launch(), which r7d retired - it survived as
+                   dead code only because `spares` is never filled now, so `if(spare)` was always
+                   false. Left in, it would have thrown ReferenceError the first time a card
+                   without that accident reached it. */
+                setTimeout(()=>{ if(!alive()) return;
+                  try{ b.remove(); }catch(e){}
+                  const ix = cells.indexOf(cell); if(ix >= 0) cells.splice(ix, 1);
                 }, 560);
                 play(lvlAudio("correct") || null, ()=>{});
               }
@@ -9925,24 +9973,40 @@ const SlideModules = {
         const TARGET_SHARE = 0.4, DRY_MS = 3200;
         let lastTargetSeen = performance.now(), colour = 0;
 
+        /* [S01r7e] ONE BALLOON PER WORD AT A TIME. SME: "at a time show only one element - papita,
+           patta, pani - and other elements like chammach, chuha, ghar, machli; don't add 3-4
+           balloons of the same element."
+           A free draw from a ten-word pool puts the same picture up three times often enough to be
+           the first thing you notice, and it wastes the discrimination the page is teaching - four
+           पानी balloons is one decision, not four. Anything already in the sky is excluded. */
         const spawnOne = (forceTarget)=>{
           if(!alive() || state.locked) return;
+          const up = new Set(cells.map(c => c.it && c.it.img));
+          const free = (arr)=> arr.filter(x => !up.has(x.img));
           const wantTarget = forceTarget || Math.random() < TARGET_SHARE;
-          const it = wantTarget ? pick(targets) : pick(decoys.length ? decoys : targets);
-          if(!it) return;
+          let pool = free(wantTarget ? targets : decoys);
+          if(!pool.length) pool = free(wantTarget ? decoys : targets);   /* the other kind will do */
+          if(!pool.length) return;                                      /* everything is already up */
+          const it = pick(pool);
+          const cell = { it };
           const b = document.createElement("div");
+          cell.b = b;
+          /* [S01r7e] y AND REGISTRATION BEFORE ANYTHING ELSE. A burst releases 2-3 in one go, and
+             laneClear reads `cells` - so with the push left until the end, the second balloon of a
+             burst could not see the first and happily took the lane it had just been given. That is
+             the overlap that survived four-lane spacing and per-lane speed: not two balloons
+             drifting together, but two STARTING in the same column at the same instant. */
+          cell.y = spawnY();
+          if(!placeLane(cell)) return;               /* no clear lane - wait rather than overlap */
+          cells.push(cell);
           b.className = "balloon bcol-" + ((colour++) % 6);
           fillBalloon(b, it);
           field.insertBefore(b, sw);
-          const cell = { b, it };
           wireTap(cell);
-          placeLane(cell);
-          cell.speed = 44 + Math.random() * 34;      /* px/s - slow enough for a 7-year-old to aim */
+          cell.speed = laneSpeed[cell.lane];         /* px/s - slow enough for a 7-year-old to aim */
           cell.amp   = 7 + Math.random() * 11;
           cell.phase = Math.random() * Math.PI * 2;
-          cell.y     = fieldH() + 30;
           drawBal(cell, performance.now());
-          cells.push(cell);
           if(it.has === true) lastTargetSeen = performance.now();
         };
 
