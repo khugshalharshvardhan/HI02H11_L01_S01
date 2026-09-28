@@ -2070,43 +2070,7 @@ body.bal-page .stage{ background:url("assets/UI/bg_balloons.webp") center/100% 1
    movement competing with the thing the child is supposed to be reading. The SKY ITSELF stays: the
    gradient and the bloom were the "plain but attractive" half of that request, and nothing about
    them moves. */
-/* [S01r6q] ...AND THESE ARE NOT THOSE. SME: "a number of balloons will come from bottom to top and
-   only 8 of them will stay on the screen (out of which we have to tap)."
-   The distinction from r6c, which is the whole reason this is safe to add back: those sixteen ran
-   CONTINUOUSLY, behind the board, for as long as the child was playing - so they competed with the
-   balloons being read. These run ONLY during the entrance, each one crosses once and is deleted,
-   and by the time the board is answerable the sky is empty again. Movement while the board is being
-   built is the opposite of movement while it is being read.
-   Inert by construction: pointer-events:none, z-index below the field, no word, no audio, and they
-   cannot be tapped or counted. */
-.bal-drift{ position:absolute; left:0; top:0; width:100%; height:100%;
-  pointer-events:none; z-index:0; }
-/* the SAME artwork the playable balloons use, recoloured by the same hue-rotate the bcol-* classes
-   use. A CSS blob was tried first and read as a rendering fault rather than a balloon - at this size
-   and opacity there is nothing to tell a rounded rectangle from a bug. No overflow:hidden here
-   either: .stage already clips, so they leave at the screen's edge rather than at an invisible
-   inner boundary, which is what made the first attempt look like half-drawn shapes. */
-/* [S01r6r] ATMOSPHERIC PERSPECTIVE, which is what stops a crowd of these reading as stickers laid
-   over a photograph. SME: "it should not feel like those balloons are not the part of background."
-   Each one is given a DEPTH in the module, and size, opacity and speed all follow it together: far
-   balloons are small, pale and slow, near ones large, solid and quick. Those three moving as one is
-   the whole cue - any one of them alone just looks like a balloon with the wrong settings.
-   No blur, deliberately: it would sell the depth a little harder and there are now ~70 of these on
-   screen at once, where a per-element blur filter is the one thing certain to cost frames. */
-.bal-drift i{ position:absolute; bottom:-26%; left:var(--dx,50%);
-  width:var(--ds,96px); height:calc(var(--ds,96px) * 1.1463);
-  background:url("assets/UI/balloon.webp") center/contain no-repeat;
-  filter:hue-rotate(var(--dh,0deg)) drop-shadow(0 6px 12px rgba(11,61,140,.18));
-  opacity:0; animation:balDrift var(--dt,7s) linear forwards; }
-@keyframes balDrift{
-  0%   { transform:translate(0, 0) rotate(-4deg);                    opacity:0; }
-  10%  { opacity:var(--do,.55); }
-  55%  { transform:translate(var(--dsw,26px), -70vh) rotate(4deg); }
-  90%  { opacity:var(--do,.55); }
-  100% { transform:translate(0, -135vh) rotate(-4deg);               opacity:0; }
-}
-html.no-anim .bal-drift{ display:none; }
-@media (prefers-reduced-motion: reduce){ .bal-drift{ display:none; } }
+/* [S01r7d] the decorative rising layer is gone - see the note in the module. */
 /* [S01r5i] LIFT THE FIELD DIRECTLY, because centring cannot do it any more. Once the balloons
    grew to 164px the field became 542px tall against a 438px content box, so there is no free space
    left for `align-content:center` to share out - the field simply starts at the top of the box and
@@ -9575,7 +9539,6 @@ const SlideModules = {
 
       /* [S01r6q] The layer the passing balloons cross. Behind the field and pointer-events:none,
          so nothing in it can ever take a tap meant for a real balloon. */
-      const drift = document.createElement("div"); drift.className = "bal-drift";
       const field = document.createElement("div"); field.className = "balloon-field";
       /* [S01r5g] SWIFTEE HOLDING THE BALLOONS, bottom-left, exactly where the SME's reference puts
          her. TWO images, not one: a GIF cannot be paused, so the animated frame and a still of its
@@ -9594,7 +9557,6 @@ const SlideModules = {
         play(audioFor(slide, "prompt") || null, ()=>{});
       };
       field.appendChild(sw);
-      host.appendChild(drift);   /* [S01r6q] behind the field, so a passing balloon never covers a real one */
       host.appendChild(field);
       /* the deck's reference screen is a bare stage: no prompt band, no hint chip, no आगे */
       $("stage").classList.add("vo-only");
@@ -9694,53 +9656,14 @@ const SlideModules = {
          as one sheet of balloons sliding off, which is the lockstep problem r6c fixed at the other
          end of the round. The callback is timed off the slowest of them rather than a fixed guess,
          and it re-checks alive() - a child who leaves mid-exit must not land on a rebuilt board. */
-      /* [S01r6q] SME: "a number of balloons will come from bottom to top and only 8 of them will
-         stay on the screen". These are the ones that do NOT stay: each rises from below the floor,
-         crosses the sky once and deletes itself.
-         Released alongside the eight real arrivals rather than in one burst, so the sky fills as
-         the board fills instead of emptying out before the last word is spoken. They stop when the
-         board is complete - see the note on .bal-drift in the stylesheet for why that limit is the
-         whole reason this is not r6c's rejected background. */
-      /* the same six hue-rotations the playable balloons use (bcol-0..5), so a passing balloon
-         is the same object in another colour rather than a different object entirely */
-      const DRIFT_HUES = [-8, 156, 207, 292, 118, -25];
-      const releaseDrift = (n)=>{
-        if(!alive() || document.documentElement.classList.contains("no-anim")) return;
-        const R = (lo, hi)=> lo + Math.random() * (hi - lo);
-        const L = (lo, hi, t)=> lo + (hi - lo) * t;
-        for(let i = 0; i < n; i++){
-          const b = document.createElement("i");
-          /* ONE depth drives size, opacity and speed together. Sampled t^1.6 rather than flat, so
-             most of the crowd sits in the distance and only a few come past close - which is what a
-             real sky of balloons looks like, and it also keeps the big expensive ones rare. */
-          const t = Math.pow(Math.random(), 1.6);
-          const dur = L(9.5, 4.6, t);
-          b.style.setProperty("--dx",  R(-4, 98).toFixed(1) + "%");
-          b.style.setProperty("--ds",  L(44, 152, t).toFixed(0) + "px");
-          b.style.setProperty("--dh",  DRIFT_HUES[(Math.random() * DRIFT_HUES.length) | 0] + "deg");
-          b.style.setProperty("--dt",  dur.toFixed(2) + "s");
-          b.style.setProperty("--dsw", R(-46, 46).toFixed(0) + "px");
-          b.style.setProperty("--do",  L(0.30, 0.74, t).toFixed(2));
-          b.style.animationDelay = R(0, 1.6).toFixed(2) + "s";
-          drift.appendChild(b);
-          /* delete rather than let them pile up: a round can be replayed, and at this density the
-             layer would otherwise grow without limit for the life of the slide */
-          setTimeout(()=>{ try{ b.remove(); }catch(e){} }, (dur + 2.4) * 1000);
-        }
-      };
-      /* [S01r7c] THE RISING SCENE, modelled on the reference game the SME pointed at.
-         One rAF loop owns every balloon's transform. Each carries its own speed and sway so the set
-         spreads out instead of moving as a sheet, and each respawns from the base when it leaves
-         the top - which is what makes a travelling target safe: nothing is ever gone for good.
+      /* [S01r7c/r7d] THE RISING SCENE. One rAF loop owns every balloon's transform; each carries
+         its own speed and sway so the stream spreads out instead of moving as a sheet.
          LANES, not free x. Eight shuffled columns are cycled, so two balloons cannot rise in the
-         same place and hide each other's picture - the whole game is reading those pictures. They
-         start at 20% to keep Swiftie's column clear.
-         THE SKY IS NEVER WITHOUT AN ANSWER. If every un-found target has drifted off the top, the
-         next one is forced back in at the base immediately. Without that a child can be left
-         tapping at a sky that cannot be right, which is the exact failure r6c froze the board to
-         avoid, and it is cheaper to fix here than to give up the motion. */
+         same place and hide each other's picture - reading those pictures is the whole game. They
+         start at 20% to keep Swiftie's column clear; she stands in the lower left and a balloon
+         rising through her reads as a fault. */
       const LANES = 8;
-      let laneBag = [], balTimer = 0;
+      let laneBag = [], balTimer = 0, spawnTimer = 0;
       const nextLane = ()=>{
         if(!laneBag.length){
           laneBag = Array.from({length: LANES}, (_, i)=> i);
@@ -9758,41 +9681,37 @@ const SlideModules = {
         const sway = Math.sin((now || 0) / 1000 * 1.1 + (c.phase || 0)) * (c.amp || 0);
         c.b.style.transform = "translate(" + sway.toFixed(1) + "px, " + c.y.toFixed(1) + "px)";
       };
-      const launch = (c, first)=>{
-        placeLane(c);
-        c.speed = 46 + Math.random() * 40;            /* px/s - slow enough to aim at */
-        c.amp   = 8 + Math.random() * 12;
-        c.phase = Math.random() * Math.PI * 2;
-        c.y     = fieldH() + (first ? 30 : 30 + Math.random() * 220);
-        c.b.classList.remove("bal-waiting");
-        drawBal(c, performance.now());
-      };
-      const onScreen = (c)=> c.y > -220 && c.y < fieldH() + 40;
       const balTick = (now)=>{
-        if(!alive()){ cancelAnimationFrame(balTimer); balTimer = 0; return; }
+        if(!alive()){ if(balTimer) cancelAnimationFrame(balTimer); balTimer = 0; return; }
         const dt = Math.min(50, now - (balTick._last || now)) / 1000;
         balTick._last = now;
-        let liveTarget = false;
-        for(const c of cells){
-          if(c.parked || c.b.classList.contains("bal-waiting")) continue;
+        for(let i = cells.length - 1; i >= 0; i--){
+          const c = cells[i];
+          if(c.parked) continue;
           c.y -= c.speed * dt;
-          if(c.y < -240) launch(c, false);
+          /* [S01r7d] OFF THE TOP IS GONE. r7c respawned here, and that is precisely what made the
+             sky look like the same eight balloons circling - the SME's "one balloon goes up, it
+             doesn't go out of the screen, the same balloon is coming from the bottom". The element
+             is removed and the spawner supplies new ones, so the stream is genuinely a stream. */
+          if(c.y < -260){ try{ c.b.remove(); }catch(e){} cells.splice(i, 1); continue; }
           drawBal(c, now);
-          if(c.it && c.it.has === true && !c.b.classList.contains("popped") && onScreen(c)) liveTarget = true;
-        }
-        /* nothing correct in the sky - bring one straight back rather than let the child hunt */
-        if(!liveTarget){
-          const t = cells.find(x => x.it && x.it.has === true
-                                 && !x.b.classList.contains("popped")
-                                 && !x.b.classList.contains("bal-waiting") && !x.parked);
-          if(t){ placeLane(t); t.y = fieldH() + 20; }
         }
         balTimer = requestAnimationFrame(balTick);
       };
+      /* one place to stop the spawner: the round change, the slide exit and a rebuild all need it,
+         and a stream that outlives its board keeps adding balloons to a dead page */
+      const killStream = ()=>{ clearTimeout(spawnTimer); spawnTimer = 0; };
+      /* [S01r7d] THE DECORATIVE LAYER IS GONE. SME: "remove the balloons which are in the
+         background, we don't need them." r6r added them to make the sky feel full while only eight
+         balloons were playable; now every balloon in the sky IS playable, so a second set that
+         looks the same but cannot be tapped is worse than useless - a child tapping one gets no
+         reaction at all, which reads as the game being broken. Fullness now comes from the stream.
+         The .bal-drift rules in the stylesheet go with it. */
       const clearField = (done)=>{
         /* [S01r7c] the loop stops FIRST: balLeave animates `transform`, and the rAF would overwrite
            it every frame, so the board would keep rising instead of being released. */
         if(balTimer){ cancelAnimationFrame(balTimer); balTimer = 0; }
+        killStream();   /* [S01r7d] and nothing new arrives while the board is being released */
         const live = [...field.querySelectorAll(".balloon:not(.popped)")];
         if(!live.length){ done(); return; }
         const R = (lo, hi)=> lo + Math.random() * (hi - lo);
@@ -9844,11 +9763,22 @@ const SlideModules = {
         const b = cell.b;
         b.onclick = ()=>{
           const it = cell.it;                                     /* re-read: a balloon can be refilled */
-          if(state.locked || busy || b.classList.contains("popped") || b.classList.contains("seq-hidden")) return;
-          if(isPlaying && !state._balFb) return;                  /* never talk over the prompt */
-          if(state._balFb){ stopAudio(); state._balFb = false; }
-          stopNudge(); busy = true;
-          const vb = setTimeout(()=>{ busy = false; }, 6500);      /* fail-safe: a superseded onEnd must not soft-lock */
+          /* [S01r7d] EVERY TAP REACTS. SME: "whenever we tap on any balloon it should react - either
+             it pops or there is an error (shake)."
+             Two guards were swallowing taps silently, and both only made sense on the old fixed
+             board. `busy` was GLOBAL - one tap froze every balloon for up to 6.5s while its feedback
+             played - and `isPlaying` dropped any tap made while something was speaking. On a board
+             of eight that a child studied before tapping, those were reasonable. On a stream they
+             are not: balloons are passing constantly, the child taps constantly, and a balloon that
+             ignores a tap reads as broken rather than as busy.
+             So the lock is now PER BALLOON (a second tap on the same one still does nothing, which
+             is right - it is already answered), and a tap that arrives over speech cuts the speech
+             instead of being thrown away. */
+          if(state.locked || cell.busy || b.classList.contains("popped")) return;
+          if(isPlaying) stopAudio();
+          state._balFb = false;
+          stopNudge(); cell.busy = true;
+          const vb = setTimeout(()=>{ cell.busy = false; }, 6500);  /* fail-safe: a superseded onEnd must not soft-lock */
           const name = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
           /* [S01r5o] THE WORD COMES FIRST, then everything else. r5h had the feedback sound land on
              the tap and held the word back behind it, because the buzzer was drowning the word. The
@@ -9857,7 +9787,7 @@ const SlideModules = {
              or the buzz - and the line after it - waits for the word to finish. Nothing overlaps, and
              no hold constant is needed any more. */
           const afterName = (cb)=>{
-            const go = ()=>{ clearTimeout(vb); busy = false; if(alive()) cb(); };
+            const go = ()=>{ clearTimeout(vb); cell.busy = false; if(alive()) cb(); };
             if(name) play(name, go); else setTimeout(go, 120);
           };
 
@@ -9952,65 +9882,91 @@ const SlideModules = {
 
       /* instruction is VO-only, and the balloons float in after it so the child hears before they act */
       state._balFb = false;
+      /* [S01r7d] A STREAM, NOT A BOARD. SME: "the balloons should continuously come from the
+         bottom and go outside the screen from the top ... there should be more balloons, not just
+         8 ... mix the balloons of प and च ... in the first stage pop only प, then च."
+         r7c recycled a fixed eight, and that is exactly what was wrong with it: the same balloon
+         sank back and came up again, so the sky never changed and eight was obviously eight. Now
+         balloons are SPAWNED, rise, leave the top and are DESTROYED. Nothing is recycled.
+
+         THE POOL IS MIXED. Each round draws from its own targets plus the OTHER round's correct
+         words plus its distractors, so प and च balloons rise together throughout and the round is
+         defined by which of them is worth tapping - which is the whole discrimination this page
+         teaches, and it was not being asked for while each round only showed its own letter.
+
+         RATE. One balloon at a time mostly, and about a third of the time two or three together,
+         which is the "one by one or 2-3 can come together" asked for. TARGET_SHARE keeps roughly
+         two in five worth tapping; without it a random draw from a ten-word pool leaves a child
+         watching wrong balloons for a long time. A dry spell is also caught directly: if no target
+         has been on screen for DRY_MS, the next spawn is forced to be one. */
       const renderLevel = ()=>{
         if(!alive()) return;
         const L = LEVELS[li] || {};
         const its = (L.items || []).slice();
-        spares = (L.spares || []).slice();
         need = its.filter(it => it.has === true).length;
         found = 0; state.locked = false; busy = false; revealing = false;
+        killStream();
         [...field.querySelectorAll(".balloon")].forEach(b => b.remove());
-        cells = its.map((it, i) => {
+        cells = [];
+
+        const targets = its.filter(it => it.has === true);
+        const otherRound = (LEVELS[li === 0 ? 1 : 0] || {}).items || [];
+        /* [S01r7d] EVERY DECOY IS FORCED TO has:false, AND THAT IS NOT DEFENSIVE TIDYING.
+           The other round's words are its ITEMS, and they carry `has: true` from THEIR round - so
+           reusing the objects as-is made चम्मच a correct answer during the प stage. Measured: a
+           tap on it popped and counted. Cloned with the flag cleared, `has` now means "correct in
+           the round being played" rather than "correct somewhere in this slide". */
+        const asDecoy = (it)=> Object.assign({}, it, { has: false });
+        const decoys = its.filter(it => it.has !== true).map(asDecoy)
+          .concat(otherRound.filter(it => it.has === true).map(asDecoy))   /* the other letter */
+          .concat((L.spares || []).map(asDecoy));
+        const pick = (arr)=> arr[(Math.random() * arr.length) | 0];
+
+        const TARGET_SHARE = 0.4, DRY_MS = 3200;
+        let lastTargetSeen = performance.now(), colour = 0;
+
+        const spawnOne = (forceTarget)=>{
+          if(!alive() || state.locked) return;
+          const wantTarget = forceTarget || Math.random() < TARGET_SHARE;
+          const it = wantTarget ? pick(targets) : pick(decoys.length ? decoys : targets);
+          if(!it) return;
           const b = document.createElement("div");
-          /* seq-hidden, NOT a private class: capture tooling settles staggered reveals by stripping
-             .seq-hidden, and a mechanic that invents its own name captures BLANK instead. */
-          b.className = "balloon bcol-" + (i % 6) + " bal-waiting";
-          b.style.setProperty("--bi", String(i));
-          /* [S01r6c] its own float, so the set does not breathe in lockstep. Ranges are deliberately
-             narrow: this is buoyancy, not drift - the balloon must still be where the child aimed. */
-          b.style.setProperty("--bt",  (3.0 + Math.random() * 2.4).toFixed(2) + "s");
-          b.style.setProperty("--bamp", (11 + Math.random() * 9).toFixed(0) + "px");
-          b.style.setProperty("--bsway", (Math.random() * 12 - 6).toFixed(0) + "px");
+          b.className = "balloon bcol-" + ((colour++) % 6);
           fillBalloon(b, it);
           field.insertBefore(b, sw);
           const cell = { b, it };
           wireTap(cell);
-          return cell;
-        });
-        /* [S01r6d] ONE AT A TIME, EACH ANNOUNCED. SME: "I want balloon come on the screen one by one
-           by taking the name of the balloon like patang ghar machli."
-           The old reveal dropped all eight in on a 170ms stagger, silently. Now each balloon flies in
-           and says its own word, and the next one waits for that clip - so the child hears पतंग, घर,
-           मछली as the board is built, which is eight free exposures to the words before a single tap.
-           Taps are held until the whole set has landed (`busy`), so a board still arriving cannot be
-           answered against. */
-        const reveal = ()=>{
-          if(!alive() || revealing) return;
-          revealing = true; busy = true;
-          const step = (i)=>{
-            if(!alive()) return;
-            if(i >= cells.length){ busy = false; return; }
-            const cell = cells[i]; const { b, it } = cell;
-            /* [S01r7c] RELEASED into the rise rather than flown to a slot. The naming r6d asked for
-               is unchanged - it just happens as the balloon sets off instead of after it lands. */
-            launch(cell, true);
-            if(!balTimer) balTimer = requestAnimationFrame(balTick);
-            /* [S01r6r] SME: "there should be too many of the balloons, it should feel like the
-               balloons cover the screen." An opening wave on the first arrival, then a steady
-               stream behind each one after it - roughly 70 over the entrance, peaking around 40 on
-               screen at once. Exactly 8 of them stay, and those 8 are the ones in the field with a
-               word on them; everything here is in the layer behind, untappable and wordless. */
-            releaseDrift(i === 0 ? 22 : 6);
-            /* name it as it flies: the word starts with the balloon, not after it has landed */
-            const w = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
-            const after = ()=> setTimeout(()=> step(i + 1), 120);
-            if(w) play(w, after); else setTimeout(after, 520);
-          };
-          step(0);
+          placeLane(cell);
+          cell.speed = 44 + Math.random() * 34;      /* px/s - slow enough for a 7-year-old to aim */
+          cell.amp   = 7 + Math.random() * 11;
+          cell.phase = Math.random() * Math.PI * 2;
+          cell.y     = fieldH() + 30;
+          drawBal(cell, performance.now());
+          cells.push(cell);
+          if(it.has === true) lastTargetSeen = performance.now();
         };
+
+        const schedule = ()=>{
+          if(!alive()) return;
+          spawnTimer = setTimeout(()=>{
+            if(!alive() || state.locked){ schedule(); return; }
+            const dry = performance.now() - lastTargetSeen > DRY_MS;
+            const n = Math.random() < 0.34 ? (2 + ((Math.random() * 2) | 0)) : 1;
+            for(let k = 0; k < n; k++) spawnOne(dry && k === 0);
+            schedule();
+          }, 820 + Math.random() * 900);
+        };
+
+        balTick._last = 0;
+        if(!balTimer) balTimer = requestAnimationFrame(balTick);
+        /* the instruction is VO-only and the stream starts after it, so the child hears what they
+           are looking for before the first balloon is tappable */
         const say = lvlAudio("prompt") || audioFor(slide, "prompt") || null;
-        play(say, reveal);
-        setTimeout(()=>{ if(alive()) reveal(); }, 9000);   /* FAIL-SAFE: balloons always arrive */
+        const begin = ()=>{ if(!alive() || spawnTimer) return;
+                            for(let k = 0; k < 2; k++) spawnOne(k === 0);
+                            schedule(); };
+        play(say, begin);
+        setTimeout(()=>{ if(alive()) begin(); }, 9000);   /* FAIL-SAFE: the stream always starts */
       };
       renderLevel();
       state.replayAudio = ()=> play(audioFor(slide, "prompt") || null, ()=>{});
