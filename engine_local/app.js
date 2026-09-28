@@ -6683,7 +6683,71 @@ const SlideModules = {
           setTimeout(()=>{ try{ b.remove(); }catch(e){} }, (dur + 2.4) * 1000);
         }
       };
+      /* [S01r7c] THE RISING SCENE, modelled on the reference game the SME pointed at.
+         One rAF loop owns every balloon's transform. Each carries its own speed and sway so the set
+         spreads out instead of moving as a sheet, and each respawns from the base when it leaves
+         the top - which is what makes a travelling target safe: nothing is ever gone for good.
+         LANES, not free x. Eight shuffled columns are cycled, so two balloons cannot rise in the
+         same place and hide each other's picture - the whole game is reading those pictures. They
+         start at 20% to keep Swiftie's column clear.
+         THE SKY IS NEVER WITHOUT AN ANSWER. If every un-found target has drifted off the top, the
+         next one is forced back in at the base immediately. Without that a child can be left
+         tapping at a sky that cannot be right, which is the exact failure r6c froze the board to
+         avoid, and it is cheaper to fix here than to give up the motion. */
+      const LANES = 8;
+      let laneBag = [], balTimer = 0;
+      const nextLane = ()=>{
+        if(!laneBag.length){
+          laneBag = Array.from({length: LANES}, (_, i)=> i);
+          for(let i = laneBag.length - 1; i > 0; i--){
+            const j = (Math.random() * (i + 1)) | 0; const t = laneBag[i]; laneBag[i] = laneBag[j]; laneBag[j] = t;
+          }
+        }
+        return laneBag.shift();
+      };
+      const fieldH = ()=> field.clientHeight || 660;
+      const placeLane = (c)=>{
+        c.b.style.setProperty("--lane", (20 + nextLane() * 9.3 + Math.random() * 2).toFixed(1) + "%");
+      };
+      const drawBal = (c, now)=>{
+        const sway = Math.sin((now || 0) / 1000 * 1.1 + (c.phase || 0)) * (c.amp || 0);
+        c.b.style.transform = "translate(" + sway.toFixed(1) + "px, " + c.y.toFixed(1) + "px)";
+      };
+      const launch = (c, first)=>{
+        placeLane(c);
+        c.speed = 46 + Math.random() * 40;            /* px/s - slow enough to aim at */
+        c.amp   = 8 + Math.random() * 12;
+        c.phase = Math.random() * Math.PI * 2;
+        c.y     = fieldH() + (first ? 30 : 30 + Math.random() * 220);
+        c.b.classList.remove("bal-waiting");
+        drawBal(c, performance.now());
+      };
+      const onScreen = (c)=> c.y > -220 && c.y < fieldH() + 40;
+      const balTick = (now)=>{
+        if(!alive()){ cancelAnimationFrame(balTimer); balTimer = 0; return; }
+        const dt = Math.min(50, now - (balTick._last || now)) / 1000;
+        balTick._last = now;
+        let liveTarget = false;
+        for(const c of cells){
+          if(c.parked || c.b.classList.contains("bal-waiting")) continue;
+          c.y -= c.speed * dt;
+          if(c.y < -240) launch(c, false);
+          drawBal(c, now);
+          if(c.it && c.it.has === true && !c.b.classList.contains("popped") && onScreen(c)) liveTarget = true;
+        }
+        /* nothing correct in the sky - bring one straight back rather than let the child hunt */
+        if(!liveTarget){
+          const t = cells.find(x => x.it && x.it.has === true
+                                 && !x.b.classList.contains("popped")
+                                 && !x.b.classList.contains("bal-waiting") && !x.parked);
+          if(t){ placeLane(t); t.y = fieldH() + 20; }
+        }
+        balTimer = requestAnimationFrame(balTick);
+      };
       const clearField = (done)=>{
+        /* [S01r7c] the loop stops FIRST: balLeave animates `transform`, and the rAF would overwrite
+           it every frame, so the board would keep rising instead of being released. */
+        if(balTimer){ cancelAnimationFrame(balTimer); balTimer = 0; }
         const live = [...field.querySelectorAll(".balloon:not(.popped)")];
         if(!live.length){ done(); return; }
         const R = (lo, hi)=> lo + Math.random() * (hi - lo);
@@ -6767,6 +6831,7 @@ const SlideModules = {
                  the child had just correctly popped stayed on screen at full opacity, merely
                  untappable. Popping is the one piece of feedback this game cannot afford to lose. */
               b.classList.remove("bal-entering");
+              cell.parked = true;                 /* [S01r7c] hold still while the burst plays */
               b.classList.add("popped"); sparkle(b, hue); burstRing(b);
               /* [S01r4v] the SME's own pop recording, trimmed 1.97s -> 0.21s with the peak 30ms in.
                  sfxCorrect stays - the pop and the "that was right" ding are two different messages. */
@@ -6810,14 +6875,12 @@ const SlideModules = {
                      balloon changing its mind rather than a new one arriving. It now takes the same
                      flight the opening set takes - own start, own swing, and the same clearance
                      around Swiftie, because flightPath measures her every time. */
+                  /* [S01r7c] the refill re-enters from the base the way everything else does, out
+                     of the same lane bag, so it cannot come back on top of another balloon */
                   cell.it = spare; fillBalloon(b, spare);
-                  b.classList.remove("popped", "bal-hot", "bal-entering");
-                  b.classList.add("seq-hidden");
-                  flightPath(b);
-                  requestAnimationFrame(()=> requestAnimationFrame(()=>{
-                    b.classList.remove("seq-hidden");
-                    b.classList.add("bal-entering");
-                  }));
+                  b.classList.remove("popped", "bal-hot");
+                  cell.parked = false;
+                  launch(cell, false);
                 }, 560);
                 play(lvlAudio("correct") || null, ()=>{});
               }
@@ -6856,7 +6919,7 @@ const SlideModules = {
           const b = document.createElement("div");
           /* seq-hidden, NOT a private class: capture tooling settles staggered reveals by stripping
              .seq-hidden, and a mechanic that invents its own name captures BLANK instead. */
-          b.className = "balloon bcol-" + (i % 6) + " seq-hidden";
+          b.className = "balloon bcol-" + (i % 6) + " bal-waiting";
           b.style.setProperty("--bi", String(i));
           /* [S01r6c] its own float, so the set does not breathe in lockstep. Ranges are deliberately
              narrow: this is buoyancy, not drift - the balloon must still be where the child aimed. */
@@ -6882,16 +6945,17 @@ const SlideModules = {
           const step = (i)=>{
             if(!alive()) return;
             if(i >= cells.length){ busy = false; return; }
-            const { b, it } = cells[i];
-            flightPath(b);
+            const cell = cells[i]; const { b, it } = cell;
+            /* [S01r7c] RELEASED into the rise rather than flown to a slot. The naming r6d asked for
+               is unchanged - it just happens as the balloon sets off instead of after it lands. */
+            launch(cell, true);
+            if(!balTimer) balTimer = requestAnimationFrame(balTick);
             /* [S01r6r] SME: "there should be too many of the balloons, it should feel like the
                balloons cover the screen." An opening wave on the first arrival, then a steady
                stream behind each one after it - roughly 70 over the entrance, peaking around 40 on
                screen at once. Exactly 8 of them stay, and those 8 are the ones in the field with a
                word on them; everything here is in the layer behind, untappable and wordless. */
             releaseDrift(i === 0 ? 22 : 6);
-            b.classList.remove("seq-hidden");
-            b.classList.add("bal-entering");
             /* name it as it flies: the word starts with the balloon, not after it has landed */
             const w = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
             const after = ()=> setTimeout(()=> step(i + 1), 120);

@@ -2116,7 +2116,29 @@ html.no-anim .bal-drift{ display:none; }
    to be padding and not a margin: Swiftie is absolutely positioned against the field's padding box,
    whose left edge padding does not move - so this slides the balloons right and leaves her put,
    which a narrower or re-centred box could not do. */
-.stage.vo-only .balloon-field{ max-width:none; padding-left:250px; gap:2px 34px; }
+/* [S01r7c] THE FIELD STOPS BEING A GRID. SME, pointing at a shipped ConveGenius game
+   (sight-wordsv1, page 16): the balloons should keep rising from the bottom and be tapped on the
+   way past, rather than flying in and parking in a flex layout.
+   That reverses r6c, which deliberately froze them - "a target that travels is a target that gets
+   missed, and a balloon that leaves the field takes its word with it". That concern was real and
+   the reference answers it rather than ignoring it: nothing is ever lost, because every balloon
+   RESPAWNS from the base, and an un-found target is forced back immediately so the sky can never
+   be without an answer (see balTick in the module). The SME has now seen it working in a shipped
+   game for this age group, which is better evidence than my reasoning was.
+   Absolute positioning, so the module can drive x and y from one animation loop. The lane is a
+   percentage rather than a pixel so it survives --scale, and lanes start at 20% to keep Swiftie's
+   column clear - she stands in the lower left and a balloon rising through her reads as a fault. */
+.stage.vo-only .balloon-field{ max-width:none; padding-left:0; gap:0;
+  display:block; position:relative; height:660px; overflow:visible; }
+.stage.vo-only .balloon-field .balloon{ position:absolute; top:0; left:var(--lane,50%);
+  margin:0 !important; will-change:transform; }
+/* the idle bob and the fly-in/fly-out keyframes are all off in this mode: one rAF loop owns the
+   transform now, and a CSS animation on the same property would fight it every frame */
+.stage.vo-only .balloon-field .balloon.bal-entering,
+.stage.vo-only .balloon-field .balloon.bal-leaving{ animation:none; }
+.stage.vo-only .balloon-field .bal-lift{ animation:none; }
+/* a balloon that has not launched yet must not be visible OR tappable */
+.balloon.bal-waiting{ opacity:0; pointer-events:none; }
 /* Swiftie is positioned INSIDE the field (left:-240px), so a wider field drags her left and off the
    stage. Her offset is re-pinned by the same amount the field's left edge moved. */
 .stage.vo-only .bal-swiftee{ left:-6px; }
