@@ -5994,7 +5994,17 @@ const SlideModules = {
       items.forEach(it => {
         const chip = document.createElement("div"); chip.className = "tap-all-item";
         chip.dataset.nudgeBelow = "1";   /* [S01r5m] the earned hand sits under the word, not on it */
-        chip.innerHTML = imgOrEmoji(it.img, it.emoji, "img", "emoji") + `<span class="lbl">${it.word_hi}</span>`;
+        /* [S01r7a] the word's FIRST AKSHARA is wrapped so rung 2 can lift it while the word is
+           read - "हर शब्द पढ़ते समय उसका पहला अक्षर highlight/glow करें". splitAksharas is the
+           engine's own segmenter, so this is the same idea of "a letter" the rest of the lesson
+           uses rather than a second, slightly different one built out of string indexes. */
+        {
+          const _ak = splitAksharas(it.word_hi || "");
+          const _first = _ak.length ? _ak[0] : "";
+          const _rest = _ak.length ? _ak.slice(1).join("") : (it.word_hi || "");
+          chip.innerHTML = imgOrEmoji(it.img, it.emoji, "img", "emoji") +
+            '<span class="lbl"><i class="sw-first">' + _first + '</i>' + _rest + '</span>';
+        }
         const src = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
         chip.onclick = ()=>{
           if(state.locked || chip.classList.contains("got") || chip.classList.contains("nope")) return;
@@ -6039,14 +6049,58 @@ const SlideModules = {
                This mechanic locked the chip permanently on the FIRST wrong tap, so 27a ("a wrong card
                must not lock on the first miss") and Yasir's "red glow first, then disable" had never
                reached it at all. */
+            /* [S01r7a] THE REVIEW DOC'S THREE RUNGS. "Hint 1 after the 1st wrong attempt, Hint 2
+               after the 2nd, Hint 3 after the 3rd", where this mechanic had two: shake+hint, then
+               lock+hand. The old rung 2 is now rung 3, and a new middle rung goes between them.
+               "In slides with two correct answers, a correct tap stays selected. Only wrong taps
+               count as attempts" - already true here (state.attempts++ lives on this branch only,
+               and a found chip keeps .got), so it is asserted by the code above rather than added.
+               The LOCK moves with the ladder: the doc puts it at rung 3 ("after Hint 3, only the
+               correct answer can be selected"), so `nope` no longer lands on the 2nd wrong. */
             state.attempts++; chip.classList.add("wrong-flash"); sfxWrongSoft(); setSwMood("tryagain");
             setTimeout(()=>{
               if(chip.classList.contains("correct")) return;   /* [28s] no helpShown guard — see the tap path */
               chip.classList.remove("wrong-flash");
-              if(state.attempts >= 2) chip.classList.add("nope");
+              if(state.attempts >= 3) chip.classList.add("nope");
             }, 700);
             $("hintBtn").classList.add("show","hint-glow");
             SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
+
+            /* RUNG 2 - SOUND IDENTIFICATION. The doc: "read the four words out one by one, stretching
+               the first sound a little; while each word is read, highlight/glow its first letter."
+               Built from clips this lesson ALREADY ships - each option has its own word clip and the
+               target letter has a bare-akshara clip - so the walk itself needs no new recording; only
+               the line that closes it does. `sw-read` glows the card being read and `sw-first` lifts
+               its opening akshara, which is the "first letter" the doc names.
+               It runs to completion before anything else can be tapped (state.locked), because it is
+               a demonstration: a child tapping through it would get the ladder's help and the next
+               wrong attempt at the same time. */
+            if(state.attempts === 2){
+              const walk = (k)=>{
+                if(CARD.slides[state.idx] !== slide) return;
+                if(k >= chips.length){
+                  chips.forEach(c => c.classList.remove("sw-read"));
+                  state.locked = false;
+                  play(audioFor(slide, "h2") || audioFor(slide, "hint") || null, ()=>{});
+                  return;
+                }
+                chips.forEach(c => c.classList.remove("sw-read"));
+                const c = chips[k]; c.classList.add("sw-read");
+                const w = items[k] && items[k].audio
+                  ? ("assets/Audio/" + items[k].audio + "." + AUDIO_EXT) : null;
+                /* THE STRETCHED FIRST SOUND IS NOT DONE HERE, and that is a delivery fact rather
+                   than a shortcut: the doc wants each word's OWN opening sound held (पपीता → प,
+                   केला → क, आम → आ), and this lesson ships bare-akshara clips for प म च न ल र
+                   only. There is no क and no आ to play. Faking it by slowing the word clip down
+                   would pitch-shift a child's voice, so the walk plays each word as recorded and
+                   the stretch waits on the recordings the manifest now asks for. The VISUAL half
+                   of that rung - the card glowing and its first akshara lifting - is live. */
+                play(w, ()=> setTimeout(()=> walk(k + 1), 260));
+              };
+              state.locked = true;
+              play(audioFor(slide, "h1") || audioFor(slide, "hint") || null, ()=> walk(0));
+              return;
+            }
             /* [S01r4] EARNED HAND, SME deck page 9: "After repeated incorrect attempts, show a
                subtle hand nudge on one remaining correct option... Do not auto-select the answer."
                This mechanic had NO hand at all - mountTapOptions grew one in [27d] but TAP_ALL never
@@ -6058,8 +6112,12 @@ const SlideModules = {
                NOT the vo_g2_try rung the ladder used to open with, and not the tapped word's own
                clip either: the deck's wrong-tap flow is shake -> red -> hint -> retry, with no word
                in it. Reading it off the slide means P1/P7 get their own; wrongClip is the fallback. */
-            play(audioFor(slide, "hint") || wrongClip(slide), ()=>{
-              if(state.attempts < 2 || state.locked) return;
+            /* RUNG 1 speaks the doc's refocus line; RUNG 3 speaks the one that NAMES what is left.
+               Both fall back to the clip the two-rung ladder used, so nothing goes silent before the
+               studio delivers - the mechanics are right today and the wording sharpens later. */
+            play(audioFor(slide, state.attempts >= 3 ? "h3" : "h1")
+                 || audioFor(slide, "hint") || wrongClip(slide), ()=>{
+              if(state.attempts < 3 || state.locked) return;
               if(CARD.slides[state.idx] !== slide) return;
               const t = chips.find((c, ix) => items[ix] && items[ix].has === true && !c.classList.contains("got"));
               /* [S01r4u] honour data.allow_hand here too. handOnAnswer self-gates to tutorial+guided

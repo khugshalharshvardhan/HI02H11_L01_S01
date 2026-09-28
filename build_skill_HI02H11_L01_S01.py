@@ -244,6 +244,52 @@ VO = {
     "vo_w_chammach": "चम्मच",
 
     "vo_try_again": "एक बार फिर सुनो।",
+
+    # ══════════════════════════════════════════════════════════════════════════════════════
+    #  [r7a] THE THREE-RUNG HINT LADDER — "Hindi Letter Sound Activity (प/म/च/न): Hint Logic"
+    #  Every line below is VERBATIM from that document; it specifies each rung for six slides.
+    #  The ladder it describes is 1 → 2 → 3, where this lesson shipped two rungs, so the middle
+    #  rung is new everywhere and the top rung is a re-script of what used to be the second.
+    #    Hint 1  clarification / refocus — shake the wrong card, highlight nothing, re-ask
+    #    Hint 2  sound identification    — read the options in turn, first sound stretched
+    #    Hint 3  guided support          — glow + nudge what is left, lock the wrong ones
+    #  NONE of these are recorded yet. They are wired with fallbacks to the clips the ladder used
+    #  before (see each slide's `clips` dict), so the mechanics work today and sharpen when the
+    #  studio delivers; the manifest asks for all of them.
+    # ══════════════════════════════════════════════════════════════════════════════════════
+
+    # ---- tap-all: प (page 7), म (page 8), च (page 9) -------------------------------------
+    "vo_g2_h1": "फिर से सुनिए। जिन शब्दों की शुरुआत ‘प’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+    "vo_g2_h2": "जिन शब्दों की शुरुआत ‘प’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+    "vo_g2_h3": "देखिए, ‘पपीता’ और ‘पतंग’ की शुरुआत ‘प’ की आवाज़ से होती है। इन पर टैप कीजिए।",
+    "vo_p1_h1": "फिर से सुनिए। जिन शब्दों की शुरुआत ‘म’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+    "vo_p1_h2": "जिन शब्दों की शुरुआत ‘म’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+    "vo_p1_h3": "देखिए, ‘मामा’ और ‘मूली’ की शुरुआत ‘म’ की आवाज़ से होती है। इन पर टैप कीजिए।",
+    "vo_p7_h1": "फिर से सुनिए। जिन शब्दों की शुरुआत ‘च’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+    "vo_p7_h2": "जिन शब्दों की शुरुआत ‘च’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+    "vo_p7_h3": "देखिए, ‘चाँद’ और ‘चश्मा’ की शुरुआत ‘च’ की आवाज़ से होती है। इन पर टैप कीजिए।",
+
+    # ---- which sound repeats: च (page 10), न (page 11) ------------------------------------
+    "vo_g3_h1": "फिर से सुनिए। वाक्य ध्यान से सुनिए और देखिए कौन-सी आवाज़ बार-बार आ रही है।",
+    "vo_g3_h2": "सुनिए, कौन-सी आवाज़ बार-बार आ रही है? उसी अक्षर पर टैप कीजिए।",
+    "vo_g3_h3": "चूहे, चार, चने, चबाए… इन सबमें ‘च’ की आवाज़ है। ‘च’ पर टैप कीजिए।",
+    "vo_p4_h1": "फिर से सुनिए। वाक्य ध्यान से सुनिए और देखिए शब्दों की शुरुआत में कौन-सी आवाज़ बार-बार आ रही है।",
+    "vo_p4_h2": "सुनिए, कौन-सी आवाज़ बार-बार आ रही है? उसी अक्षर पर टैप कीजिए।",
+    "vo_p4_h3": "नानी, ने, नई, नाव… इन सबकी शुरुआत ‘न’ की आवाज़ से होती है। ‘न’ पर टैप कीजिए।",
+
+    # ---- the sort (page 12, second half) --------------------------------------------------
+    # The doc gives पायल as the worked example and says "बाकी चित्रों के लिए भी यही logic रहेगा",
+    # so rungs 2 and 3 are PER ITEM - each names the picture the child got wrong, which is the
+    # whole point of that rung and cannot be said by one shared line.
+    "vo_g5_h1": "फिर से सुनिए। चित्र का नाम ध्यान से सुनिए और देखिए उसकी शुरुआत किस आवाज़ से होती है।",
+    "vo_g5_h2_payal":    "‘पायल’ की शुरुआत ‘प’ की आवाज़ से होती है। अब इसे सही डिब्बे में डालिए।",
+    "vo_g5_h3_payal":    "‘पायल’ को ‘प’ वाले डिब्बे में डालिए।",
+    "vo_g5_h2_pani":     "‘पानी’ की शुरुआत ‘प’ की आवाज़ से होती है। अब इसे सही डिब्बे में डालिए।",
+    "vo_g5_h3_pani":     "‘पानी’ को ‘प’ वाले डिब्बे में डालिए।",
+    "vo_g5_h2_chuha":    "‘चूहा’ की शुरुआत ‘च’ की आवाज़ से होती है। अब इसे सही डिब्बे में डालिए।",
+    "vo_g5_h3_chuha":    "‘चूहा’ को ‘च’ वाले डिब्बे में डालिए।",
+    "vo_g5_h2_chammach": "‘चम्मच’ की शुरुआत ‘च’ की आवाज़ से होती है। अब इसे सही डिब्बे में डालिए।",
+    "vo_g5_h3_chammach": "‘चम्मच’ को ‘च’ वाले डिब्बे में डालिए।",
 }
 
 # Copied in by the kit / inherited — never recorded for this lesson.
@@ -550,7 +596,9 @@ def build_card():
          _item("आम",    "obj_aam",    "vo_w_aam",    has=False)],
         {"prompt": "vo_g2_prompt", "target": "vo_snd_p", "hint": "vo_g2_hint",
          "try_again": "vo_g2_try", "reveal": "vo_g2_reveal", "done": "vo_g2_done",
-         "more": "vo_g2_more"}))
+         "more": "vo_g2_more",
+         # [r7a] the review doc's three rungs
+         "h1": "vo_g2_h1", "h2": "vo_g2_h2", "h3": "vo_g2_h3"}))
     # new page 10 (was page 10) — same sentence as the च teach page, now as a question
     slides.append(pick_sound(
         "G3", "practice", VO["vo_g3_prompt"],
@@ -565,7 +613,8 @@ def build_card():
         # Dropping it lets `reveal` through, which IS that line. The deck specifies exactly two
         # rungs on this page, so the generic third one has nothing to attach to anyway.
         {"prompt": "vo_g3_prompt", "target": "vo_ltr_ch",
-         "try_again": "vo_g3_try", "reveal": "vo_g3_reveal", "correct": "vo_g3_correct"},
+         "try_again": "vo_g3_try", "reveal": "vo_g3_reveal", "correct": "vo_g3_correct",
+         "h1": "vo_g3_h1", "h2": "vo_g3_h2", "h3": "vo_g3_h3"},   # [r7a]
         hide_replay=True,      # [r4p] "remove the फिर से सुनो button"
         seq_say_whole=True,    # [r4p] ...so the sentence must play itself, before the letters
         fixed_order=True))     # [r4p] entry order is named in the flow: च -> ल -> र
@@ -608,7 +657,9 @@ def build_card():
          _item("चूहा",  "obj_chuha",    "vo_w_chuha",    gender="P"),
          _item("चम्मच", "obj_chammach", "vo_w_chammach", gender="P")],
         {"prompt": "vo_g5_prompt", "target": "vo_snd_p", "hint": "vo_g5_hint",
-         "try_again": "vo_g5_try", "correct": "vo_g5_correct"},
+         "try_again": "vo_g5_try", "correct": "vo_g5_correct",
+         # [r7a] rung 1 is shared; rungs 2 and 3 are per item, keyed off the item's own id below
+         "h1": "vo_g5_h1"},
         "sound_sort_first_try")
 
     # [r6s] THE WATCH AND THE DO BECOME ONE PAGE. SME: "when page 12's guided section ends, don't
@@ -639,7 +690,8 @@ def build_card():
          _item("मूली",   "obj_muli",    "vo_w_muli",    has=True),
          _item("लड्डू",   "obj_laddu",   "vo_w_laddu",   has=False)],
         {"prompt": "vo_p1_prompt", "target": "vo_snd_m", "hint": "vo_p1_hint", "more": "vo_p1_more",
-         "try_again": "vo_p1_try", "reveal": "vo_p1_reveal", "done": "vo_p1_done"},
+         "try_again": "vo_p1_try", "reveal": "vo_p1_reveal", "done": "vo_p1_done",
+         "h1": "vo_p1_h1", "h2": "vo_p1_h2", "h3": "vo_p1_h3"},   # [r7a]
         allow_hand=True))   # [r4u] hand after two wrong taps, as on page 7
     # [r4u] PAGE 11 (P2 — the "शुरुआत में / बीच में" sort) REMOVED on request: "we don't want it
     # anymore in our game". Resolved by slide ID before anything renumbered — the ask named page 11
@@ -662,7 +714,8 @@ def build_card():
         # told the child the answer. vo_p4_hint is retired; vo_p4_try already carries the
         # "you heard the LAST sound, we want the repeated one" steer that it duplicated.
         {"prompt": "vo_p4_prompt", "target": "vo_ltr_n",
-         "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct"},
+         "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct",
+         "h1": "vo_p4_h1", "h2": "vo_p4_h2", "h3": "vo_p4_h3"},   # [r7a]
         mark_initial=True,     # [r5n] "शुरुआत में" - see pick_sound
         hide_replay=True,      # [r5b] page 9's treatment - no «फिर से सुनो» pill
         seq_say_whole=True,    # [r5b] ...so the sentence plays itself, before the letters
@@ -676,7 +729,8 @@ def build_card():
          _item("चश्मा", "obj_chashma", "vo_w_chashma", has=True),
          _item("लाल",   "obj_laal",    "vo_w_laal",    has=False)],
         {"prompt": "vo_p7_prompt", "target": "vo_snd_ch", "hint": "vo_p7_hint", "more": "vo_p7_more",
-         "try_again": "vo_p7_try", "reveal": "vo_p7_reveal", "done": "vo_p7_done"},
+         "try_again": "vo_p7_try", "reveal": "vo_p7_reveal", "done": "vo_p7_done",
+         "h1": "vo_p7_h1", "h2": "vo_p7_h2", "h3": "vo_p7_h3"},   # [r7a]
         allow_hand=True))   # [r4u] hand after two wrong taps, as on page 7
     # [r5d] MOVED TO THE END (SME: "the balloon page should be the last page"). It used to sit at
     # new page 8, between the teach block and the tap-all. Two things travel with it:
@@ -845,7 +899,7 @@ def build_card():
         "phase_transition_title": {"tutorial": "चलो, शुरू करें!", "guided": "साथ में करें।",
                                    "practice": "अब तुम्हारी बारी।"},
         "scaffold_rules": {"nudge_timeout_ms": {"guided": 6000, "practice": 8000},
-                           "max_attempts": 2},
+                           "max_attempts": 3},
         "slides": slides,
     }
 

@@ -36,7 +36,7 @@
       "guided": 6000,
       "practice": 8000
     },
-    "max_attempts": 2
+    "max_attempts": 3
   },
   "slides": [
     {
@@ -370,7 +370,10 @@
         "try_again": "vo_g2_try",
         "reveal": "vo_g2_reveal",
         "done": "vo_g2_done",
-        "more": "vo_g2_more"
+        "more": "vo_g2_more",
+        "h1": "vo_g2_h1",
+        "h2": "vo_g2_h2",
+        "h3": "vo_g2_h3"
       },
       "data": {
         "target_sound": "प",
@@ -422,7 +425,10 @@
         "more": "vo_p1_more",
         "try_again": "vo_p1_try",
         "reveal": "vo_p1_reveal",
-        "done": "vo_p1_done"
+        "done": "vo_p1_done",
+        "h1": "vo_p1_h1",
+        "h2": "vo_p1_h2",
+        "h3": "vo_p1_h3"
       },
       "data": {
         "target_sound": "म",
@@ -474,7 +480,10 @@
         "more": "vo_p7_more",
         "try_again": "vo_p7_try",
         "reveal": "vo_p7_reveal",
-        "done": "vo_p7_done"
+        "done": "vo_p7_done",
+        "h1": "vo_p7_h1",
+        "h2": "vo_p7_h2",
+        "h3": "vo_p7_h3"
       },
       "data": {
         "target_sound": "च",
@@ -524,7 +533,10 @@
         "target": "vo_ltr_ch",
         "try_again": "vo_g3_try",
         "reveal": "vo_g3_reveal",
-        "correct": "vo_g3_correct"
+        "correct": "vo_g3_correct",
+        "h1": "vo_g3_h1",
+        "h2": "vo_g3_h2",
+        "h3": "vo_g3_h3"
       },
       "data": {
         "words": [
@@ -579,7 +591,10 @@
         "target": "vo_ltr_n",
         "try_again": "vo_p4_try",
         "reveal": "vo_p4_reveal",
-        "correct": "vo_p4_correct"
+        "correct": "vo_p4_correct",
+        "h1": "vo_p4_h1",
+        "h2": "vo_p4_h2",
+        "h3": "vo_p4_h3"
       },
       "data": {
         "words": [
@@ -718,7 +733,8 @@
             "target": "vo_snd_p",
             "hint": "vo_g5_hint",
             "try_again": "vo_g5_try",
-            "correct": "vo_g5_correct"
+            "correct": "vo_g5_correct",
+            "h1": "vo_g5_h1"
           }
         }
       }
@@ -991,16 +1007,23 @@
       "vo_g1_next": "assets/Audio/vo_g1_next.ogg",
       "vo_g1_prompt": "assets/Audio/vo_g1_prompt.ogg",
       "vo_g2_done": "assets/Audio/vo_g2_done.ogg",
+      "vo_g2_h1": "assets/Audio/vo_g2_h1.ogg",
+      "vo_g2_h2": "assets/Audio/vo_g2_h2.ogg",
+      "vo_g2_h3": "assets/Audio/vo_g2_h3.ogg",
       "vo_g2_hint": "assets/Audio/vo_g2_hint.ogg",
       "vo_g2_more": "assets/Audio/vo_g2_more.ogg",
       "vo_g2_prompt": "assets/Audio/vo_g2_prompt.ogg",
       "vo_g2_reveal": "assets/Audio/vo_g2_reveal.ogg",
       "vo_g2_try": "assets/Audio/vo_g2_try.ogg",
       "vo_g3_correct": "assets/Audio/vo_g3_correct.ogg",
+      "vo_g3_h1": "assets/Audio/vo_g3_h1.ogg",
+      "vo_g3_h2": "assets/Audio/vo_g3_h2.ogg",
+      "vo_g3_h3": "assets/Audio/vo_g3_h3.ogg",
       "vo_g3_prompt": "assets/Audio/vo_g3_prompt.ogg",
       "vo_g3_reveal": "assets/Audio/vo_g3_reveal.ogg",
       "vo_g3_try": "assets/Audio/vo_g3_try.ogg",
       "vo_g5_correct": "assets/Audio/vo_g5_correct.ogg",
+      "vo_g5_h1": "assets/Audio/vo_g5_h1.ogg",
       "vo_g5_hint": "assets/Audio/vo_g5_hint.ogg",
       "vo_g5_prompt": "assets/Audio/vo_g5_prompt.ogg",
       "vo_g5_show": "assets/Audio/vo_g5_show.ogg",
@@ -1017,16 +1040,25 @@
       "vo_ltr_p": "assets/Audio/vo_ltr_p.ogg",
       "vo_ltr_r": "assets/Audio/vo_ltr_r.ogg",
       "vo_p1_done": "assets/Audio/vo_p1_done.ogg",
+      "vo_p1_h1": "assets/Audio/vo_p1_h1.ogg",
+      "vo_p1_h2": "assets/Audio/vo_p1_h2.ogg",
+      "vo_p1_h3": "assets/Audio/vo_p1_h3.ogg",
       "vo_p1_hint": "assets/Audio/vo_p1_hint.ogg",
       "vo_p1_more": "assets/Audio/vo_p1_more.ogg",
       "vo_p1_prompt": "assets/Audio/vo_p1_prompt.ogg",
       "vo_p1_reveal": "assets/Audio/vo_p1_reveal.ogg",
       "vo_p1_try": "assets/Audio/vo_p1_try.ogg",
       "vo_p4_correct": "assets/Audio/vo_p4_correct.ogg",
+      "vo_p4_h1": "assets/Audio/vo_p4_h1.ogg",
+      "vo_p4_h2": "assets/Audio/vo_p4_h2.ogg",
+      "vo_p4_h3": "assets/Audio/vo_p4_h3.ogg",
       "vo_p4_prompt": "assets/Audio/vo_p4_prompt.ogg",
       "vo_p4_reveal": "assets/Audio/vo_p4_reveal.ogg",
       "vo_p4_try": "assets/Audio/vo_p4_try.ogg",
       "vo_p7_done": "assets/Audio/vo_p7_done.ogg",
+      "vo_p7_h1": "assets/Audio/vo_p7_h1.ogg",
+      "vo_p7_h2": "assets/Audio/vo_p7_h2.ogg",
+      "vo_p7_h3": "assets/Audio/vo_p7_h3.ogg",
       "vo_p7_hint": "assets/Audio/vo_p7_hint.ogg",
       "vo_p7_more": "assets/Audio/vo_p7_more.ogg",
       "vo_p7_prompt": "assets/Audio/vo_p7_prompt.ogg",
@@ -1077,16 +1109,23 @@
       "vo_g1_next": "अब “च” की आवाज़ वाले चित्रों पर टैप कीजिए।",
       "vo_g1_prompt": "प की आवाज़ वाले चित्र पर टैप कीजिए।",
       "vo_g2_done": "शाबाश! तुमने प की आवाज़ वाले सारे शब्द खोज लिए।",
+      "vo_g2_h1": "फिर से सुनिए। जिन शब्दों की शुरुआत ‘प’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+      "vo_g2_h2": "जिन शब्दों की शुरुआत ‘प’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+      "vo_g2_h3": "देखिए, ‘पपीता’ और ‘पतंग’ की शुरुआत ‘प’ की आवाज़ से होती है। इन पर टैप कीजिए।",
       "vo_g2_hint": "हर शब्द को ध्यान से देखिए और सुनिए। किस शब्द में प की आवाज़ आ रही है?",
       "vo_g2_more": "एक और प वाले शब्द पर टैप कीजिए।",
       "vo_g2_prompt": "“प” की आवाज़ वाले शब्दों पर टैप कीजिए।",
       "vo_g2_reveal": "सुनो — इसमें प की आवाज़ है।",
       "vo_g2_try": "इस शब्द की शुरुआत में प की आवाज़ नहीं है। एक बार फिर सुनो।",
       "vo_g3_correct": "चूहे, चार, चने, चबाए — इन सब शब्दों में च की आवाज़ बार-बार आई।",
+      "vo_g3_h1": "फिर से सुनिए। वाक्य ध्यान से सुनिए और देखिए कौन-सी आवाज़ बार-बार आ रही है।",
+      "vo_g3_h2": "सुनिए, कौन-सी आवाज़ बार-बार आ रही है? उसी अक्षर पर टैप कीजिए।",
+      "vo_g3_h3": "चूहे, चार, चने, चबाए… इन सबमें ‘च’ की आवाज़ है। ‘च’ पर टैप कीजिए।",
       "vo_g3_prompt": "इस वाक्य में कौन-सी आवाज़ बार-बार आई?",
       "vo_g3_reveal": "ध्यान से देखिए, सही जवाब च है।",
       "vo_g3_try": "यह च की आवाज़ नहीं है।",
       "vo_g5_correct": "बहुत बढ़िया! सही डिब्बा।",
+      "vo_g5_h1": "फिर से सुनिए। चित्र का नाम ध्यान से सुनिए और देखिए उसकी शुरुआत किस आवाज़ से होती है।",
       "vo_g5_hint": "शब्द बोलो और सुनो — उसमें प की आवाज़ है या च की?",
       "vo_g5_prompt": "हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए।",
       "vo_g5_show": "हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
@@ -1103,16 +1142,25 @@
       "vo_ltr_p": "प",
       "vo_ltr_r": "र",
       "vo_p1_done": "शाबाश! म की आवाज़ वाले सारे शब्द मिल गए।",
+      "vo_p1_h1": "फिर से सुनिए। जिन शब्दों की शुरुआत ‘म’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+      "vo_p1_h2": "जिन शब्दों की शुरुआत ‘म’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+      "vo_p1_h3": "देखिए, ‘मामा’ और ‘मूली’ की शुरुआत ‘म’ की आवाज़ से होती है। इन पर टैप कीजिए।",
       "vo_p1_hint": "हर शब्द सुनो — क्या उसमें म की आवाज़ सुनाई देती है?",
       "vo_p1_more": "एक और म वाले शब्द पर टैप कीजिए।",
       "vo_p1_prompt": "“म” की आवाज़ वाले शब्दों पर टैप कीजिए।",
       "vo_p1_reveal": "सुनो — इसमें म की आवाज़ है।",
       "vo_p1_try": "इस शब्द की शुरुआत में म की आवाज़ नहीं है। एक बार फिर सुनो।",
       "vo_p4_correct": "सही! शुरुआत में न की आवाज़ थी।",
+      "vo_p4_h1": "फिर से सुनिए। वाक्य ध्यान से सुनिए और देखिए शब्दों की शुरुआत में कौन-सी आवाज़ बार-बार आ रही है।",
+      "vo_p4_h2": "सुनिए, कौन-सी आवाज़ बार-बार आ रही है? उसी अक्षर पर टैप कीजिए।",
+      "vo_p4_h3": "नानी, ने, नई, नाव… इन सबकी शुरुआत ‘न’ की आवाज़ से होती है। ‘न’ पर टैप कीजिए।",
       "vo_p4_prompt": "कौन-सी आवाज़ शब्दों की शुरुआत में बार-बार आई?",
       "vo_p4_reveal": "शुरुआत में न की आवाज़ बार-बार आई।",
       "vo_p4_try": "तुमने आखिरी आवाज़ सुनी। हमें वह आवाज़ ढूँढनी है जो पूरे वाक्य में बार-बार आई है।",
       "vo_p7_done": "वाह! तुमने च की आवाज़ हर जगह पहचान ली।",
+      "vo_p7_h1": "फिर से सुनिए। जिन शब्दों की शुरुआत ‘च’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+      "vo_p7_h2": "जिन शब्दों की शुरुआत ‘च’ की आवाज़ से होती है, उन पर टैप कीजिए।",
+      "vo_p7_h3": "देखिए, ‘चाँद’ और ‘चश्मा’ की शुरुआत ‘च’ की आवाज़ से होती है। इन पर टैप कीजिए।",
       "vo_p7_hint": "च की आवाज़ शुरू में भी हो सकती है और बीच में भी। पूरा शब्द सुनो।",
       "vo_p7_more": "एक और च वाले शब्द पर टैप कीजिए।",
       "vo_p7_prompt": "“च” की आवाज़ वाले शब्दों पर टैप कीजिए।",

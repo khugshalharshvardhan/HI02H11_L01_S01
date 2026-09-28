@@ -153,6 +153,11 @@ def vo_status(aid, line, dur):
         return "SYNTHESISED - record a human take of the line in column D"
     master = os.path.join(HUMAN_VO, aid + ".wav")
     if not os.path.exists(master):
+        # [r7a] "machine TTS - replace" is only true of a line that HAS a generated clip. The review
+        # doc's hint ladder added lines that have no audio of any kind yet, and telling a studio to
+        # "replace" something that was never there reads as optional cleanup rather than as work.
+        if not os.path.exists(os.path.join(BUNDLE, "assets", "Audio", aid + ".ogg")):
+            return "NOT RECORDED - new line, needs a first take"
         return "machine TTS - replace"
     if aid in TRIMMED_ON_PURPOSE:
         return "delivered - build holds a deliberate TRIM; do NOT re-record"

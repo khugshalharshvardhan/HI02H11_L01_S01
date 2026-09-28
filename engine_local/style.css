@@ -944,6 +944,24 @@ body.loaded .sg-acell{animation-play-state:running;}
 .sg-vo:active{transform:scale(.92);}
 @keyframes sgVoPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.09);}}
 
+/* [S01r7a] RUNG 2 OF THE REVIEW DOC'S LADDER — "read the words out one by one; while each word is
+   read, its card glows and its first letter is highlighted."
+   Two separate cues on purpose. The card glow says WHICH word is being spoken; the first-akshara
+   lift says WHAT to listen for in it, and that second one is the whole point of the rung - a child
+   who only sees the card light up has been told where to look but not what for.
+   Nothing here dims the other cards: the doc puts locking at rung 3, and a board that greys out
+   while it is being read to would be answering the question two rungs early. */
+.tap-all-item.sw-read, .opt-cell.sw-read, .sentence-word.sw-read{
+  box-shadow:0 0 0 5px rgba(252,183,23,.55), 0 10px 22px rgba(11,61,140,.18);
+  transform:translateY(-4px) scale(1.04);
+  transition:box-shadow .18s ease, transform .18s ease; }
+.tap-all-item.sw-read .sw-first, .opt-cell.sw-read .sw-first, .sentence-word.sw-read .sw-first{
+  color:var(--tgt-ink,#C2590A); text-shadow:0 0 14px rgba(252,183,23,.85); }
+html.no-anim .tap-all-item.sw-read, html.no-anim .opt-cell.sw-read,
+html.no-anim .sentence-word.sw-read{ transform:none; }
+/* the wrapper is inert until rung 2 lights it - it must not restyle the word the rest of the time */
+.sw-first{ font-style:normal; }
+
 /* ===== NUDGE HAND — kit asset ===== */
 .nudge-hand{position:absolute;width:96px;height:96px;z-index:55;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.22));animation:nudgeMove 1s ease-in-out infinite;display:none;}
 .nudge-hand img{width:100%;height:100%;object-fit:contain;}
