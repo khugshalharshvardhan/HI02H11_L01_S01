@@ -6660,8 +6660,8 @@ const SlideModules = {
          could only ever indicate one of the four - the glow can mark them all at once, which is what
          "which ones am I looking for" actually needs. */
       const glowCorrect = ()=> remainingCorrect().forEach(c => c.b.classList.add("bal-hot"));
-      /* [S01r7g] FIVE QUIET SECONDS AND THE ANSWERS LIGHT UP. SME: "if the user is inactive for 5
-         seconds, glow the right options."
+      /* [S01r7j] TEN QUIET SECONDS AND THE ANSWERS LIGHT UP. SME first asked for five (r7g) and has
+         now moved it to ten - the help was arriving while a child was still reading the board.
          `glowing` is a state, not a one-shot: the board is a STREAM, so the balloons that were
          correct when the timer fired will have risen away within a few seconds and the ones that
          replace them must light up too, or the help fades out on its own while the child is still
@@ -6678,7 +6678,7 @@ const SlideModules = {
         idleT = setTimeout(()=>{
           if(!alive() || state.locked) return;
           glowing = true; glowCorrect();
-        }, 5000);
+        }, 10000);   /* [S01r7j] was 5000 */
       };
 
       const fillBalloon = (b, it)=>{
