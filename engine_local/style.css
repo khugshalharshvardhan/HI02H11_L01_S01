@@ -271,6 +271,15 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
 /* [24a A5] tray ghost-slot: a placed sort card leaves a faint same-size dashed placeholder at its
    exact tray origin (holds the flex slot so remaining cards don't shift; vachan/gender parity) */
 .sort-ghost{flex:0 0 auto;border-radius:16px;background:rgba(74,120,230,.06);border:2px dashed #C3D2EC;box-sizing:border-box;}
+/* [S01r7h] the empty slot closing up once its tile is home, and the two-halves swap on page 12.
+   Both animate width/opacity only: `transform` belongs to the drag code and to the balloon loop,
+   and a second rule touching it is how those two stopped working in earlier rounds. */
+.sort-ghost{ transition:width .3s ease, opacity .3s ease, margin .3s ease; }
+.sort-ghost.sg-ghost-go{ width:0 !important; opacity:0; margin-left:0; margin-right:0; }
+.sg-swap-out{ opacity:0; transition:opacity .42s ease; pointer-events:none; }
+@keyframes sgSwapIn{ from{ opacity:0; } to{ opacity:1; } }
+.sg-swap-in{ animation:sgSwapIn .45s ease forwards; }
+html.no-anim .sort-ghost, html.no-anim .sg-swap-out, html.no-anim .sg-swap-in{ transition:none; animation:none; }
 .sort-item{width:116px;height:116px;border-radius:16px;background:#fff;border:3px solid #8BBFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:grab;touch-action:none;box-shadow:0 5px 0 rgba(11,61,140,.12);position:relative;z-index:2;}
 .sort-item.dragging{background:transparent;border-color:transparent;box-shadow:none;cursor:grabbing;z-index:50;box-shadow:0 12px 24px rgba(56,106,246,.30);transition:none;}
 .sort-item img{width:72px;height:72px;object-fit:contain;} .sort-item img.fallback{display:none;}
@@ -2101,6 +2110,18 @@ body.bal-page .stage{ background:url("assets/UI/bg_balloons.webp") center/100% 1
 .stage.vo-only .balloon-field .balloon.bal-entering,
 .stage.vo-only .balloon-field .balloon.bal-leaving{ animation:none; }
 .stage.vo-only .balloon-field .bal-lift{ animation:none; }
+/* [S01r7g] THE IDLE GLOW, drawn without touching `transform`. The old .bal-hot rode a keyframe on
+   .bal-lift, and the rule above switches every .bal-lift animation off in this mode so the rAF can
+   own the movement unopposed - so the help would have been silently invisible, which is the worse
+   half of a hint that does not appear. This pulses a light around the balloon's own art instead,
+   on a property nothing else is animating. */
+@keyframes balHotGlow{
+  0%,100%{ filter:drop-shadow(0 0 2px rgba(255,208,64,0)); }
+  50%    { filter:drop-shadow(0 0 20px rgba(255,208,64,.95)) drop-shadow(0 0 34px rgba(255,170,20,.7)); }
+}
+.stage.vo-only .balloon-field .balloon.bal-hot .bal-body{
+  animation:balHotGlow 1.15s ease-in-out infinite; }
+html.no-anim .balloon.bal-hot .bal-body{ animation:none; }
 /* a balloon that has not launched yet must not be visible OR tappable */
 .balloon.bal-waiting{ opacity:0; pointer-events:none; }
 /* Swiftie is positioned INSIDE the field (left:-240px), so a wider field drags her left and off the

@@ -747,6 +747,12 @@ def build_card():
                   "correct": "vo_g1_correct", "hint": "vo_g1_hint"},
         "data": {
             "target_sound": "प",
+            # [r7h] THE ONE PLACE THE PEEK STILL APPEARS MID-LESSON. SME: "after page 6 do not
+            # show the Swiftie transition - show it before the game only." The engine used to
+            # infer gates from round changes, which on this card fired three times; it now shows
+            # one only where a slide asks, and this is the slide that asks. The cover's own gate
+            # is separate - the play button calls it directly.
+            "gate_before": True,
             # [r5o] TWO ROUNDS, and the sky never thins out.
             #   * popping a target REFILLS that balloon from `spares` - the SME asked for "at that
             #     place other balloon will appear with other image". A refill is always a NON-target,

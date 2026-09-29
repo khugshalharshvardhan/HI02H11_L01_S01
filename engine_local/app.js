@@ -245,6 +245,7 @@ const sfxCorrect   = ()=> _sfxFile("sfx_correct", _toneCorrect);
 const sfxWrongSoft = ()=> _sfxFile("sfx_wrong",   _toneWrong);
 /* a joyful star/confetti pop, centred on the play stage (upper-middle) */
 function burstStars(){ const stage = document.querySelector(".slide-stage") || document.body;
+  try{ playSfx("sfx_celebrate"); }catch(e){}   /* [S01r7g] the other celebration visual, same sound */
   const cx = stage.offsetWidth/2, cy = stage.offsetHeight*0.38, emo = ["⭐","✨","🌟","💫","🎉"];
   for(let i=0;i<14;i++){ const s = document.createElement("span"); s.className = "spark"; s.textContent = emo[i % emo.length];
     const ang = (Math.PI*2)*(i/14) + Math.random()*0.5, dist = 70 + Math.random()*110;
@@ -303,8 +304,19 @@ const CONF_PAIRS = [
 /* weighted: star 40%, rectangle 20%, line 20%, square 20% — the sizes are deliberately far
    apart, because at 7-11px a square and a rectangle are indistinguishable while spinning */
 const CONF_SHAPES = ["st","st","st","st","rc","rc","ln","ln","sq","sq"];
+/* [S01r7g] A CELEBRATION SOUND WITH THE CONFETTI. SME: "when we did right and the confetti is
+   coming add an sfx there also for celebration like (clapping) etc, also add wherever the confetti
+   comes."
+   It goes INSIDE the cannon rather than beside its eleven call sites. Those sites are spread across
+   nine mechanics, and adding a line to each is how one gets missed and a page celebrates in silence
+   - which is exactly the "also add wherever the confetti comes" half of the request. Anything that
+   throws confetti now sounds, including any mechanic added later.
+   sfx_celebrate is the clip this bundle already ships for exactly this moment, so it costs nothing.
+   It is NOT clapping - if the SME wants applause specifically, that is a new recording and this is
+   the one line that would change. */
 function confettiCannon(n){
   const host = document.body;
+  try{ playSfx("sfx_celebrate"); }catch(e){}
   if(document.documentElement.classList.contains("no-anim")) return;   // R5
   const R = (a, b)=> a + Math.random() * (b - a);
   const count = n || 56;
@@ -2192,6 +2204,20 @@ function makeDraggable(tileEl, onDrop, opts){
    the tray at its exact original spot (Yasir 2026-07-24, parity with the production gender game).
    The ghost holds the flex slot so the remaining tray cards don't shift, and marks where the card
    came from. Sized BEFORE the tile moves/shrinks (offsetWidth is read while it still sits in the tray). */
+/* [S01r7h] AND THE SLOT GOES ONCE THE TILE HAS LANDED. SME: "when the 1st element goes in the right
+   box, remove the highlighted box of the element from the options."
+   The ghost exists for a good reason - it holds the tray's width while a tile is in flight, so the
+   remaining tiles do not jump out from under a child's finger mid-drag. That reason expires the
+   moment the tile is home. It is collapsed rather than deleted outright, so the tray closes up
+   smoothly instead of snapping, and the collapse is on width/opacity - never on `transform`, which
+   the drag code owns. */
+function dropTrayGhost(tile){
+  const g = tile && tile._ghostEl;
+  if(!g) return;
+  tile._ghostEl = null;
+  g.classList.add("sg-ghost-go");
+  setTimeout(()=>{ try{ g.remove(); }catch(e){} }, 340);
+}
 function leaveTrayGhost(tile){
   if(!tile || tile._ghosted) return;
   const tray = tile.parentElement;
@@ -2206,6 +2232,7 @@ function leaveTrayGhost(tile){
   g.style.width = tile.offsetWidth + "px";
   g.style.height = tile.offsetHeight + "px";
   tray.insertBefore(g, tile);
+  tile._ghostEl = g;   /* [S01r7h] so the slot can be taken away again - see dropTrayGhost */
   tile._ghosted = true;
 }
 /* shared wrong-drop response for drag/sort/sequence modules: soft buzz + Swiftie try-again pose + the
@@ -4945,10 +4972,22 @@ const SlideModules = {
             $("stage").classList.remove("auto-adv");
             state.locked = false; state.attempts = 0; state.hintActive = false;
             state.ownsAudio = false; state.demoRunning = false; state.revealing = false;
+            /* [S01r7h] SME: "the two options will disappear, then my 4 options will come in the
+               same screen." The swap was instant - two tiles replaced by four between frames, which
+               reads as the board glitching rather than as one set leaving and another arriving. The
+               demo board fades out first, so the change has a beginning and an end, and only then is
+               it rebuilt. Same screen throughout; nothing navigates. */
+            const _demoBoard = host.firstElementChild;
+            if(_demoBoard) _demoBoard.classList.add("sg-swap-out");
             setTimeout(()=>{
               if(CARD.slides[state.idx] !== slide) return;
               host.innerHTML = "";
               SlideModules.SORT_GENDER.mount(host, slide, true);
+              const _taskBoard = host.firstElementChild;
+              if(_taskBoard){
+                _taskBoard.classList.add("sg-swap-in");
+                setTimeout(()=>{ try{ _taskBoard.classList.remove("sg-swap-in"); }catch(e){} }, 480);
+              }
             }, 900);
             return;
           }
@@ -5023,6 +5062,7 @@ const SlideModules = {
             leaveTrayGhost(t);   // [24a A5] capture the tray-slot size before .snapped shrinks/moves it
             t.classList.add("snapped");
             bin.querySelector(".bin-items").appendChild(t);
+            setTimeout(()=> dropTrayGhost(t), 260);   /* [S01r7h] the slot closes behind it */
             placed++; _sgWrong.delete(t);          /* [28p] this tile is done */
             /* [28u] RELEASE THE TERMINAL HOLD ON A CORRECT DROP — this slide was UNWINNABLE.
                28p armed the terminal rung here but the correct-drop branch cleared none of it:
@@ -6625,6 +6665,26 @@ const SlideModules = {
          could only ever indicate one of the four - the glow can mark them all at once, which is what
          "which ones am I looking for" actually needs. */
       const glowCorrect = ()=> remainingCorrect().forEach(c => c.b.classList.add("bal-hot"));
+      /* [S01r7g] FIVE QUIET SECONDS AND THE ANSWERS LIGHT UP. SME: "if the user is inactive for 5
+         seconds, glow the right options."
+         `glowing` is a state, not a one-shot: the board is a STREAM, so the balloons that were
+         correct when the timer fired will have risen away within a few seconds and the ones that
+         replace them must light up too, or the help fades out on its own while the child is still
+         stuck. spawnOne checks it for exactly that reason.
+         Any tap clears it and restarts the clock - a child who is trying does not need the answer
+         shown, and the help would otherwise stay on screen for the rest of the round. */
+      let idleT = 0, glowing = false;
+      const clearGlow = ()=>{
+        glowing = false;
+        [...field.querySelectorAll(".balloon.bal-hot")].forEach(b => b.classList.remove("bal-hot"));
+      };
+      const armIdleGlow = ()=>{
+        clearTimeout(idleT); clearGlow();
+        idleT = setTimeout(()=>{
+          if(!alive() || state.locked) return;
+          glowing = true; glowCorrect();
+        }, 5000);
+      };
 
       const fillBalloon = (b, it)=>{
         /* [S01r5c] .bal-lift wraps the balloon so the IDLE FLOAT and the ENTRANCE live on different
@@ -6832,7 +6892,8 @@ const SlideModules = {
           if(state.locked || cell.busy || b.classList.contains("popped")) return;
           if(isPlaying) stopAudio();
           state._balFb = false;
-          stopNudge(); cell.busy = true;
+          stopNudge(); armIdleGlow();        /* [S01r7g] a tap is activity - restart the quiet clock */
+          cell.busy = true;
           const vb = setTimeout(()=>{ cell.busy = false; }, 6500);  /* fail-safe: a superseded onEnd must not soft-lock */
           const name = it.audio ? ("assets/Audio/" + it.audio + "." + AUDIO_EXT) : null;
           /* [S01r5o] THE WORD COMES FIRST, then everything else. r5h had the feedback sound land on
@@ -6847,30 +6908,36 @@ const SlideModules = {
           };
 
           if(it.has === true){
-            /* the balloon does not burst until it has been NAMED - see afterName above */
+            /* [S01r7g] THE BURST IS ON THE TAP. SME: "when we tap a balloon it has to pop
+               instantly." r5o had put the whole reaction behind the word clip, because the SME then
+               wanted "पतंग and THEN the rest of the VO" - but that ruling was about the ORDER OF THE
+               VOICE, and taking the burst with it meant a balloon sat visibly whole for the ~1.3s
+               its name took to play. On a board the child studies that is a pause; on a stream of
+               rising balloons it reads as the tap not having registered.
+               So the two are separated: the burst and its pop land on the gesture, and the SPOKEN
+               part - the word, then the praise - still runs in r5o's order behind it. */
+            const _bb = b.querySelector(".bal-body");
+            const hue = _bb ? getComputedStyle(_bb).color : "#FFC93C";
+            b.classList.remove("bal-entering");
+            cell.parked = true;                  /* hold still while the burst plays */
+            b.classList.add("popped"); sparkle(b, hue); burstRing(b);
+            playSfx("sfx_bal_pop");
             afterName(()=>{
-              /* the balloon's fill is NOT its background: `.balloon[class*="bcol-"] .bal-body`
-                 resets background to none and the skin is drawn by a hue-rotated ::before.
-                 What each bcol- DOES still set is `color`, so that is the accent to throw. */
-              const _bb = b.querySelector(".bal-body");
-              const hue = _bb ? getComputedStyle(_bb).color : "#FFC93C";
               /* [S01r6j] bal-entering comes OFF before popped goes on. A refilled balloon carries
                  it for up to 1.75s (r6e), and a child can certainly tap one inside that window -
                  but `.balloon.bal-entering` sits BELOW `.balloon.popped` in the stylesheet at equal
                  specificity, so it won the `animation` property and balPop never ran: the balloon
                  the child had just correctly popped stayed on screen at full opacity, merely
                  untappable. Popping is the one piece of feedback this game cannot afford to lose. */
-              b.classList.remove("bal-entering");
-              cell.parked = true;                 /* [S01r7c] hold still while the burst plays */
-              b.classList.add("popped"); sparkle(b, hue); burstRing(b);
-              /* [S01r4v] the SME's own pop recording, trimmed 1.97s -> 0.21s with the peak 30ms in.
-                 sfxCorrect stays - the pop and the "that was right" ding are two different messages. */
-              playSfx("sfx_bal_pop"); sfxCorrect(); setSwMood("happy");
+              /* [S01r4v] sfxCorrect stays - the pop and the "that was right" ding are two
+                 different messages, and only the pop moved onto the gesture above. */
+              sfxCorrect(); setSwMood("happy");
               found++;
               doneImgs.add(it.img);              /* [S01r7f] never offered again this round */
               SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
               if(found >= need){
-                state.locked = true; setSwMood("celebrate"); confettiCannon();
+                state.locked = true; clearTimeout(idleT); clearGlow();   /* [S01r7g] */
+                setSwMood("celebrate"); confettiCannon();
                 SwiftPAL.emit(d.signal_name || "balloon_sound_first_try", {
                   slide_id: slide.id, phase: slide.phase, value: state.attempts === 0,
                   attempts: state.attempts, latency_ms: Date.now() - state.slideStart, level: li + 1 });
@@ -6957,6 +7024,7 @@ const SlideModules = {
         need = its.filter(it => it.has === true).length;
         found = 0; state.locked = false; busy = false; revealing = false;
         doneImgs = new Set();                    /* [S01r7f] each round starts with all four open */
+        clearTimeout(idleT); glowing = false;    /* [S01r7g] */
         killStream();
         [...field.querySelectorAll(".balloon")].forEach(b => b.remove());
         cells = [];
@@ -7004,7 +7072,8 @@ const SlideModules = {
           cell.y = spawnY();
           if(!placeLane(cell)) return;               /* no clear lane - wait rather than overlap */
           cells.push(cell);
-          b.className = "balloon bcol-" + ((colour++) % 6);
+          b.className = "balloon bcol-" + ((colour++) % 6)
+                      + (glowing && it.has === true ? " bal-hot" : "");   /* [S01r7g] */
           fillBalloon(b, it);
           field.insertBefore(b, sw);
           wireTap(cell);
@@ -7033,7 +7102,7 @@ const SlideModules = {
         const say = lvlAudio("prompt") || audioFor(slide, "prompt") || null;
         const begin = ()=>{ if(!alive() || spawnTimer) return;
                             for(let k = 0; k < 2; k++) spawnOne(k === 0);
-                            schedule(); };
+                            schedule(); armIdleGlow(); };   /* [S01r7g] the clock starts with the board */
         play(say, begin);
         setTimeout(()=>{ if(alive()) begin(); }, 9000);   /* FAIL-SAFE: the stream always starts */
       };
@@ -7361,11 +7430,22 @@ function completeSlide(success){
      back — the alias fixed the missing gate and introduced a duplicate one. Deduping by ROUND instead
      of by phase string collapses that pair, and a phase with no round (mastery) still gets no gate,
      which is the ruling: three rounds, no round 4. */
+  /* [S01r7h] THE PEEK IS NOW ASKED FOR, NOT INFERRED. SME: "after page 6 don't show the Swiftie
+     transition - show it before the game only: the first animation after the cover page, then
+     before the game only."
+     The rule was "whenever the ROUND changes", which on this lesson fires three times - into the
+     tutorial, into guided after page 6, and into practice after page 7. Two of those are the ones
+     the SME wants gone. Rather than special-case this card's phases inside the engine, the next
+     slide now has to ASK: `data.gate_before`. The cover's gate is unaffected - it is called
+     directly from the play button, not from here.
+     A card that sets nothing gets no gates, which is the safer default for a one-off request like
+     this: a missing transition is a missing flourish, an unwanted one interrupts a lesson. */
   const nextRound = PHASE_ROUND[next && next.phase], curRound = PHASE_ROUND[slide.phase];
-  if(next && nextRound && nextRound !== curRound
+  const wantsGate = !!(next && next.data && next.data.gate_before);
+  if(next && wantsGate
      && next.type !== "CELEBRATION" && next.type !== "PHASE_TRANSITION"
-     && PHASE_GATE_TITLE[next.phase] && !_gatedPhases.has(nextRound)){
-    _gatedPhases.add(nextRound);
+     && PHASE_GATE_TITLE[next.phase] && !_gatedPhases.has("slide:" + next.id)){
+    _gatedPhases.add("slide:" + next.id);
     afterConfetti(()=>{ if(state.idx === fromIdx) phaseBlurTransition(()=> mountSlide(nextIdx), next.phase); });
     return;
   }
@@ -7723,7 +7803,15 @@ function boot(){
     if(!ready) b.classList.remove("idle-pulse");
   };
   window.__setStartBtnReady = setStartBtnReady;
-  setStartBtnReady(false);          /* dead from first paint - the greeting starts within 1.6s */
+  /* [S01r7h] THE BUTTON IS LIVE FROM FIRST PAINT NOW. SME: "the VO will come after we tap on the
+     play button." Nothing speaks on arrival, so there is nothing to protect the child from talking
+     over, and the whole reason this button was born disabled has gone with it.
+     That also retires the r5y trap at the root rather than guarding it: the cover used to hold the
+     only way into the lesson shut for fifteen seconds while a greeting played, and every bug on
+     this screen since has been some version of "the button was disabled at the wrong moment". A
+     button that is never disabled cannot be disabled at the wrong moment. */
+  setStartBtnReady(true);
+  window.__greetingDone = true;     /* nothing is owed before the tap */
 
   const playLanding = ()=>{ if($("startGate").classList.contains("hidden")) return;
     /* [S01r4] the sentence animation is meant to run WITH the greeting ("the highlighting
@@ -7747,7 +7835,8 @@ function boot(){
   // child), deduped by .done. The same handler adds body.loaded (unblocks the concept-strip stagger)
   // and fires the landing VO. play() absorbs an autoplay block; the pulsing 🔊 chip is the fallback. ----
   (function(){
-    const bl = $("bootLoader"); if(!bl){ document.body.classList.add("loaded"); playLanding(); return; }
+    const bl = $("bootLoader"); if(!bl){ document.body.classList.add("loaded");
+      if(window.__armStartNudge) window.__armStartNudge(); return; }
     // [16l] BRAND SPLASH MIN-HOLD: locally, window.load fires in ~100ms and the CG loader was
     // removed before it ever painted ("no CG logo at the start"). The loader now holds for a
     // minimum beat so the ConveGenius mark is always seen; the watchdog still caps the worst case.
@@ -7759,7 +7848,7 @@ function boot(){
       setTimeout(()=>{
         bl.classList.add("done");                  // NOW start the fade (after the brand beat)
         document.body.classList.add("loaded");     // starts the .sg-acell pop chain
-        playLanding();
+        if(window.__armStartNudge) window.__armStartNudge();
         setTimeout(()=> bl.remove(), 450);
       }, Math.max(0, MIN_MS - (performance.now() - T0)));
     };
@@ -7792,7 +7881,9 @@ function boot(){
        Releasing the button IS the signal that the greeting is done, so that is the thing to test. */
     const _btn = $("sgBtn");
     const _greetingDone = _btn && !_btn.disabled;
-    if(!_audible && !_greetingDone) playLanding(); }, { once:true });
+    /* [S01r7h] the fallback is retired with the autoplay it existed to rescue - there is no
+       unheard greeting to recover, because the greeting is now started BY a gesture. */
+    }, { once:true });
 
   /* [S01r5l] SME: "if user remains inactive for more than 5 seconds then add hand nudge on the play
      button". The cover has no other affordance now that the wording is gone, so an idle child has
@@ -7839,21 +7930,50 @@ function boot(){
     if(sg) sg.addEventListener("pointerdown", ()=>{ disarmStartNudge(); armStartNudge(); }, true); }
   /* NOT armed here any more - the greeting's end owns it now. See [S01r5p] in _landingSentence. */
 
+  /* [S01r7h] THE COVER'S ORDER, as the SME set it: "the VO will come after we tap on the play
+     button, then when the VO is complete, after 1 second Swiftie's animation will automatically
+     come, and sync Swiftie's lip-sync with the sentence चलिए शुरू करें."
+     So the tap does three things in sequence rather than one: pop, speak, and then - a beat later -
+     hand over to the peek. The beat is the SME's second, and it matters: without it the gate opens
+     on the last syllable and the two voices tread on each other.
+     The lip-sync is the gate's own doing and needs nothing added here: phaseBlurTransition restarts
+     peeking.webp from frame 0 on every open (the cache-bust on its src) and holds the gate for as
+     long as vo_pt_tutorial runs - 5.12s of a 9.72s animation - so the mouth moves while that line
+     is spoken rather than against a clip that finished earlier.
+     `guard` is not politeness: the button stays live now, and a second tap during the greeting would
+     otherwise start a second greeting and a second gate on top of the first. */
+  let _startTapped = false;
   $("sgBtn").onclick = ()=>{
+    if(_startTapped) return;
+    _startTapped = true;
+    playSfx("sfx_pop");   /* [S01r7g] SME: a pop when the play button is tapped */
     disarmStartNudge();
-    stopAudio();          // silence the landing greeting BEFORE slide 0 speaks (no VO overlap)
+    setStartBtnReady(false);   /* it has been used - it must not invite a second tap */
     _ac();                // unlock/resume WebAudio on the start gesture so the first clip never clips
-    // [engine JS] r4/P1: peek gate into the tutorial. The landing stays visible-and-BLURRED behind the
-    // peeking Swiftie + "चलिए शुरू करें"; it hides once the tutorial mounts (in the callback).
-    _gatedPhases.add("tutorial");
-    phaseBlurTransition(()=>{
-      $("startGate").classList.add("hidden");
-      document.body.classList.remove("is-start");   // blue bg only on the title screen
-      mountSlide(0);
-    }, "tutorial");
+    const land = (CARD.assets && CARD.assets.audio && CARD.assets.audio[CARD.landing_audio || "vo_landing"])
+                 ? ("assets/Audio/" + (CARD.landing_audio || "vo_landing") + "." + AUDIO_EXT) : null;
+    const intoLesson = ()=>{
+      // [engine JS] r4/P1: peek gate into the tutorial. The landing stays visible-and-BLURRED behind
+      // the peeking Swiftie + "चलिए शुरू करें"; it hides once the tutorial mounts (in the callback).
+      _gatedPhases.add("tutorial");
+      phaseBlurTransition(()=>{
+        $("startGate").classList.add("hidden");
+        document.body.classList.remove("is-start");   // blue bg only on the title screen
+        mountSlide(0);
+      }, "tutorial");
+    };
+    play(land, ()=> setTimeout(intoLesson, 1000));    /* the SME's one second */
   };
   // tapping आगे clears any pending nav-nudge
-  $("navBtn").addEventListener("click", ()=>{ clearTimeout(state.navNudgeTimer); stopNudge(); });
+  /* [S01r7g] ...and it clicks. SME: "add sfx on the next button in the file whenever we tap on next
+     button." It goes on a LISTENER rather than into the handler, because `navBtn.onclick` is
+     reassigned by nearly every mechanic as it mounts - there are a dozen such assignments - so a
+     sound written into the handler would be dropped by the next slide that set its own. A listener
+     is additive and survives all of them, which is also why the nudge-clearing above lives here. */
+  $("navBtn").addEventListener("click", ()=>{
+    if(!$("navBtn").disabled) playSfx("sfx_tap");
+    clearTimeout(state.navNudgeTimer); stopNudge();
+  });
   // [engine JS] r4 dev jump: ?slide=N skips the loader+gate and mounts slide N directly (QA/capture only)
   (function(){
     const j = parseInt(new URLSearchParams(location.search).get("slide"), 10);
