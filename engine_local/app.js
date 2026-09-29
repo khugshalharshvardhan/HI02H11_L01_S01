@@ -971,6 +971,14 @@ function flyTileTo(tile, bin, done){
     try{ leaveTrayGhost(tile); }catch(e){}
     tile.classList.add("snapped");
     zone.appendChild(tile);
+    /* [S01r7k] SME: "in page 12, in the tutorial also, when the element goes in the right box remove
+       the shadow box of that element at the bottom."
+       r7h closed the slot on the CHILD's drop and left the demonstration showing one - so the page
+       taught a gesture and then modelled a leftover the real thing does not produce. The ghost is
+       worth even less here than there: it exists to stop the tray reflowing under a finger MID-DRAG,
+       and in an auto-demo there is no finger at all. This function is the demo's alone (its only
+       caller is SORT_GENDER's flyNext), so nothing else changes behaviour. */
+    setTimeout(()=> dropTrayGhost(tile), 260);
     sfxCorrect();
     if(done) done();
   };
@@ -4995,7 +5003,16 @@ const SlideModules = {
         const flyNext = ()=>{
           if(CARD.slides[state.idx] !== slide) return;
           if(di >= demoTiles.length){
-            play(audioFor(slide, "correct") || null, ()=> setTimeout(endDemo, 500));
+            /* [S01r7k] SME: "after the drag and drop of the two elements, when it's complete, remove
+               the VO 'बहुत बढ़िया, सही डिब्बा' from it."
+               That line is praise, and nothing was praised: the child watched. Worse, it is the same
+               clip the TASK half speaks on a real correct drop, so hearing it here spends the
+               reward before the work - and a child who then earns it gets a line they have already
+               been given for doing nothing.
+               The clip itself is untouched and still plays where it is earned; only the demo's use
+               of it goes. The beat it used to occupy is kept, so the last tile still settles before
+               the board changes. */
+            setTimeout(endDemo, 700);
             return;
           }
           const t = demoTiles[di++];
