@@ -287,10 +287,9 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
    and a second rule touching it is how those two stopped working in earlier rounds. */
 .sort-ghost{ transition:width .3s ease, opacity .3s ease, margin .3s ease; }
 .sort-ghost.sg-ghost-go{ width:0 !important; opacity:0; margin-left:0; margin-right:0; }
-.sg-swap-out{ opacity:0; transition:opacity .42s ease; pointer-events:none; }
-@keyframes sgSwapIn{ from{ opacity:0; } to{ opacity:1; } }
-.sg-swap-in{ animation:sgSwapIn .45s ease forwards; }
-html.no-anim .sort-ghost, html.no-anim .sg-swap-out, html.no-anim .sg-swap-in{ transition:none; animation:none; }
+/* [S01r7i] the swap fade is gone - the SME asked for no transition between the two boards. The
+   ghost collapse above stays: that is the tray tidying up after a tile, not a board change. */
+html.no-anim .sort-ghost{ transition:none; }
 .sort-item{width:116px;height:116px;border-radius:16px;background:#fff;border:3px solid #8BBFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:grab;touch-action:none;box-shadow:0 5px 0 rgba(11,61,140,.12);position:relative;z-index:2;}
 .sort-item.dragging{background:transparent;border-color:transparent;box-shadow:none;cursor:grabbing;z-index:50;box-shadow:0 12px 24px rgba(56,106,246,.30);transition:none;}
 .sort-item img{width:72px;height:72px;object-fit:contain;} .sort-item img.fallback{display:none;}
@@ -8002,22 +8001,17 @@ const SlideModules = {
             $("stage").classList.remove("auto-adv");
             state.locked = false; state.attempts = 0; state.hintActive = false;
             state.ownsAudio = false; state.demoRunning = false; state.revealing = false;
-            /* [S01r7h] SME: "the two options will disappear, then my 4 options will come in the
-               same screen." The swap was instant - two tiles replaced by four between frames, which
-               reads as the board glitching rather than as one set leaving and another arriving. The
-               demo board fades out first, so the change has a beginning and an end, and only then is
-               it rebuilt. Same screen throughout; nothing navigates. */
-            const _demoBoard = host.firstElementChild;
-            if(_demoBoard) _demoBoard.classList.add("sg-swap-out");
+            /* [S01r7i] NO TRANSITION. SME: "don't show any transition, just the new four options
+               will come there." r7h faded the demo board out and the task board in, reading the
+               earlier "the two will disappear, then my 4 will come" as asking for a visible
+               handover; it was not. The four simply replace the two.
+               The 900ms beat stays - it is not a transition, it is the pause after the demo's last
+               tile settles, and without it the board changes while the child is still watching the
+               thing that was being demonstrated. */
             setTimeout(()=>{
               if(CARD.slides[state.idx] !== slide) return;
               host.innerHTML = "";
               SlideModules.SORT_GENDER.mount(host, slide, true);
-              const _taskBoard = host.firstElementChild;
-              if(_taskBoard){
-                _taskBoard.classList.add("sg-swap-in");
-                setTimeout(()=>{ try{ _taskBoard.classList.remove("sg-swap-in"); }catch(e){} }, 480);
-              }
             }, 900);
             return;
           }

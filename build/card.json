@@ -643,9 +643,9 @@
       "phase": "practice",
       "eis": "enactive",
       "type": "SORT_VACHAN",
-      "prompt_hi": "हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
+      "prompt_hi": "हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए।",
       "audio": {
-        "prompt": "vo_g5_show",
+        "prompt": "vo_g5_prompt",
         "target": "vo_snd_p",
         "correct": "vo_g5_correct"
       },
@@ -1027,7 +1027,6 @@
       "vo_g5_h1": "assets/Audio/vo_g5_h1.ogg",
       "vo_g5_hint": "assets/Audio/vo_g5_hint.ogg",
       "vo_g5_prompt": "assets/Audio/vo_g5_prompt.ogg",
-      "vo_g5_show": "assets/Audio/vo_g5_show.ogg",
       "vo_g5_try": "assets/Audio/vo_g5_try.ogg",
       "vo_landing": "assets/Audio/vo_landing.ogg",
       "vo_line_l1": "assets/Audio/vo_line_l1.ogg",
@@ -1129,7 +1128,6 @@
       "vo_g5_h1": "फिर से सुनिए। चित्र का नाम ध्यान से सुनिए और देखिए उसकी शुरुआत किस आवाज़ से होती है।",
       "vo_g5_hint": "शब्द बोलो और सुनो — उसमें प की आवाज़ है या च की?",
       "vo_g5_prompt": "हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए।",
-      "vo_g5_show": "हर चित्र को उसके सही डिब्बे में ऐसे डालते हैं।",
       "vo_g5_try": "यह डिब्बा सही नहीं है। शब्द की आवाज़ फिर सुनो।",
       "vo_landing": "नमस्ते दोस्तो! आज हम जानेंगे वाक्य में बार-बार आने वाली ध्वनि यानी आवाज़ के बारे में।",
       "vo_line_l1": "पीतल के पतीले में पपीता पीला-पीला।",
@@ -1554,16 +1552,6 @@
         [
           4.63,
           6.54
-        ]
-      ],
-      "vo_g5_show": [
-        [
-          0.29,
-          2.38
-        ],
-        [
-          2.55,
-          3.43
         ]
       ],
       "vo_g5_try": [
@@ -2361,7 +2349,6 @@
       "vo_g5_correct": 2.68,
       "vo_g5_hint": 5.88,
       "vo_g5_prompt": 6.92,
-      "vo_g5_show": 3.84,
       "vo_g5_try": 4.84,
       "vo_landing": 6.37,
       "vo_line_l1": 3.96,

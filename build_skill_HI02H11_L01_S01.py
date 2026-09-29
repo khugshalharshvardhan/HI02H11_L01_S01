@@ -628,13 +628,21 @@ def build_card():
     # is the smallest set that shows "this one goes here, that one goes there".
     # Words chosen from art and clips this lesson ALREADY ships (पतंग on page 7, चाँद on page 12), so
     # the demo costs one new VO line and nothing else - dist has little headroom left.
+    # [r7i] ONE INSTRUCTION FOR THE WHOLE PAGE. SME: "when we enter the page the text and VO should
+    # be 'हर चित्र का नाम सुनिए और उसे सही डिब्बे में डालिए।'"
+    # The page used to open on the DEMO's own line ("...ऐसे डालते हैं", i.e. "this is how we do it")
+    # and only switch to the task's line at the handover. But it is one page now, and a page that
+    # restates its instruction halfway through reads as two pages that happen to share a screen -
+    # which is the thing r6s merged away. The demonstration is now something that happens UNDER the
+    # instruction rather than something with an instruction of its own.
+    # vo_g5_show therefore goes unreferenced and drops out of the card: nothing says it any more.
     _sort_demo = sort_two(
-        "G5D", "practice", VO["vo_g5_show"],
+        "G5D", "practice", VO["vo_g5_prompt"],
         [{"gender": "S", "label": "प"},
          {"gender": "P", "label": "च"}],
         [_item("पतंग", "obj_patang", "vo_w_patang", gender="S"),
          _item("चाँद", "obj_chand",  "vo_w_chand",  gender="P")],
-        {"prompt": "vo_g5_show", "target": "vo_snd_p", "correct": "vo_g5_correct"},
+        {"prompt": "vo_g5_prompt", "target": "vo_snd_p", "correct": "vo_g5_correct"},   # [r7i]
         "sound_sort_demo",
         # [r5r] SME: "remove the next button from the 9th page, once the pre screen tutorial is
         # complete then it will automatically transition to the 10th page". There is nothing to

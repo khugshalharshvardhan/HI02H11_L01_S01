@@ -276,10 +276,9 @@ body.is-start{background:#47BCFD;}   /* [20a landing] new-blue ground */
    and a second rule touching it is how those two stopped working in earlier rounds. */
 .sort-ghost{ transition:width .3s ease, opacity .3s ease, margin .3s ease; }
 .sort-ghost.sg-ghost-go{ width:0 !important; opacity:0; margin-left:0; margin-right:0; }
-.sg-swap-out{ opacity:0; transition:opacity .42s ease; pointer-events:none; }
-@keyframes sgSwapIn{ from{ opacity:0; } to{ opacity:1; } }
-.sg-swap-in{ animation:sgSwapIn .45s ease forwards; }
-html.no-anim .sort-ghost, html.no-anim .sg-swap-out, html.no-anim .sg-swap-in{ transition:none; animation:none; }
+/* [S01r7i] the swap fade is gone - the SME asked for no transition between the two boards. The
+   ghost collapse above stays: that is the tray tidying up after a tile, not a board change. */
+html.no-anim .sort-ghost{ transition:none; }
 .sort-item{width:116px;height:116px;border-radius:16px;background:#fff;border:3px solid #8BBFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:grab;touch-action:none;box-shadow:0 5px 0 rgba(11,61,140,.12);position:relative;z-index:2;}
 .sort-item.dragging{background:transparent;border-color:transparent;box-shadow:none;cursor:grabbing;z-index:50;box-shadow:0 12px 24px rgba(56,106,246,.30);transition:none;}
 .sort-item img{width:72px;height:72px;object-fit:contain;} .sort-item img.fallback{display:none;}

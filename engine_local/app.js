@@ -4972,22 +4972,17 @@ const SlideModules = {
             $("stage").classList.remove("auto-adv");
             state.locked = false; state.attempts = 0; state.hintActive = false;
             state.ownsAudio = false; state.demoRunning = false; state.revealing = false;
-            /* [S01r7h] SME: "the two options will disappear, then my 4 options will come in the
-               same screen." The swap was instant - two tiles replaced by four between frames, which
-               reads as the board glitching rather than as one set leaving and another arriving. The
-               demo board fades out first, so the change has a beginning and an end, and only then is
-               it rebuilt. Same screen throughout; nothing navigates. */
-            const _demoBoard = host.firstElementChild;
-            if(_demoBoard) _demoBoard.classList.add("sg-swap-out");
+            /* [S01r7i] NO TRANSITION. SME: "don't show any transition, just the new four options
+               will come there." r7h faded the demo board out and the task board in, reading the
+               earlier "the two will disappear, then my 4 will come" as asking for a visible
+               handover; it was not. The four simply replace the two.
+               The 900ms beat stays - it is not a transition, it is the pause after the demo's last
+               tile settles, and without it the board changes while the child is still watching the
+               thing that was being demonstrated. */
             setTimeout(()=>{
               if(CARD.slides[state.idx] !== slide) return;
               host.innerHTML = "";
               SlideModules.SORT_GENDER.mount(host, slide, true);
-              const _taskBoard = host.firstElementChild;
-              if(_taskBoard){
-                _taskBoard.classList.add("sg-swap-in");
-                setTimeout(()=>{ try{ _taskBoard.classList.remove("sg-swap-in"); }catch(e){} }, 480);
-              }
             }, 900);
             return;
           }
