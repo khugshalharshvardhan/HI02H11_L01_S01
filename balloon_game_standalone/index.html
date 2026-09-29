@@ -9993,11 +9993,23 @@ const SlideModules = {
                               follows 420ms later, so it reads as the balloons taking her rather
                               than everything leaving at once.
                               completeSlide waits for her, not just for them. */
+                           /* [S01r7l] SME: "when the च balloons pop they will disappear upward just
+                              like the प balloons, and THEN the next screen will come."
+                              They were already being released - what was wrong is that nothing
+                              waited for them. clearField was handed an empty callback and the screen
+                              changed on a fixed 2200ms timer running in PARALLEL with the exit, so
+                              whether the child saw the board leave came down to whether the clear
+                              happened to finish inside that window. The round change never had this
+                              problem because it does the obvious thing: it passes what comes next AS
+                              the callback. The last round now does the same.
+                              The tail after it is Swiftie's: her flight is 2.1s and starts with the
+                              clear, so ~900ms of it is still running when the sky is empty. */
                            if(last) setTimeout(()=>{
                              if(!alive()) return;
                              try{ sw.classList.add("sw-flyaway"); }catch(e){}
-                             clearField(()=>{});
-                             setTimeout(()=>{ if(alive()) completeSlide(state.attempts === 0); }, 2200);
+                             clearField(()=>{
+                               setTimeout(()=>{ if(alive()) completeSlide(state.attempts === 0); }, 900);
+                             });
                            }, 700);
                            /* [S01r6j] let the board go up before the next one comes up */
                            else     setTimeout(()=> clearField(()=> { li++; renderLevel(); }), 500); });
