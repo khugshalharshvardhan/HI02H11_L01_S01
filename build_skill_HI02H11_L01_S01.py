@@ -707,8 +707,16 @@ def build_card():
     # new page 14 (was page 16) — new line, new target sound (न), new third option.
     # The deck explicitly does NOT want word-by-word highlighting here ("No word-by-word
     # highlighting is required"), so this page carries no teach_seq — it is a plain question.
+    # [r7m] SME: page 11's instruction and VO become "इस वाक्य में कौन-सी आवाज़ बार-बार आई?" - which
+    # is word-for-word the line page 10 already asks, and already has a human recording of
+    # (vo_g3_prompt, 3.44s). So this points at that clip rather than re-scripting vo_p4_prompt and
+    # adding a seventeenth line to the studio list for something already in the bundle.
+    # The two pages asking the identical question of two different sentences is the point of the
+    # pair, not a collision: page 10 is the च sentence, page 11 the न one.
+    # vo_p4_prompt goes unreferenced and drops out of the card. The line it held named the position
+    # of the sound ("शब्दों की शुरुआत में"), which this one deliberately does not.
     slides.append(pick_sound(
-        "P4", "practice", VO["vo_p4_prompt"],
+        "P4", "practice", VO["vo_g3_prompt"],
         ["नानी", "ने", "नई", "नाव", "बनाई।"], "vo_line_l6", "न",
         # [r5c] bare sounds on the reveal — see the vo_ltr_* note in the VO map above.
         # (ल already points at vo_snd_l, which was itself cut to the bare akshara for G3.)
@@ -721,7 +729,7 @@ def build_card():
         # ("शुरुआत में न की आवाज़ बार-बार आई।") - it repeated the hint, so this page never actually
         # told the child the answer. vo_p4_hint is retired; vo_p4_try already carries the
         # "you heard the LAST sound, we want the repeated one" steer that it duplicated.
-        {"prompt": "vo_p4_prompt", "target": "vo_ltr_n",
+        {"prompt": "vo_g3_prompt", "target": "vo_ltr_n",   # [r7m] shared with page 10
          "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct",
          "h1": "vo_p4_h1", "h2": "vo_p4_h2", "h3": "vo_p4_h3"},   # [r7a]
         mark_initial=True,     # [r5n] "शुरुआत में" - see pick_sound

@@ -6685,17 +6685,36 @@ const SlideModules = {
          stuck. spawnOne checks it for exactly that reason.
          Any tap clears it and restarts the clock - a child who is trying does not need the answer
          shown, and the help would otherwise stay on screen for the rest of the round. */
-      let idleT = 0, glowing = false;
+      /* [S01r7m] TWO STAGES OFF ONE CLOCK. SME: "if the child is inactive for 5 seconds the VO will
+         repeat automatically" - on top of the ten-second glow above. So quiet time now does two
+         things, in the order a teacher would: at 5s it ASKS AGAIN, and only if that does not move
+         them, at 10s it SHOWS. Saying it again first is the cheaper help and the one that leaves
+         the child something to do.
+         The repeat re-arms from the END of the clip, not from the tap, so the gap is five seconds of
+         actual silence rather than five seconds that the clip itself spends most of. It also never
+         talks over the game: if something is already sounding when it fires, it waits.
+         The glow's clock is separate and runs from the last real ACTIVITY, so a repeat the child
+         ignored does not postpone the stronger help. */
+      let idleT = 0, voT = 0, glowing = false;
       const clearGlow = ()=>{
         glowing = false;
         [...field.querySelectorAll(".balloon.bal-hot")].forEach(b => b.classList.remove("bal-hot"));
       };
+      const sayAgain = ()=>{
+        if(!alive() || state.locked) return;
+        if(isPlaying){ voT = setTimeout(sayAgain, 1200); return; }   /* never over the game's own voice */
+        const again = lvlAudio("prompt") || audioFor(slide, "prompt") || null;
+        state._balFb = true;        /* a tap may cut this - it is a reminder, not an instruction */
+        play(again, ()=>{ state._balFb = false;
+                          voT = setTimeout(sayAgain, 5000); });      /* 5s of SILENCE, then again */
+      };
       const armIdleGlow = ()=>{
-        clearTimeout(idleT); clearGlow();
+        clearTimeout(idleT); clearTimeout(voT); clearGlow();
+        voT  = setTimeout(sayAgain, 5000);        /* [S01r7m] ask again */
         idleT = setTimeout(()=>{
           if(!alive() || state.locked) return;
           glowing = true; glowCorrect();
-        }, 10000);   /* [S01r7j] was 5000 */
+        }, 10000);   /* [S01r7j] was 5000 — then show */
       };
 
       const fillBalloon = (b, it)=>{
@@ -6948,7 +6967,7 @@ const SlideModules = {
               doneImgs.add(it.img);              /* [S01r7f] never offered again this round */
               SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
               if(found >= need){
-                state.locked = true; clearTimeout(idleT); clearGlow();   /* [S01r7g] */
+                state.locked = true; clearTimeout(idleT); clearTimeout(voT); clearGlow();   /* [S01r7m] */
                 setSwMood("celebrate"); confettiCannon();
                 SwiftPAL.emit(d.signal_name || "balloon_sound_first_try", {
                   slide_id: slide.id, phase: slide.phase, value: state.attempts === 0,
@@ -7048,7 +7067,7 @@ const SlideModules = {
         need = its.filter(it => it.has === true).length;
         found = 0; state.locked = false; busy = false; revealing = false;
         doneImgs = new Set();                    /* [S01r7f] each round starts with all four open */
-        clearTimeout(idleT); glowing = false;    /* [S01r7g] */
+        clearTimeout(idleT); clearTimeout(voT); glowing = false;    /* [S01r7m] */
         killStream();
         [...field.querySelectorAll(".balloon")].forEach(b => b.remove());
         cells = [];
