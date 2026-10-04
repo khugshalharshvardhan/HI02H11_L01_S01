@@ -104,6 +104,12 @@ refs = set(re.findall(r"assets/[A-Za-z0-9_./ -]+?\.(?:png|jpe?g|webp|svg|gif|mp3
 # the engine builds some paths by concatenation (Swiftie's moods, the object art in the card), so
 # anything whose basename appears as a whole quoted string is kept too
 quoted = set(re.findall(r'["\']([A-Za-z0-9_-]{3,})["\']', out))
+# ...and by basename WITH its extension, which is how the celebration kit names its three sheets: the
+# card carries {"src": "cel_shabaash.webp"} and the player builds base + src at runtime. Neither rule
+# above can see that - the path is never literal, and the quoted token contains a dot, which the stem
+# pattern excludes - so the demo shipped a celebration whose sprites 404'd on every frame. Same blind
+# spot, same fix as sync_dist.referenced.
+quoted_files = set(re.findall(r'["\']([A-Za-z0-9_-]{3,}\.[A-Za-z0-9]{2,4})["\']', out))
 
 copied = bytes_ = 0
 for dp, _, fs in os.walk(os.path.join(SRC, "assets")):
@@ -111,7 +117,7 @@ for dp, _, fs in os.walk(os.path.join(SRC, "assets")):
         src = os.path.join(dp, fn)
         rel = os.path.relpath(src, SRC).replace(os.sep, "/")
         stem = os.path.splitext(fn)[0]
-        if rel not in refs and stem not in quoted:
+        if rel not in refs and stem not in quoted and fn not in quoted_files:
             continue
         dst = os.path.join(OUT, rel.replace("/", os.sep))
         os.makedirs(os.path.dirname(dst), exist_ok=True)
@@ -122,4 +128,6 @@ for dp, _, fs in os.walk(os.path.join(SRC, "assets")):
 total = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fs in os.walk(OUT) for f in fs)
 print("  %s/index.html  (%d slides kept)" % (OUT, len(KEEP)))
 print("  %d assets copied, %.2f MB" % (copied, bytes_ / 1048576.0))
-print("  folder total: %.2f MB  (the full delivery is 9.57 MB)" % (total / 1048576.0))
+# measured, not quoted: the delivery's size moves every round and a hardcoded one goes stale quietly
+full = sum(os.path.getsize(os.path.join(dp, f)) for dp, _, fs in os.walk(SRC) for f in fs)
+print("  folder total: %.2f MB  (the full delivery is %.2f MB)" % (total / 1048576.0, full / 1048576.0))

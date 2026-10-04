@@ -899,6 +899,134 @@ def build_card():
         # already retired the `light` cue with the word strip it lit.
     }
 
+    # ══════════════════════════════════════════════════════════════════════════════════════
+    #  [r8a] THE GATE AND THE CELEBRATION, PORTED FROM MTG204_L01_S01
+    #  SME: "extract the transition animation and its gif, also extract the end celebration screen;
+    #  both should be exactly the same as made in the repo, just text and VO will be according to my
+    #  file." So the artwork and every timing rule below are that lesson's, unchanged.
+    #
+    #  WHAT IS OURS: the words and the voice. The gate's title comes from the engine's own
+    #  PHASE_GATE_TITLE (already this lesson's Hindi) and its clip from vo_pt_<phase>; the
+    #  celebration runs against vo_p8_prompt, this lesson's closing line.
+    #
+    #  `bits` IS THE ONE MEASURED NUMBER and the one thing that is not portable: it is a lip-sync
+    #  track read off OUR clip at 25ms per step by the kit's make_lipsync.py. vo_p8_prompt is on the
+    #  re-record list, so WHEN IT IS RE-RECORDED THIS MUST BE RE-MEASURED - otherwise her mouth runs
+    #  to the rhythm of a take nobody will hear. The command is in _assets_round4/make_lipsync.py.
+    # ══════════════════════════════════════════════════════════════════════════════════════
+    GATE = {
+        "img":  "assets/UI/gate_peek.webp",
+        "peek": "assets/UI/gate_peek.webp",   # one continuous rise, played once
+        "talk": "assets/UI/gate_talk.webp",   # mouth open/close, only while the gate VO sounds
+        "rest": "assets/UI/gate_rest.webp",   # mouth closed, from the moment it ends
+        "peek_ms": 1520,                      # the reference's own timings - not re-tuned
+        "hold_ms": 450,
+    }
+    END_ANIM = {
+            "cols": 6,
+            "frames": 36,
+            "fw": 329,
+            "fh": 440,
+            "shabaash": {
+                    "src": "cel_shabaash.webp",
+                    "pre": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5
+                    ],
+                    "word": [
+                            6,
+                            7,
+                            8,
+                            9,
+                            10,
+                            11,
+                            12,
+                            13,
+                            14,
+                            15,
+                            16,
+                            17,
+                            18,
+                            19,
+                            20,
+                            21,
+                            22,
+                            23,
+                            24,
+                            25,
+                            26,
+                            27,
+                            28,
+                            29
+                    ],
+                    "post": [
+                            30,
+                            31,
+                            32,
+                            33,
+                            34,
+                            35
+                    ]
+            },
+            "talk": {
+                    "src": "cel_talk.webp",
+                    "open": [
+                            0,
+                            1,
+                            2,
+                            4,
+                            5,
+                            6,
+                            8,
+                            9,
+                            10,
+                            11,
+                            15,
+                            16,
+                            20,
+                            21,
+                            22,
+                            23,
+                            24,
+                            25,
+                            26,
+                            28,
+                            29,
+                            30,
+                            31,
+                            32
+                    ]
+            },
+            "idle": {
+                    "src": "cel_idle.webp",
+                    "loop": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            24,
+                            25,
+                            26,
+                            27,
+                            28,
+                            29,
+                            30,
+                            31,
+                            32,
+                            33,
+                            34,
+                            35
+                    ]
+            },
+            "bits": "0000000000000111111000111111111000011000000000000001111100000011111111100000110000001110000000000000000000111100000011110000011111111000011100001111111111110000000000000000001111110000111111111111111100111100111111110011111100000011000000011111111111110000000000000000111100000001111111000000000000000001111100000000000000111110011111111100000111110000011111000000011111000000000000",
+            "step_ms": 25
+    }
+
     card = {
         "version": "0.1",
         "skill_code": CODE,
@@ -911,6 +1039,8 @@ def build_card():
         "title": {"hi": "बार-बार आने वाली ध्वनि",
                   "en": "Recognise the repeated letter-sound in a line"},
         "subtitle_hi": "",
+        "gate": GATE,            # [r8a] the three-piece transition
+        "end_anim": END_ANIM,    # [r8a] sheets + the lip-sync track for OUR closing line
         "theme": "toybox",
         "skill_description_hi": "सुनी या पढ़ी गई पंक्ति/वाक्य में बार-बार आने वाले वर्ण या ध्वनि को पहचानता है — "
                                 "जैसे 'पीतल के पतीले में पपीता पीला-पीला'।",

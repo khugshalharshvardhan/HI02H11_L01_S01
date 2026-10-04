@@ -2906,3 +2906,33 @@ html.no-anim .wg-fx{display:none;}
 /* the outward spark ring added with toolkit recipe 20 was red by definition — with the colour gone
    from the tile, a red burst around it is the only red left on screen, so it goes too */
 .wg-fx{ display:none !important; }
+
+/* ═══ [S01r8a] PORTED FROM MTG204_L01_S01 ═══════════════════════════════════════════════════════
+   Two pieces of that lesson, taken whole on the SME's instruction ("both of these should be exactly
+   the same as made in the repo, just text and VO will be according to my file"):
+     1. THE GATE. Swiftie peeks up once, then the title is written in with a left-to-right wipe as
+        she starts to talk, and her mouth runs only while the gate VO is actually sounding. The old
+        gate played one long animation and started the VO at a fixed offset, so the mouth and the
+        voice lined up only by luck.
+     2. THE CELEBRATION. A lip-synced Swiftie on the end screen: she jumps on «शाबाश!», then her
+        beak opens on each syllable of this lesson's own closing line, then idles mouth-shut.
+   The ARTWORK and the TIMING RULES are the reference's, verbatim. What is ours is the text
+   (PHASE_GATE_TITLE, already Hindi for this lesson) and the voice (vo_pt_* and vo_p8_prompt), plus
+   the lip-sync track, which is measured from OUR clip and is the only lesson-specific number in the
+   celebration kit. */
+.phase-gate #phaseGateImg.pg-card{ animation:none; height:clamp(200px,30vh,290px); }
+@keyframes pgWrite{ from{ clip-path:inset(-30% 112% -30% -12%); } to{ clip-path:inset(-30% -12% -30% -12%); } }
+.pg-title.pg-wait{ visibility:hidden; }
+.pg-title.pg-write{ animation:pgWrite .9s ease-out both; }
+/* the stock end mascot steps aside for the lip-synced one; the आगे बढ़ें button must not move, so the
+   host is given the same footprint the image had */
+#endScreen .end-mascot.cel-off{ display:none !important; }
+#celBox{ width:300px; height:358px; position:relative; z-index:2; }
+
+/* Swiftie celebration kit — the sprite fills its host's HEIGHT; the art is 420/358 of the host so the
+   jump's head-room rises above the host box (the layout box, and anything placed under it, keeps the
+   standard 358 px mascot geometry). Give the host a height (e.g. 358px) and a width (~300px). */
+.swc-sprite{position:relative;width:100%;height:100%;animation:swcPop .55s cubic-bezier(.34,1.5,.6,1);}
+.swc-sprite .swc-art{position:absolute;left:50%;bottom:0;height:117.3%;transform:translateX(-50%);
+  background-repeat:no-repeat;background-size:600% 600%;filter:drop-shadow(0 12px 22px rgba(0,47,118,.22));}
+@keyframes swcPop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}

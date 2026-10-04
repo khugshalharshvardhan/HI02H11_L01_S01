@@ -2758,7 +2758,12 @@ html.no-anim .wg-fx{display:none;}
     <div class="confetti" id="confetti"></div>
     <div class="end-title" id="endTitle"></div>
     <div class="end-subtitle" id="endSubtitle"></div>
-    <img class="end-mascot" src="assets/UI/sw_lg_celebrating_anim.webp" alt="Swiftee"
+    <!-- [S01r8a] the lip-synced celebration replaces this image, and r8a dropped the 682 KB
+         animation it used to point at to make room for the kit's three sheets. A shipped
+         asset is kept as the src rather than none: the element is hidden the moment the kit
+         mounts, but if the kit ever fails to start, the end screen still shows a celebrating
+         Swiftie instead of a broken image. -->
+    <img class="end-mascot" src="assets/UI/sw_head_celebrate_anim.webp" alt="Swiftee"
          onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'end-mascot',textContent:'🎉'}))">
     <button class="end-btn" id="endBtn" aria-label="आगे बढ़ें"></button>
   </div>
@@ -2774,7 +2779,9 @@ html.no-anim .wg-fx{display:none;}
      and shrink the gate with the stage - production pattern). -->
 <div class="phase-gate" id="phaseGate">
     <div class="pg-title" id="phaseGateTitle"></div>
-    <img id="phaseGateImg" src="assets/UI/peeking.webp" alt="">   <!-- [20a landing-fix] reunited with #phaseGate (was orphaned in .stage → full-bleed on landing once the gate went transparent) -->
+    <!-- [S01r8a] the three-piece gate sets this on every open; the default is the peek piece so a
+         cold load requests something that exists (peeking.webp went with the port). -->
+    <img id="phaseGateImg" src="assets/UI/gate_peek.webp" alt="">   <!-- [20a landing-fix] reunited with #phaseGate (was orphaned in .stage → full-bleed on landing once the gate went transparent) -->
 </div>
 
 <!-- ============ CARD DATA (embedded; in prod the compiler does this) ============ -->

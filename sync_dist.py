@@ -95,7 +95,14 @@ def referenced(rel, stem, html):
     folder = rel.replace(os.sep, "/").rsplit("/", 1)[0]
     if re.search(r"%s/%s\.%s" % (re.escape(folder), re.escape(stem), ANY_EXT), html):
         return True
-    return re.search(r"[\"']%s[\"']" % re.escape(stem), html) is not None
+    if re.search(r"[\"']%s[\"']" % re.escape(stem), html):
+        return True
+    # [r8a] ...and the basename WITH its extension, quoted. The celebration kit names its sheets
+    # that way - the page carries {"src": "cel_shabaash.webp"} and builds the path at runtime as
+    # base + src - so neither test above can see them, and all three were silently left out of the
+    # first build. This is the same concatenation blind spot build_dist.py documents for Swiftie's
+    # moods; it costs nothing to close and a missing sheet is a celebration that never animates.
+    return re.search(r"[\"']%s[\"']" % re.escape(os.path.basename(rel)), html) is not None
 
 
 def encode_audio(src, dst, rate):

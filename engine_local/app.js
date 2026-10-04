@@ -7422,8 +7422,73 @@ const PHASE_GATE_VO    = { tutorial:"vo_pt_tutorial", guided:"vo_pt_guided",
    which fails safe to "no gate" rather than to a spurious extra one. */
 const PHASE_ROUND = { tutorial:"tutorial", guided:"guided", practice:"round3", independent:"round3" };
 const _gatedPhases = new Set();   // each ROUND gate plays ONCE (Start→tutorial, →guided, →round 3)
+/* [S01r8a] the three-piece gate, ported from MTG204_L01_S01 — see the note on phaseBlurTransition */
+function _gateThreePiece(cb, toPhase, G){
+  const tok = ++_gateToken;
+  stopNudge(); stopAudio();
+  const gate = $("phaseGate"), im = $("phaseGateImg"), title = $("phaseGateTitle");
+  /* clearing src before setting it restarts an animated webp from frame 0 - without it a second
+     gate opens on whatever frame the first one stopped at */
+  const setImg = (src)=>{ im.removeAttribute("src"); void im.offsetWidth; im.src = src; };
+  if(im){ im.classList.add("pg-card"); setImg(G.peek); }
+  if(title){ title.textContent = PHASE_GATE_TITLE[toPhase] || "";
+             title.classList.remove("pg-write"); title.classList.add("pg-wait"); }
+  $("stage").classList.add("blurred", "gating");
+  document.body.classList.add("gating");
+  gate.classList.add("show", "hint-glow");
+  SwiftPAL.emit("phase_transition", { to: toPhase });
+  const closeGate = ()=>{ gate.classList.remove("show"); $("stage").classList.remove("blurred", "gating");
+                          document.body.classList.remove("gating"); };
+  const voId = PHASE_GATE_VO[toPhase];
+  const voSrc = voId ? ("assets/Audio/" + voId + "." + AUDIO_EXT) : null;
+  let finished = false;
+  const finish = ()=>{
+    if(finished) return; finished = true;
+    if(tok !== _gateToken){ closeGate(); return; }
+    if(im && G.rest) setImg(G.rest);                 /* the mouth closes with the last word */
+    setTimeout(()=>{
+      if(tok !== _gateToken){ closeGate(); return; }
+      gate.classList.remove("show");
+      $("stage").classList.remove("blurred");
+      if(cb) cb();
+      $("stage").classList.remove("gating");
+      document.body.classList.remove("gating");
+    }, G.hold_ms || 450);
+  };
+  const talk = ()=>{
+    if(tok !== _gateToken){ closeGate(); return; }
+    if(title){ title.classList.remove("pg-wait"); void title.offsetWidth; title.classList.add("pg-write"); }
+    if(im && G.talk) setImg(G.talk);
+    play(voSrc, finish);
+    setTimeout(finish, 12000);                       /* never strand the child */
+  };
+  /* the peek clock starts when the peek image has actually decoded, not when it was requested -
+     otherwise a cold cache opens the gate on an empty frame and the rise is simply missed */
+  let started = false;
+  const go = ()=>{ if(started) return; started = true; setTimeout(talk, G.peek_ms || 1500); };
+  if(!im || im.complete) go();
+  else { im.addEventListener("load", go, { once:true });
+         im.addEventListener("error", go, { once:true });
+         setTimeout(go, 2500); }
+}
 let _gateToken = 0;
+/* [S01r8a] THE GATE IS MTG204_L01_S01's, PIECE FOR PIECE. SME: "extract the transition animation
+   and its gif ... exactly the same as made in the repo, just text and VO will be according to my
+   file."
+   The stock gate played ONE long animation and started the VO at a fixed offset, so the mouth and
+   the voice agreed only by accident. The reference splits it into three:
+       peek  — one continuous rise, played once      (CARD.gate.peek_ms)
+       talk  — mouth open/close, shown ONLY while the gate VO is actually sounding
+       rest  — mouth closed, from the moment the VO ends
+   and writes the title in with a left-to-right wipe as she starts to talk.
+   What is OURS is the text and the voice: PHASE_GATE_TITLE is already this lesson's Hindi, and the
+   clip is whichever vo_pt_* the phase names. Nothing about her timing was re-tuned.
+   The shell below is the engine's own - same token, same blur, same header hide - so a gate that is
+   superseded still closes cleanly. It falls back to the single-image path when the card ships no
+   gate.peek, which is what keeps this function safe for any other lesson built on this engine. */
 function phaseBlurTransition(cb, toPhase){
+  const G = (CARD && CARD.gate) || {};
+  if(G.peek) return _gateThreePiece(cb, toPhase, G);
   const tok = ++_gateToken;
   stopNudge(); stopAudio();
   const gate = $("phaseGate"), img = $("phaseGateImg");
@@ -8060,3 +8125,153 @@ function buildDevNav(){
   setInterval(sync, 300); sync();
 }
 boot();
+
+
+/* ═══ [S01r8a] SWIFTIE CELEBRATION KIT — ported verbatim from MTG204_L01_S01 ════════════════════
+   The player below is the reference's `swiftie_celebration.js`, unedited. Its sheets and the frame
+   lists in CEL_META were measured by eye in that repo and its README says in terms not to touch
+   them; nothing in them is lesson-specific.
+   The one lesson-specific number is the lip-sync TRACK, which was measured from THIS lesson's own
+   closing clip (vo_p8_prompt, 9.57s) with the kit's make_lipsync.py. If that line is ever
+   re-recorded - and it is on the studio list - the track must be re-measured or her mouth will run
+   against the old rhythm. Both ride on the card, so the build owns them. */
+/* ============================================================================================
+   SWIFTIE CELEBRATION KIT — player (framework-free, no dependencies)
+   ============================================================================================
+   Plays the three celebration sheets (cel_shabaash / cel_talk / cel_idle) lip-synced to a voice-over.
+
+     SwiftieCelebration.play({
+       host:     <element>,                 // where Swiftie goes (she fills its height)
+       meta:     <cel_meta.json object>,    // frame size, grid, open-mouth frames, roles
+       base:     "assets/UI/celebration/",  // folder the three .webp sheets are served from
+       bits:     "0001111...",              // lip-sync track from make_lipsync.py (25 ms per char)
+       step_ms:  25,
+       // THE CLOCK — give ONE of these:
+       audio:    <HTMLAudioElement>,        // best: time = audio.currentTime
+       isSounding: ()=> bool                // or: true while the VO is sounding (timer starts then)
+     })  -> { stop() }
+
+   Timeline (all from the VO clock):
+     before the first sound   shabaash 0-5    standing, mouth shut
+     first word («शाबाश!»)    shabaash 6-29   the jump, mouth open — stretched to that word
+     the pause after it       shabaash 30-35  lands, mouth shut
+     rest of the line         talk sheet: a cursor walks the sheet forward (so the body keeps moving)
+                              but only lands on frames whose mouth matches the track at that instant
+     after the VO             idle sheet, mouth-shut frames only, looping
+   Measured on MTG2A04_L01_S01: mouth = VO in 99.6-100 % of samples; every miss within one paint.
+   ============================================================================================ */
+(function(global){
+  "use strict";
+  function play(o){
+    const M = o.meta, base = (o.base || "").replace(/\/?$/, "/");
+    const bits = o.bits || "", step = o.step_ms || 25;
+    const S = M.shabaash, T = M.talk, I = M.idle, COLS = M.cols || 6, N = M.frames || 36;
+    const OPEN = new Set(T.open);
+    let stopped = false;
+
+    const sp = document.createElement("div");
+    sp.className = "swc-sprite";
+    sp.innerHTML = '<div class="swc-art"></div>';
+    o.host.appendChild(sp);
+    const art = sp.firstChild;
+    art.style.aspectRatio = M.fw + " / " + M.fh;
+    [S, T, I].forEach(s => { const i = new Image(); i.src = base + s.src; });   /* warm all three */
+
+    let cur = "";
+    const show = (sheet, i)=>{
+      const url = base + sheet.src;
+      if(url !== cur){ art.style.backgroundImage = 'url("' + url + '")'; cur = url; }
+      const c = i % COLS, r = Math.floor(i / COLS);
+      art.style.backgroundPosition = (c * 100 / (COLS - 1)) + "% " + (r * 100 / (COLS - 1)) + "%";
+      sp.dataset.sheet = sheet === S ? "shabaash" : (sheet === I ? "idle" : "talk"); sp.dataset.f = i;
+    };
+    show(S, S.pre[0]);
+
+    const loud = (t)=> bits.charAt(Math.floor(t / step)) === "1";
+    const GAP = Math.round(200 / step);                       /* a 200 ms silence ends the first word */
+    let s0 = bits.indexOf("1"), e0 = s0, gap = 0;
+    for(let k = s0; k >= 0 && k < bits.length; k++){ if(bits[k] === "1"){ e0 = k; gap = 0; } else if(++gap >= GAP) break; }
+    const speechStart = Math.max(0, s0) * step, wordEnd = (e0 + 1) * step;
+    const ns = bits.indexOf("1", e0 + GAP), nextStart = ns < 0 ? wordEnd : ns * step;
+    const lenMs = bits.length * step;
+    const seg = (list, t, a, b)=> list[Math.min(list.length - 1, Math.max(0, Math.floor((t - a) / Math.max(1, b - a) * list.length)))];
+
+    const idle = ()=>{ let j = 0; (function tick(){ if(stopped || !sp.isConnected) return;
+      show(I, I.loop[j % I.loop.length]); j++; setTimeout(tick, 110); })(); };
+
+    /* the clock */
+    let t0 = 0, started = false;
+    /* audio.currentTime advances in coarse steps in some browsers, so it only ANCHORS a smooth clock:
+       t0 is set once from it when the clip starts; after that time is performance.now() - t0 */
+    const t_now = ()=> performance.now() - t0;
+    const sounding = ()=> o.audio ? (!o.audio.paused && !o.audio.ended) : !!(o.isSounding && o.isSounding());
+    const waitStart = performance.now();
+    let cursor = 0, curOpen = null, lastStep = 0;
+    (function frame(){
+      if(stopped || !sp.isConnected) return;
+      const now = performance.now();
+      if(!started){
+        if(sounding() && (!o.audio || o.audio.currentTime > 0)){ started = true; t0 = now - (o.audio ? o.audio.currentTime * 1000 : 0); }
+        else if(now - waitStart > 1800){ idle(); return; }            /* the VO never started */
+        else { requestAnimationFrame(frame); return; }
+      }
+      const t = t_now(); sp.dataset.t = Math.round(t);
+      if(!sounding() || t > lenMs + 400){ idle(); return; }
+      if(t < speechStart) show(S, seg(S.pre, t, 0, speechStart));
+      else if(t < wordEnd) show(S, seg(S.word, t, speechStart, wordEnd));
+      else if(t < nextStart) show(S, seg(S.post, t, wordEnd, nextStart));
+      else {
+        const want = loud(t + 16);                        /* one paint ahead: the frame shows on the NEXT paint */
+        if(want !== curOpen || now - lastStep > 80){      /* at once on a mouth change, else every 80 ms */
+          let k = 1;
+          while(k < N && OPEN.has((cursor + k) % N) !== want) k++;
+          cursor = (cursor + k) % N; show(T, cursor); curOpen = want; lastStep = now;
+        }
+      }
+      requestAnimationFrame(frame);
+    })();
+    return { el: sp, stop(){ stopped = true; } };
+  }
+  global.SwiftieCelebration = { play };
+})(window);
+
+/* Wire it to this lesson's end screen. The engine's CELEBRATION module is wrapped rather than
+   edited, exactly as the kit's README prescribes: the stock .end-mascot is hidden and a host of the
+   same footprint takes its place, so the आगे बढ़ें button does not move.
+   `isSounding: () => isPlaying` is how the kit couples to a SwiftPAL engine - the celebration VO is
+   played by the module through play(), which owns that flag, so the mouth follows the real clip
+   rather than a timer that could drift from it. */
+(function wireCelebration(){
+  const CEL = (CARD && CARD.end_anim) || null;
+  if(!CEL || !CEL.bits || !window.SwiftieCelebration) return;
+  const _mount = SlideModules.CELEBRATION && SlideModules.CELEBRATION.mount;
+  if(!_mount) return;
+  const startCel = ()=>{
+    try{
+      const img = document.querySelector("#endScreen .end-mascot");
+      if(!img) return;
+      let box = document.getElementById("celBox");
+      if(!box){ box = document.createElement("div"); box.id = "celBox";
+                img.parentNode.insertBefore(box, img); }
+      img.classList.add("cel-off");
+      box.innerHTML = "";
+      SwiftieCelebration.play({
+        host: box, meta: CEL, base: "assets/UI/celebration/",
+        bits: CEL.bits, step_ms: CEL.step_ms || 25,
+        isSounding: ()=> isPlaying
+      });
+    }catch(e){}
+  };
+  SlideModules.CELEBRATION.mount = function(host, slide){
+    const r = _mount.apply(this, arguments);
+    startCel();
+    return r;
+  };
+  /* [S01r8a] AND START IT IF THE SCREEN IS ALREADY UP. The `?slide=N` jump calls mountSlide during
+     script evaluation - before these closing lines run - so a celebration reached that way was
+     mounted by the UNWRAPPED module and the wrapper was installed a moment too late to matter.
+     Measured exactly that: end screen showing, module wrapped, and no celBox. Normal play reaches
+     the end long afterwards and was never affected, which is precisely what would have made this a
+     QA-only ghost. Wrapping for the future AND catching the present costs three lines. */
+  if(document.querySelector("#endScreen.show .end-mascot")) startCel();
+})();
