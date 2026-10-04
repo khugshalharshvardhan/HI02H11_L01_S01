@@ -307,7 +307,17 @@ INHERITED_AUDIO = ["vo_pt_tutorial", "vo_pt_guided", "vo_pt_practice",
                    # the dist asset walker - can see that it exists. It is NOT in
                    # assets.audio_text, so check_clip_lengths skips it: there is no line for a
                    # twelve-second loop of music to be "too short to contain".
-                   "sfx_bal_music"]
+                   "sfx_bal_music",
+                   # [r8b] And the LESSON's bed, which the SME supplied as an 18.46s piece and asked
+                   # to hear under the whole file except the balloon game. Declared for the same
+                   # reason as the two above - an undeclared id is invisible to the manifest, the
+                   # receipt and the dist walker - and, like sfx_bal_music, kept out of
+                   # assets.audio_text so check_clip_lengths has no line to measure it against.
+                   # The file that ships is NOT the SME's original: that one ends with a chord
+                   # ringing out to silence, so looping it drops into near-silence and snaps back
+                   # every pass. _assets_round4/make_bg_loop.py folds the ring-out back over the
+                   # head, which is what makes the loop joinless; re-run it if the source changes.
+                   "sfx_bg_music"]
 # [r4 · row 13] "A small काँव-काँव sound effect can play when the crow appears, if suitable."
 # DELIVERED in r4d: an SME recording, trimmed here to one call. This list means "not scripted
 # in VO" — these are sounds, not lines — not "still outstanding". sfx_kanv stays in it because a

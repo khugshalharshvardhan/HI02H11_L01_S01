@@ -182,7 +182,7 @@ function playSfx(id){
   /* [S01r6q] SME: the bed drops for sfx as well as speech. Announced HERE rather than at each call
      site so a sound effect added later cannot forget to do it. A time window rather than a flag
      because this element is fire-and-forget - nothing here waits for it to end. */
-  try{ BAL_MUSIC.sfxUntil = Date.now() + BAL_MUSIC.sfxHold; }catch(e){}
+  try{ for(const M of _BEDS) M.sfxUntil = Date.now() + M.sfxHold; }catch(e){}
   try{
     const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
     a.volume = 0.7;
@@ -636,56 +636,94 @@ function armSkyBurst(){
        succession extend one duck instead of stacking two.
    Held over from r6i: it honours mute continuously rather than once at the start, it fades rather
    than cuts, and it never outlives the page. */
-const BAL_MUSIC = {
-  id: "sfx_bal_music",
-  vol: 0.272,          /* [S01r7e] SME: 20% quieter than r6q's 0.34 */
-  duck: 0.34,          /* of that, while a clip or a pop is sounding */
-  sfxHold: 420,        /* ms a pop keeps the bed down for */
-  up: 0.008,           /* per 40ms tick: ~1.1s to swell back */
-  down: 0.055,         /* per 40ms tick: ~170ms to get out of the way */
-  el: null, gate: 0, sfxUntil: 0,
-};
+/* [S01r8b] THE BED IS NOW A KIND OF THING, NOT A SINGLETON. The SME asked for background music
+   under the WHOLE lesson - "when we click on the play button then only the music will start playing
+   in my entire file except in the balloon game, it has its own music" - so there are two beds now,
+   and they want identical behaviour: duck under speech, duck under pops, honour mute continuously,
+   fade rather than cut, never outlive their owner.
+   That behaviour was hard-won (see the two notes inside start, both of which were live bugs), so it
+   is EXTRACTED rather than copied. A second hand-written copy would have drifted the first time one
+   of them was tuned, and the failure mode of this particular code is silence - a bed stuck at
+   volume 0 with nothing logged - which is exactly the kind of bug that survives review.
+   `suspended` is the only genuinely new idea: the lesson bed does not stop for the balloon game, it
+   steps aside for it and comes back, so the game's own music is the only thing playing there and
+   the child does not hear the lesson bed restart from the top afterwards. */
+const _BEDS = [];
+function makeMusicBed(cfg){
+  const M = Object.assign({
+    vol: 0.272,        /* [S01r7e] SME: 20% quieter than r6q's 0.34 */
+    duck: 0.34,        /* of that, while a clip or a pop is sounding */
+    sfxHold: 420,      /* ms a pop keeps the bed down for */
+    up: 0.008,         /* per 40ms tick: ~1.1s to swell back */
+    down: 0.055,       /* per 40ms tick: ~170ms to get out of the way */
+    el: null, gate: 0, sfxUntil: 0, suspended: false,
+  }, cfg);
+  M.start = function(){
+    try{
+      if(M.el) return;
+      if(document.documentElement.classList.contains("no-anim")) return;
+      const a = new Audio("assets/Audio/" + M.id + "." + AUDIO_EXT);
+      a.loop = true; a.volume = 0; a.preload = "auto";
+      M.el = a; M.sfxUntil = 0;
+      /* ONE interval owns the level, and it recomputes the target every tick rather than being told
+         when to duck. A clip can end half a dozen ways here - natural end, stopAudio, a superseded
+         chain, a missing file, a refused autoplay - and only a poll sees all of them. Being told
+         would eventually leave the bed stuck down after an ending nobody wired. */
+      M.gate = setInterval(()=>{
+        const el = M.el; if(!el) return;
+        const busy = isPlaying || Date.now() < M.sfxUntil;
+        const target = (isMuted || M.suspended) ? 0
+                     : (busy ? M.vol * M.duck : M.vol);
+        const d = target - el.volume;
+        const v = Math.max(0, Math.min(1, el.volume + (d > 0 ? Math.min(d, M.up)
+                                                             : Math.max(d, -M.down))));
+        try{ el.volume = v; }catch(e){}
+        /* a suspended bed is PAUSED once it has faded out, not left running silently: an element at
+           volume 0 still holds a decoder and still advances currentTime, so leaving it would bring
+           the lesson back mid-phrase somewhere the child never heard it reach. */
+        if(M.suspended){ if(v <= 0.001 && !el.paused){ try{ el.pause(); }catch(e){} } }
+        else if(el.paused){ try{ const pr = el.play(); if(pr && pr.catch) pr.catch(()=>{}); }catch(e){} }
+      }, 40);
+      /* STARTED LAST, AND IN ITS OWN TRY. play() is only specified to return a promise in modern
+         engines; where it does not, `.catch` on undefined throws - and with this call placed BEFORE
+         the interval, the outer try swallowed that and the gate above never ran. The bed then sat at
+         volume 0 for the life of the page with nothing logged anywhere. The ramp is armed first now,
+         so a refused autoplay cannot take it down. */
+      try{ const pr = a.play(); if(pr && pr.catch) pr.catch(()=>{}); }catch(e){}
+    }catch(e){}
+  };
+  M.stop = function(){
+    try{
+      const el = M.el; if(!el) return;
+      M.el = null; M.sfxUntil = 0; M.suspended = false;
+      clearInterval(M.gate);
+      /* fade rather than cut, then stop for real - a paused element at volume 0 still holds a decoder */
+      let v = el.volume;
+      const f = setInterval(()=>{
+        v -= 0.08;
+        if(v <= 0){ clearInterval(f); try{ el.pause(); el.currentTime = 0; el.src = ""; }catch(e){} }
+        else { try{ el.volume = v; }catch(e){} }
+      }, 40);
+    }catch(e){}
+  };
+  M.suspend = function(){ M.suspended = true; };
+  M.resume  = function(){ M.suspended = false; };
+  _BEDS.push(M);
+  return M;
+}
+const BAL_MUSIC = makeMusicBed({ id: "sfx_bal_music" });
+/* [S01r8b] the lesson's own bed. Quieter than the balloon game's: that one plays under a board with
+   long silences, this one plays under pages that talk almost continuously, so it is heard mostly in
+   the gaps between sentences and at the game's level it would be sitting on top of the voice. */
+const BG_MUSIC = makeMusicBed({ id: "sfx_bg_music", vol: 0.19 });
 function balMusicStart(){
-  try{
-    if(BAL_MUSIC.el) return;
-    if(document.documentElement.classList.contains("no-anim")) return;
-    const a = new Audio("assets/Audio/" + BAL_MUSIC.id + "." + AUDIO_EXT);
-    a.loop = true; a.volume = 0; a.preload = "auto";
-    BAL_MUSIC.el = a; BAL_MUSIC.sfxUntil = 0;
-    /* ONE interval owns the level, and it recomputes the target every tick rather than being told
-       when to duck. A clip can end half a dozen ways here - natural end, stopAudio, a superseded
-       chain, a missing file, a refused autoplay - and only a poll sees all of them. Being told
-       would eventually leave the bed stuck down after an ending nobody wired. */
-    BAL_MUSIC.gate = setInterval(()=>{
-      const el = BAL_MUSIC.el; if(!el) return;
-      const busy = isPlaying || Date.now() < BAL_MUSIC.sfxUntil;
-      const target = isMuted ? 0 : (busy ? BAL_MUSIC.vol * BAL_MUSIC.duck : BAL_MUSIC.vol);
-      const d = target - el.volume;
-      const v = Math.max(0, Math.min(1, el.volume + (d > 0 ? Math.min(d, BAL_MUSIC.up)
-                                                           : Math.max(d, -BAL_MUSIC.down))));
-      try{ el.volume = v; }catch(e){}
-    }, 40);
-    /* STARTED LAST, AND IN ITS OWN TRY. play() is only specified to return a promise in modern
-       engines; where it does not, `.catch` on undefined throws - and with this call placed BEFORE
-       the interval, the outer try swallowed that and the gate above never ran. The bed then sat at
-       volume 0 for the life of the page with nothing logged anywhere. The ramp is armed first now,
-       so a refused autoplay cannot take it down. */
-    try{ const pr = a.play(); if(pr && pr.catch) pr.catch(()=>{}); }catch(e){}
-  }catch(e){}
+  /* the SME's rule - the balloon game has its OWN music - so the lesson bed steps aside for it */
+  try{ BG_MUSIC.suspend(); }catch(e){}
+  BAL_MUSIC.start();
 }
 function balMusicStop(){
-  try{
-    const el = BAL_MUSIC.el; if(!el) return;
-    BAL_MUSIC.el = null; BAL_MUSIC.sfxUntil = 0;
-    clearInterval(BAL_MUSIC.gate);
-    /* fade rather than cut, then stop for real - a paused element at volume 0 still holds a decoder */
-    let v = el.volume;
-    const f = setInterval(()=>{
-      v -= 0.08;
-      if(v <= 0){ clearInterval(f); try{ el.pause(); el.currentTime = 0; el.src = ""; }catch(e){} }
-      else { try{ el.volume = v; }catch(e){} }
-    }, 40);
-  }catch(e){}
+  BAL_MUSIC.stop();
+  try{ BG_MUSIC.resume(); }catch(e){}
 }
 function buildSky(){
   try{
@@ -828,7 +866,18 @@ function setNavActive(on){
      guarantees a pulse cannot outlive the slide that asked for it. Modules re-arm AFTER calling
      setNavActive(true), which is the order finish() uses. */
   stopNavPulse();
-  /* [20a nudge-03] no auto-nudge on आगे — buttons are known affordances (ruling); nudge is for learning elements only. */
+  /* [S01r8b] ...and it is also the one place that can give EVERY page the pulse. SME: "in every page
+     where next button is showing, the next button will pulsate after the VO is completed."
+     r6k had added this for pages 1/3/5 by having those three modules ask for it; asking the other
+     dozen mechanics to each remember a call is how one of them quietly does not. Arming here instead
+     means the rule holds for any slide, including any added later, and the three pages that want a
+     different wait still get it - they call armNavPulse(3000) immediately AFTER setNavActive(true),
+     which re-arms over this one.
+     This narrows the [20a nudge-03] ruling noted above rather than breaking it: that ruling is about
+     the HAND, and the SME has now asked three separate times (r5r on the cover, r6k on 1/3/5, and
+     here for everything) for a pulse on the button itself in exactly this situation. */
+  if(on) armNavPulse(600);
+  /* [20a nudge-03] no auto-nudge HAND on आगे — buttons are known affordances (ruling); the hand is for learning elements only. */
 }
 /* [S01r6k] आगे ASKS, AFTER THREE QUIET SECONDS. SME, for pages 1/3/5: "the next button will active
    and this button will have pulse effect AFTER 3 SECONDS OF INACTIVITY."
@@ -845,10 +894,20 @@ function armNavPulse(ms){
   state.navPulseArmed = true;
   clearTimeout(state.navPulseTimer);
   btn.classList.remove("idle-pulse");
+  /* [S01r8b] "after the VO is completed" has to survive arriving BEFORE it starts. setNavActive now
+     arms this on every mount, and a mechanic that calls it before its own play() would otherwise
+     find nothing sounding, conclude the page had finished talking, and pulse under the opening
+     sentence - the precise thing the SME is asking not to see. So silence only counts once a clip
+     has actually been heard, or once a short grace has passed with none: a page with no VO at all
+     still pulses, just a beat later. The grace is measured from arming, so the 3000ms that pages
+     1/3/5 ask for is already past it and their behaviour is unchanged. */
+  const t0 = Date.now();
+  let heard = false;
   const tick = ()=>{
     if(!state.navPulseArmed) return;
     const b = $("navBtn"); if(!b || b.disabled) return;
-    if(isPlaying || state.hintActive){ state.navPulseTimer = setTimeout(tick, 600); return; }
+    if(isPlaying || state.hintActive){ heard = true; state.navPulseTimer = setTimeout(tick, 600); return; }
+    if(!heard && Date.now() - t0 < 1500){ state.navPulseTimer = setTimeout(tick, 250); return; }
     b.classList.add("idle-pulse");
   };
   state.navPulseTimer = setTimeout(tick, ms || 3000);
@@ -7786,7 +7845,7 @@ function boot(){
             if(b && b.disabled && window.__setStartBtnReady){
               window.__greetingDone = true;
               window.__setStartBtnReady(true);
-              if(window.__armStartNudge) window.__armStartNudge();
+              if(window.__armStartNudge) window.__armStartNudge(0);   /* [S01r8b] pulse at once */
             }
           }, Math.round(_dur * 1000) + 8000);
         }
@@ -7794,7 +7853,7 @@ function boot(){
           if(!onLanding()) return;
           window.__greetingDone = true;
           if(window.__setStartBtnReady) window.__setStartBtnReady(true);
-          if(window.__armStartNudge) window.__armStartNudge(); };
+          if(window.__armStartNudge) window.__armStartNudge(0);   /* [S01r8b] pulse at once */ };
         let armOnFinish = true;
 
         const fired = new Set();
@@ -7851,7 +7910,7 @@ function boot(){
            greeting never starts would otherwise be a dead end with no way into the lesson. */
         window.__greetingDone = true;
         if(window.__setStartBtnReady) window.__setStartBtnReady(true);
-        if(window.__armStartNudge) window.__armStartNudge();
+        if(window.__armStartNudge) window.__armStartNudge(0);   /* [S01r8b] pulse at once */
       }, 6000);
       return;
     }
@@ -7911,17 +7970,21 @@ function boot(){
     if(!ready) b.classList.remove("idle-pulse");
   };
   window.__setStartBtnReady = setStartBtnReady;
-  /* [S01r7h] THE BUTTON IS LIVE FROM FIRST PAINT NOW. SME: "the VO will come after we tap on the
-     play button." Nothing speaks on arrival, so there is nothing to protect the child from talking
-     over, and the whole reason this button was born disabled has gone with it.
-     That also retires the r5y trap at the root rather than guarding it: the cover used to hold the
-     only way into the lesson shut for fifteen seconds while a greeting played, and every bug on
-     this screen since has been some version of "the button was disabled at the wrong moment". A
-     button that is never disabled cannot be disabled at the wrong moment. */
-  setStartBtnReady(true);
-  window.__greetingDone = true;     /* nothing is owed before the tap */
+  /* [S01r8b] THE GREETING COMES BACK TO THE FRONT. SME: "in cover page first VO will play, while
+     VO is playing the play button will be disabled; after completing the VO the play button will
+     activate and it will pulsate."
+     This is r5r's arrangement again - r7h had moved the greeting behind the tap on the SME's earlier
+     instruction, and this reverses that half of r7h deliberately. Nothing else about r7h goes with
+     it: the pop on the button, the one-second beat and the gate all still belong to the tap.
+     The r5y trap r7h was wary of is guarded rather than avoided, by the machinery that was already
+     built for it and never removed: a dead-button watchdog sized off the clip, a release on the
+     no-greeting path, and `__greetingDone` so a replay from the 🔊 chip can never re-disable a way
+     in that was already granted. */
+  setStartBtnReady(false);
+  window.__greetingDone = false;    /* the greeting is owed before the button means anything */
 
   const playLanding = ()=>{ if($("startGate").classList.contains("hidden")) return;
+    if(window.__greetingDone === false && window.__setStartBtnReady) window.__setStartBtnReady(false);
     /* [S01r4] the sentence animation is meant to run WITH the greeting ("the highlighting
        should sync with the VO"), so it restarts on every play - including the listen chip,
        which is the first time it is heard whenever autoplay was blocked. */
@@ -7944,7 +8007,7 @@ function boot(){
   // and fires the landing VO. play() absorbs an autoplay block; the pulsing 🔊 chip is the fallback. ----
   (function(){
     const bl = $("bootLoader"); if(!bl){ document.body.classList.add("loaded");
-      if(window.__armStartNudge) window.__armStartNudge(); return; }
+      playLanding(); return; }      /* [S01r8b] the greeting is back on arrival */
     // [16l] BRAND SPLASH MIN-HOLD: locally, window.load fires in ~100ms and the CG loader was
     // removed before it ever painted ("no CG logo at the start"). The loader now holds for a
     // minimum beat so the ConveGenius mark is always seen; the watchdog still caps the worst case.
@@ -7956,7 +8019,7 @@ function boot(){
       setTimeout(()=>{
         bl.classList.add("done");                  // NOW start the fade (after the brand beat)
         document.body.classList.add("loaded");     // starts the .sg-acell pop chain
-        if(window.__armStartNudge) window.__armStartNudge();
+        playLanding();                             /* [S01r8b] the greeting is back on arrival */
         setTimeout(()=> bl.remove(), 450);
       }, Math.max(0, MIN_MS - (performance.now() - T0)));
     };
@@ -7989,8 +8052,12 @@ function boot(){
        Releasing the button IS the signal that the greeting is done, so that is the thing to test. */
     const _btn = $("sgBtn");
     const _greetingDone = _btn && !_btn.disabled;
-    /* [S01r7h] the fallback is retired with the autoplay it existed to rescue - there is no
-       unheard greeting to recover, because the greeting is now started BY a gesture. */
+    /* [S01r8b] ...and the fallback comes back with the autoplay it exists to rescue. The greeting
+       starts on arrival again, so a browser that refuses it pre-gesture leaves the cover silent AND
+       its button disabled - the first real gesture is the only chance to recover both. Both guards
+       above still apply: it fires only when nothing is audible and the greeting has not already
+       finished. */
+    if(!_audible && !_greetingDone) playLanding();
     }, { once:true });
 
   /* [S01r5l] SME: "if user remains inactive for more than 5 seconds then add hand nudge on the play
@@ -8018,7 +8085,13 @@ function boot(){
     const home = document.querySelector(".slide-stage");
     if(home && nh.parentNode !== home) home.appendChild(nh);
   };
-  const armStartNudge = ()=>{
+  /* [S01r8b] ...and `ms` is now a parameter, because the two things that arm this want different
+     answers. A stray tap on the cover means "the child is here" and the five-second wait of r5p
+     still applies. The END OF THE GREETING means something else entirely - the SME's "after
+     completing the VO the play button will activate and it will pulsate" - and making that wait
+     another five seconds in silence is the opposite of what was asked. The greeting's three endings
+     pass 0; everything else keeps r5p's wait by default. */
+  const armStartNudge = (ms)=>{
     clearTimeout(_startNudgeT);
     _startNudgeT = setTimeout(()=>{
       if(!_onLandingNow()) return;
@@ -8026,7 +8099,7 @@ function boot(){
       /* a button the child cannot press yet must not beg to be pressed */
       if(!btn || btn.disabled) return;
       btn.classList.add("idle-pulse");
-    }, 5000);
+    }, (ms === undefined ? 5000 : ms));
   };
   window.__armStartNudge = armStartNudge;
   window.__disarmStartNudge = disarmStartNudge;
@@ -8038,18 +8111,16 @@ function boot(){
     if(sg) sg.addEventListener("pointerdown", ()=>{ disarmStartNudge(); armStartNudge(); }, true); }
   /* NOT armed here any more - the greeting's end owns it now. See [S01r5p] in _landingSentence. */
 
-  /* [S01r7h] THE COVER'S ORDER, as the SME set it: "the VO will come after we tap on the play
-     button, then when the VO is complete, after 1 second Swiftie's animation will automatically
-     come, and sync Swiftie's lip-sync with the sentence चलिए शुरू करें."
-     So the tap does three things in sequence rather than one: pop, speak, and then - a beat later -
-     hand over to the peek. The beat is the SME's second, and it matters: without it the gate opens
-     on the last syllable and the two voices tread on each other.
-     The lip-sync is the gate's own doing and needs nothing added here: phaseBlurTransition restarts
-     peeking.webp from frame 0 on every open (the cache-bust on its src) and holds the gate for as
-     long as vo_pt_tutorial runs - 5.12s of a 9.72s animation - so the mouth moves while that line
-     is spoken rather than against a clip that finished earlier.
-     `guard` is not politeness: the button stays live now, and a second tap during the greeting would
-     otherwise start a second greeting and a second gate on top of the first. */
+  /* [S01r8b] THE TAP NO LONGER OWNS THE GREETING - it has already been heard, which is what makes
+     the button live at all. What the tap owns now is the music and the way in.
+     THE MUSIC STARTS HERE and nowhere else, which is the SME's instruction ("when we click on the
+     play button then only the music will start playing") and also the only place it CAN start: a
+     bed begun before a gesture is refused by every browser's autoplay policy, and refused silently.
+     It is started before the gate so the bed is already under Swiftie's first line rather than
+     arriving behind it.
+     stopAudio() is back with the greeting it belongs to: the 🔊 chip can replay it, so a clip may
+     well be sounding when the child finally taps, and the gate's own voice must not land on top.
+     The guard is not politeness: a second tap would otherwise open a second gate on the first. */
   let _startTapped = false;
   $("sgBtn").onclick = ()=>{
     if(_startTapped) return;
@@ -8057,20 +8128,17 @@ function boot(){
     playSfx("sfx_pop");   /* [S01r7g] SME: a pop when the play button is tapped */
     disarmStartNudge();
     setStartBtnReady(false);   /* it has been used - it must not invite a second tap */
+    stopAudio();               // silence a replayed greeting BEFORE the gate speaks (no VO overlap)
     _ac();                // unlock/resume WebAudio on the start gesture so the first clip never clips
-    const land = (CARD.assets && CARD.assets.audio && CARD.assets.audio[CARD.landing_audio || "vo_landing"])
-                 ? ("assets/Audio/" + (CARD.landing_audio || "vo_landing") + "." + AUDIO_EXT) : null;
-    const intoLesson = ()=>{
-      // [engine JS] r4/P1: peek gate into the tutorial. The landing stays visible-and-BLURRED behind
-      // the peeking Swiftie + "चलिए शुरू करें"; it hides once the tutorial mounts (in the callback).
-      _gatedPhases.add("tutorial");
-      phaseBlurTransition(()=>{
-        $("startGate").classList.add("hidden");
-        document.body.classList.remove("is-start");   // blue bg only on the title screen
-        mountSlide(0);
-      }, "tutorial");
-    };
-    play(land, ()=> setTimeout(intoLesson, 1000));    /* the SME's one second */
+    try{ BG_MUSIC.start(); }catch(e){}
+    // [engine JS] r4/P1: peek gate into the tutorial. The landing stays visible-and-BLURRED behind
+    // the peeking Swiftie + "चलिए शुरू करें"; it hides once the tutorial mounts (in the callback).
+    _gatedPhases.add("tutorial");
+    phaseBlurTransition(()=>{
+      $("startGate").classList.add("hidden");
+      document.body.classList.remove("is-start");   // blue bg only on the title screen
+      mountSlide(0);
+    }, "tutorial");
   };
   // tapping आगे clears any pending nav-nudge
   /* [S01r7g] ...and it clicks. SME: "add sfx on the next button in the file whenever we tap on next

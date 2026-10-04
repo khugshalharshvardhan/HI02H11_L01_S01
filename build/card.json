@@ -1107,6 +1107,7 @@
     "audio": {
       "sfx_bal_music": "assets/Audio/sfx_bal_music.ogg",
       "sfx_bal_pop": "assets/Audio/sfx_bal_pop.ogg",
+      "sfx_bg_music": "assets/Audio/sfx_bg_music.ogg",
       "sfx_celebrate": "assets/Audio/sfx_celebrate.ogg",
       "sfx_correct": "assets/Audio/sfx_correct.ogg",
       "sfx_kanv": "assets/Audio/sfx_kanv.ogg",
