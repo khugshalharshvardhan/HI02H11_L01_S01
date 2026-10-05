@@ -27,8 +27,14 @@ mid-distribution is indistinguishable from an ordinary bar line; the raw loop si
 """
 import math, struct, wave
 
-SRC = "build/assets/Audio/Standard Background Music 1.wav"
-OUT = "build/assets/Audio/sfx_bg_music.wav"
+SRC = "build/assets/Audio/background music.wav"
+# .ogg, holding RIFF/PCM. That looks wrong and is the tree's convention: build/assets/Audio keeps
+# its masters under .ogg whatever is actually inside them - sfx_bal_music.ogg and vo_landing.ogg are
+# both RIFF - because the card declares audio_ext "ogg" and the engine builds every path from it.
+# Writing this one as a .wav (r8b did) left build/ asking for a file that was not there, so opening
+# build/HI02H11_L01_S01.html played no music at all while dist/ was fine. Browsers sniff the
+# content, so the extension costs nothing; the mismatch cost a silent page.
+OUT = "build/assets/Audio/sfx_bg_music.ogg"
 HOP_MS = 50
 
 w = wave.open(SRC)
