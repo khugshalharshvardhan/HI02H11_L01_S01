@@ -270,10 +270,17 @@ VO = {
     "vo_p7_h3": "देखिए, ‘चाँद’ और ‘चश्मा’ की शुरुआत ‘च’ की आवाज़ से होती है। इन पर टैप कीजिए।",
 
     # ---- which sound repeats: च (page 10), न (page 11) ------------------------------------
-    "vo_g3_h1": "फिर से सुनिए। वाक्य ध्यान से सुनिए और देखिए कौन-सी आवाज़ बार-बार आ रही है।",
+    # [r8d] RUNG 1 IS NOW JUST "READ IT AGAIN". SME: "first hint should be phir se padho, second
+    # should be reading the sentence, and third should be disabling incorrect options and hand
+    # nudge on correct." The old rung 1 re-stated the QUESTION on top of the prompt the child had
+    # just heard, which spends the gentlest rung saying nothing new. Rung 2 now plays the sentence
+    # itself (engine: data.whole_audio), so _h2 below is no longer reached on these two pages - it
+    # is kept declared only so an existing recording would not be orphaned, and it is off the
+    # outstanding list.
+    "vo_g3_h1": "फिर से पढ़िए।",
     "vo_g3_h2": "सुनिए, कौन-सी आवाज़ बार-बार आ रही है? उसी अक्षर पर टैप कीजिए।",
     "vo_g3_h3": "चूहे, चार, चने, चबाए… इन सबमें ‘च’ की आवाज़ है। ‘च’ पर टैप कीजिए।",
-    "vo_p4_h1": "फिर से सुनिए। वाक्य ध्यान से सुनिए और देखिए शब्दों की शुरुआत में कौन-सी आवाज़ बार-बार आ रही है।",
+    "vo_p4_h1": "फिर से पढ़िए।",
     "vo_p4_h2": "सुनिए, कौन-सी आवाज़ बार-बार आ रही है? उसी अक्षर पर टैप कीजिए।",
     "vo_p4_h3": "नानी, ने, नई, नाव… इन सबकी शुरुआत ‘न’ की आवाज़ से होती है। ‘न’ पर टैप कीजिए।",
 

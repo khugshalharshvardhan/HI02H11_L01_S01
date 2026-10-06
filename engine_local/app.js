@@ -177,6 +177,21 @@ function play(src, onEnd){
 /* playSfx(id): fire-and-forget sound effect on its OWN Audio element so it can
    overlap the spoken VO (does NOT touch currentAudio / the play() chain).
    Silently no-ops if the file is missing or playback is blocked. */
+/* [S01r8d] SFX ELEMENTS ARE REUSED, NOT BUILT ON THE TAP. SME: "play button sound is delayed -
+   when we tap on the play button the pop SFX will come instantly."
+   `new Audio(src)` on the gesture means the browser only STARTS fetching and decoding the clip at
+   the moment it is needed, so the first play of any sound lands late - most audibly on the cover,
+   where sfx_pop is the very first sound the file ever plays and has nothing warming it. One element
+   per id is kept and rewound instead, so every play after the first is instant, and they are warmed
+   at boot so even the first one is. Cloning on overlap keeps two quick pops from cutting each
+   other, which is what a single shared element would do. */
+const _SFX = {};
+function _warmSfx(ids){
+  try{ for(const id of ids){ if(_SFX[id]) continue;
+    const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
+    a.preload = "auto"; a.volume = 0.7; try{ a.load(); }catch(e){}
+    _SFX[id] = a; } }catch(e){}
+}
 function playSfx(id){
   if(!id) return;
   /* [S01r6q] SME: the bed drops for sfx as well as speech. Announced HERE rather than at each call
@@ -184,9 +199,13 @@ function playSfx(id){
      because this element is fire-and-forget - nothing here waits for it to end. */
   try{ for(const M of _BEDS) M.sfxUntil = Date.now() + M.sfxHold; }catch(e){}
   try{
-    const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
-    a.volume = 0.7;
-    a.play().catch(()=>{});
+    let a = _SFX[id];
+    if(!a){ _warmSfx([id]); a = _SFX[id]; }
+    /* already sounding - clone so two pops in quick succession do not cut each other */
+    if(a && !a.paused && a.currentTime > 0 && !a.ended){
+      const c = a.cloneNode(); c.volume = 0.7; c.play().catch(()=>{}); return;
+    }
+    if(a){ try{ a.currentTime = 0; }catch(e){} a.volume = 0.7; a.play().catch(()=>{}); }
   }catch(e){}
 }
 /* [S01r4t] SPEAK A WORD WITHOUT TAKING THE VO LOCK.
@@ -1514,7 +1533,17 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
              flash and applying the lock is correct whether or not terminal help is up — a wrong card should
              read the same as the distractors terminal help fades. */
           cell.classList.remove("wrong-flash");
-          if(state.attempts >= 2) cell.classList.add("crossed");
+          /* [S01r8d] THE GREY LOCK MOVES TO THE THIRD MISS. SME: "first hint should be फिर से पढ़ो,
+             second should be reading the sentence, and third should be disabling incorrect options
+             and hand nudge on correct. don't disable incorrect options before that."
+             It was locking at the SECOND, under Yasir's 2026-07-27 ruling ("just disable the button
+             after 2nd wrong attempt"). That ruling is superseded here by the SME's own ladder, which
+             gives the second miss a teaching move - re-reading the sentence - rather than a
+             consequence. A card taken away while the child is still being taught removes the very
+             option they are about to be told to reconsider.
+             Still bounded: at the third miss the lock lands in the same beat as the reveal, so a
+             single card cannot burn every attempt and the board never ends up fully dead. */
+          if(state.attempts >= 3) cell.classList.add("crossed");
         }, 700);
         // (do NOT count masteryAttempts here — the correct branch counts one attempt PER ITEM.)
         SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
@@ -1525,7 +1554,17 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
           _fb = true;                        /* [28t] from here the audio is FEEDBACK — a retry may interrupt it */
           if(state.attempts >= _maxA){ revealAnswer("wrong"); _fb = false; }
           else if(state.attempts >= 2){ state.scaffoldLevel = Math.max(state.scaffoldLevel, 2);
-            if(runHint) runHint(); else play(midHint(slide), ()=>{ _fb = false; }); }   /* [28k] rung 2 */
+            /* [S01r8d] RUNG 2 READS THE SENTENCE BACK. SME: "second should be reading the sentence."
+               On these pages the answer IS in the sentence - चूहे, चार, चने, चबाए - so hearing it
+               again is the help, and a hint that only re-states the question ("कौन-सी आवाज़ बार-बार
+               आ रही है?") spends a rung telling the child what they were already asked.
+               It reuses the line the page already owns (data.whole_audio), which also means rung 2
+               needs no recording at all: vo_g3_h2 and vo_p4_h2 come OFF the studio list rather than
+               being re-scripted. Cards with no whole_audio keep the authored mid hint. */
+            const _whole = slide.data && slide.data.whole_audio;
+            const _sent = _whole ? ("assets/Audio/" + _whole + "." + AUDIO_EXT) : null;
+            if(_sent) play(_sent, ()=>{ _fb = false; });
+            else if(runHint) runHint(); else play(midHint(slide), ()=>{ _fb = false; }); }   /* [28k] rung 2 */
           // [24a A2] 1st wrong: the slide's OWN hint1 clip when authored ("यह … नहीं है…"), else the
           // generic try_again — additive, cards without hint1 are byte-for-byte unchanged.
           else { state.scaffoldLevel = Math.max(state.scaffoldLevel, 1); play(audioFor(slide, "hint1") || audioFor(slide, "try_again") || null, ()=>{ _fb = false; }); }
@@ -5008,11 +5047,23 @@ const SlideModules = {
          travelling to the right box and flies the tile along with it. Input is off throughout (see
          the auto_demo return in the tile loop above), and आगे unlocks once the board is full. */
       if(slide.data.auto_demo){
+        /* [S01r8d] THE TWO LETTERS ARE LIT WHILE THE DEMO TALKS. SME, on this page: "प या च वाले
+           सही डिब्बे में डालिए - तब प और च को highlight करवाओ, in tutorial."
+           The instruction names प and च, and the two baskets ARE प and च, but nothing connected the
+           words to the baskets - the child hears two letters and sees two unremarkable boxes. The
+           bin titles pulse for as long as the demo is running and go quiet the moment the child is
+           handed the task, so it reads as part of the explanation rather than as a hint sitting
+           over the question.
+           It comes off in endDemo below, and endDemo is already the one place that is guaranteed to
+           run (it is idempotent and every exit path calls it), so the glow cannot outlive the demo. */
+        try{ host.querySelectorAll(".sort-bin .bin-title").forEach(t => t.classList.add("bin-teach")); }catch(e){}
         state.ownsAudio = true; state.demoRunning = true; setNavActive(false);
         let di = 0, demoEnded = false;
         const demoTiles = [...tray.children];
         const endDemo = ()=>{
           if(demoEnded) return; demoEnded = true;
+          /* [S01r8d] ...and they stop asking for attention the moment the demo is over */
+          try{ document.querySelectorAll(".bin-title.bin-teach").forEach(t => t.classList.remove("bin-teach")); }catch(e){}
           stopNudge(); state.demoRunning = false; state.locked = true;   /* stays locked: nothing to do here */
           /* [S01r5r] AUTO-ADVANCE. On a watch-first page there is nothing to do, so आगे would be a
              gate with no question behind it - the SME asked for the page to hand over by itself.
@@ -5135,6 +5186,10 @@ const SlideModules = {
             bin.querySelector(".bin-items").appendChild(t);
             setTimeout(()=> dropTrayGhost(t), 260);   /* [S01r7h] the slot closes behind it */
             placed++; _sgWrong.delete(t);          /* [28p] this tile is done */
+            /* [S01r8d] SME: "in this sorting game - no correct SFX is there." It had none at all -
+               the drop was acknowledged visually and by the spoken echo, but the "that was right"
+               ding every other mechanic in the file plays was simply missing from this one. */
+            sfxCorrect();
             /* [28u] RELEASE THE TERMINAL HOLD ON A CORRECT DROP — this slide was UNWINNABLE.
                28p armed the terminal rung here but the correct-drop branch cleared none of it:
                terminalHold() puts .reveal-hold on the tile, .tile-disabled plus INLINE
@@ -6992,8 +7047,28 @@ const SlideModules = {
              like पतंग and THEN the rest of the VO". So the name plays alone on the tap, and the pop
              or the buzz - and the line after it - waits for the word to finish. Nothing overlaps, and
              no hold constant is needed any more. */
+          /* [S01r8d] THIS IS WHY THE GAME COULD NOT BE FINISHED. SME: "मैंने प वाले सारे चित्र ढूँढ
+             लिये, यह आगे नहीं बढ़ रही" and "बार-बार गलत कर रही हूँ, कुछ glow नहीं हो रहा".
+             One cause for both. play() guards its end callback with `myGen !== _audioGen`, and
+             stopAudio() - which the tap handler calls six lines above, so a tap can cut the speech
+             rather than be thrown away - bumps that generation. So tapping a second balloon before
+             the first word finished SILENTLY DISCARDED the first balloon's whole consequence: no
+             found++, no doneImgs, no sfxCorrect, and on the wrong path no buzz and no glow. The
+             balloon still burst, because r7g moved the burst onto the gesture, so every pop LOOKED
+             like it counted. Pop four प balloons at the speed this game invites and up to three of
+             them did not, and the round could never reach `found >= need`.
+             The previous author saw half of it: `vb` exists because "a superseded onEnd must not
+             soft-lock", and it releases cell.busy - but it never ran the callback, so the scoring
+             stayed lost. The watchdog now runs the SAME callback, once, whether the clip ends, is
+             superseded, or never starts. Sized off the clip's own length so an uninterrupted word
+             still finishes first, which is r5o's ruling and is unchanged. */
           const afterName = (cb)=>{
-            const go = ()=>{ clearTimeout(vb); cell.busy = false; if(alive()) cb(); };
+            let ran = false;
+            const go = ()=>{ if(ran) return; ran = true;
+                             clearTimeout(vb); clearTimeout(wd); cell.busy = false; if(alive()) cb(); };
+            const dur = (CARD.assets && CARD.assets.audio_dur && it.audio
+                         && CARD.assets.audio_dur[it.audio]) || 1.4;
+            const wd = setTimeout(go, Math.round(dur * 1000) + 500);
             if(name) play(name, go); else setTimeout(go, 120);
           };
 
@@ -7012,6 +7087,13 @@ const SlideModules = {
             cell.parked = true;                  /* hold still while the burst plays */
             b.classList.add("popped"); sparkle(b, hue); burstRing(b);
             playSfx("sfx_bal_pop");
+            /* [S01r8d] THE SCORE IS TAKEN ON THE GESTURE, like the burst. Even with afterName now
+               watchdogged, counting a tap is not something that should depend on an audio callback
+               at all - it is the one piece of state the round's end is computed from. The SPOKEN
+               consequences still wait for the word, which is r5o's order. */
+            found++;
+            doneImgs.add(it.img);              /* [S01r7f] never offered again this round */
+            SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
             afterName(()=>{
               /* [S01r6j] bal-entering comes OFF before popped goes on. A refilled balloon carries
                  it for up to 1.75s (r6e), and a child can certainly tap one inside that window -
@@ -7021,10 +7103,9 @@ const SlideModules = {
                  untappable. Popping is the one piece of feedback this game cannot afford to lose. */
               /* [S01r4v] sfxCorrect stays - the pop and the "that was right" ding are two
                  different messages, and only the pop moved onto the gesture above. */
+              /* [S01r4v] sfxCorrect stays - the pop and the "that was right" ding are two
+                 different messages, and only the pop moved onto the gesture above. */
               sfxCorrect(); setSwMood("happy");
-              found++;
-              doneImgs.add(it.img);              /* [S01r7f] never offered again this round */
-              SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
               if(found >= need){
                 state.locked = true; clearTimeout(idleT); clearTimeout(voT); clearGlow();   /* [S01r7m] */
                 setSwMood("celebrate"); confettiCannon();
@@ -7999,13 +8080,30 @@ function boot(){
      is precisely the trap r5y was: the button that releases the cover is held disabled for as long
      as the greeting runs. CSS now makes it untappable while the clip sounds; this is the backstop,
      because a gate that exists only in a stylesheet is one `!important` away from being gone. */
+  /* [S01r8d] ...AND IT LOOKS SHUT, NOT JUST ACTS SHUT. Checklist: "the speaker button remains
+     disabled when the VO is spoken; once the VO is complete it will be enabled again." r6k made it
+     untappable, which is half of it - a button that silently ignores a tap reads as broken, not as
+     busy. The `disabled` attribute is set from the same flag the stylesheet uses, so the two can
+     never disagree.
+     This does NOT reopen the vo-lock dimming ruling: that ban is about LEARNING elements - the
+     board must not grey out while a clip plays. This is a control, and the checklist asks for
+     exactly this. */
   const sgVo = $("sgVo");
-  if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); if(isPlaying) return; playLanding(); };
+  if(sgVo){
+    sgVo.onclick = (e)=>{ e.stopPropagation(); if(isPlaying) return; playLanding(); };
+    const syncVoBtn = ()=>{ try{ sgVo.disabled = !!isPlaying;
+                                 sgVo.classList.toggle("sg-vo-off", !!isPlaying); }catch(e){} };
+    setInterval(syncVoBtn, 120); syncVoBtn();
+  }
   // ---- [engine JS] r4/P2 boot loader: loader.gif until assets warm, then it dismisses ITSELF into
   // the landing (NO tap gate). DUAL auto-dismiss (window 'load' OR a 2.5s watchdog — never strand the
   // child), deduped by .done. The same handler adds body.loaded (unblocks the concept-strip stagger)
   // and fires the landing VO. play() absorbs an autoplay block; the pulsing 🔊 chip is the fallback. ----
   (function(){
+    /* [S01r8d] warm the button sounds before anything can ask for one - see playSfx. The cover's
+       pop is the first sound the file ever plays, so it is the one with nothing ahead of it to have
+       paid the fetch already, and it was the one the SME heard arrive late. */
+    _warmSfx(["sfx_pop", "sfx_tap", "sfx_correct", "sfx_wrong", "sfx_celebrate", "sfx_bal_pop"]);
     const bl = $("bootLoader"); if(!bl){ document.body.classList.add("loaded");
       playLanding(); return; }      /* [S01r8b] the greeting is back on arrival */
     // [16l] BRAND SPLASH MIN-HOLD: locally, window.load fires in ~100ms and the CG loader was

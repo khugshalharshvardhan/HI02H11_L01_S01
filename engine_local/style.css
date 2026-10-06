@@ -2936,3 +2936,42 @@ html.no-anim .wg-fx{display:none;}
 .swc-sprite .swc-art{position:absolute;left:50%;bottom:0;height:117.3%;transform:translateX(-50%);
   background-repeat:no-repeat;background-size:600% 600%;filter:drop-shadow(0 12px 22px rgba(0,47,118,.22));}
 @keyframes swcPop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* ═══ [S01r8d] SME REVIEW BATCH ═════════════════════════════════════════════════════════════════ */
+
+/* 1 · THE COVER SPEAKER LOOKS SHUT WHILE SHE TALKS. Checklist: "the speaker button remains disabled
+   when the VO is spoken; once the VO is complete it will be enabled again." r6k made it untappable
+   and left it looking live, which reads as a broken button rather than a busy one.
+   This does NOT reopen the vo-lock dimming ban a few hundred lines above: that ruling is about
+   LEARNING elements - the board must never grey out while a clip plays. This is a control, and the
+   checklist asks for exactly this. Scoped to .sg-vo so nothing else can be caught by it. */
+.sg-vo.sg-vo-off{ opacity:.45; cursor:default; pointer-events:none; filter:saturate(.6); }
+.sg-vo.sg-vo-off .wv{ opacity:0; }     /* the sound-wave arcs stop too - they say "tap me" */
+
+/* 2 · THE OPTION GLYPHS READ BIGGER. SME: "font size of options should be slightly larger to make it
+   easily readable." The letters are the whole question on these pages, and at 96px inside a 210px
+   card there was room to spare. ~17% up, which is a step the eye notices without reflowing the row;
+   the toybox override below it keeps its proportional lead. */
+.big-glyph{ font-size:112px; }
+.stage.thm-toybox .big-glyph{ font-size:128px; }
+
+/* 3 · THE GREY TAIL UNDER THE BALLOONS. SME: "there is some grey line below most balloons."
+   It is .bal-tie, a 2px x 34px grey gradient meant to read as the balloon's string. It does not: the
+   balloon skin is drawn by a hue-rotated ::before, so every balloon is a different colour while the
+   tie stayed the same cool grey, and against the meadow it reads as a stray line rather than string.
+   Hidden rather than recoloured - at this size a string adds nothing the knot does not already say,
+   and hiding keeps the layout box intact so nothing below it shifts. */
+.balloon .bal-tie{ display:none; }
+
+/* [S01r8d] the प / च baskets, lit while the demo explains them - see the note in SORT_GENDER.
+   A warm ring and a slow breath, not the answer-green or the wrong-red this engine reserves for
+   feedback: this is teaching, so it must not read as "you got something right". */
+@keyframes binTeach{
+  0%,100%{ box-shadow:0 0 0 0 rgba(245,194,75,.55); transform:scale(1); }
+  50%    { box-shadow:0 0 0 10px rgba(245,194,75,0); transform:scale(1.06); }
+}
+.bin-title.bin-teach{
+  background:#FFF6DF; border-radius:14px; color:var(--navy);
+  animation:binTeach 1.35s ease-in-out infinite;
+}
+html.no-anim .bin-title.bin-teach{ animation:none; box-shadow:0 0 0 4px rgba(245,194,75,.5); }
