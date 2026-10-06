@@ -2977,9 +2977,20 @@ html.no-anim .wg-fx{display:none;}
 /* [S01r8d] the प / च baskets, lit while the demo explains them - see the note in SORT_GENDER.
    A warm ring and a slow breath, not the answer-green or the wrong-red this engine reserves for
    feedback: this is teaching, so it must not read as "you got something right". */
+/* [S01r8f] THIS ANIMATES SHADOW AND COLOUR ONLY - NEVER transform. SME: "the प and च letters will
+   be in the center just like in the user activity."
+   r8d's version scaled the chip, and `.sort-bin.dd-zone .bin-title` positions itself with
+   `left:50%; transform:translate(-50%,-50%)`. A keyframe that sets transform REPLACES that
+   translate, so for the whole demo both labels jumped ~37px right and dropped into the top of their
+   box, and then snapped back to centre when the task began and the animation came off. Measured
+   exactly that: translate(-37.9px,-29px) during the task against scale(1.044) during the demo.
+   The stylesheet warns about this two hundred lines above, on the tray-ghost rule - "transform
+   belongs to the drag code, and a second rule touching it is how those stopped working in earlier
+   rounds" - and r8d walked into it anyway. Shadow and background carry the whole effect now, so
+   nothing this rule does can move a label again. */
 @keyframes binTeach{
-  0%,100%{ box-shadow:0 0 0 0 rgba(245,194,75,.55); transform:scale(1); }
-  50%    { box-shadow:0 0 0 10px rgba(245,194,75,0); transform:scale(1.06); }
+  0%,100%{ box-shadow:0 0 0 0 rgba(245,194,75,.55); background:#FFF6DF; }
+  50%    { box-shadow:0 0 0 10px rgba(245,194,75,0); background:#FFEFC2; }
 }
 .bin-title.bin-teach{
   background:#FFF6DF; border-radius:14px; color:var(--navy);
@@ -4212,10 +4223,19 @@ function flyTileTo(tile, bin, done){
   });
   setTimeout(land, 1600);                       /* fail-safe: a dropped transitionend must not stall */
 }
-function travelNudge(fromEl, toEl, slide, loops){
+/* [S01r8f] `force` joins the signature, matching handOnAnswer(el, slide, force), which has had it
+   all along. SME: "in page 12 when we are showing user how to put elements in the correct box, show
+   it with the help of hand nudge."
+   The demo ALREADY asked for the hand - two call sites below, one of them commented "the hand
+   leads... the tile follows" - and never got one, because page 12 is `practice` and HAND_PHASES is
+   {tutorial, guided}. That phase rule is right and stays: it encodes the ruling that a hand in
+   practice is a hint the child has not earned. A DEMONSTRATION is not a hint - nobody has been asked
+   anything yet, and the whole purpose of those few seconds is to show the move - so the two demo
+   calls opt in explicitly rather than the rule being widened to let every practice slide nudge. */
+function travelNudge(fromEl, toEl, slide, loops, force){
   if(!fromEl) return;
-  if(!toEl || typeof $("nudgeHand").animate !== "function"){ handOnAnswer(fromEl, slide); return; }
-  if(!slide || !HAND_PHASES.has(slide.phase)) return;      // same phase rule as handOnAnswer
+  if(!toEl || typeof $("nudgeHand").animate !== "function"){ handOnAnswer(fromEl, slide, force); return; }
+  if(!force && (!slide || !HAND_PHASES.has(slide.phase))) return;   // same phase rule as handOnAnswer
   stopNudge();
   const nh = $("nudgeHand");
   const sw = document.querySelector(".slide-stage").getBoundingClientRect();
@@ -8275,7 +8295,7 @@ const SlideModules = {
           speakNoLock(t.dataset.audio);                       /* name it, without taking the VO lock */
           setTimeout(()=>{
             if(CARD.slides[state.idx] !== slide) return;
-            travelNudge(t, goal, slide, 1);                   /* the hand leads... */
+            travelNudge(t, goal, slide, 1, true);             /* [S01r8f] the hand leads... */
             setTimeout(()=> flyTileTo(t, goal, ()=> setTimeout(flyNext, 600)), 320);  /* ...the tile follows */
           }, 950);
         };
@@ -8302,7 +8322,7 @@ const SlideModules = {
              it can be overruled. */
           const _first = tray.children[0];
           const _goal = [...binsRow.children].find(b => b.dataset.gender === _first.dataset.gender) || binsRow;
-          travelNudge(_first, _goal, slide, 3);
+          travelNudge(_first, _goal, slide, 3, true);   /* [S01r8f] a demo may show the move */
           document.addEventListener("pointerdown", _demoOff, true);
         };
         setTimeout(_armDemo, 600);

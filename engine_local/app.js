@@ -1067,10 +1067,19 @@ function flyTileTo(tile, bin, done){
   });
   setTimeout(land, 1600);                       /* fail-safe: a dropped transitionend must not stall */
 }
-function travelNudge(fromEl, toEl, slide, loops){
+/* [S01r8f] `force` joins the signature, matching handOnAnswer(el, slide, force), which has had it
+   all along. SME: "in page 12 when we are showing user how to put elements in the correct box, show
+   it with the help of hand nudge."
+   The demo ALREADY asked for the hand - two call sites below, one of them commented "the hand
+   leads... the tile follows" - and never got one, because page 12 is `practice` and HAND_PHASES is
+   {tutorial, guided}. That phase rule is right and stays: it encodes the ruling that a hand in
+   practice is a hint the child has not earned. A DEMONSTRATION is not a hint - nobody has been asked
+   anything yet, and the whole purpose of those few seconds is to show the move - so the two demo
+   calls opt in explicitly rather than the rule being widened to let every practice slide nudge. */
+function travelNudge(fromEl, toEl, slide, loops, force){
   if(!fromEl) return;
-  if(!toEl || typeof $("nudgeHand").animate !== "function"){ handOnAnswer(fromEl, slide); return; }
-  if(!slide || !HAND_PHASES.has(slide.phase)) return;      // same phase rule as handOnAnswer
+  if(!toEl || typeof $("nudgeHand").animate !== "function"){ handOnAnswer(fromEl, slide, force); return; }
+  if(!force && (!slide || !HAND_PHASES.has(slide.phase))) return;   // same phase rule as handOnAnswer
   stopNudge();
   const nh = $("nudgeHand");
   const sw = document.querySelector(".slide-stage").getBoundingClientRect();
@@ -5130,7 +5139,7 @@ const SlideModules = {
           speakNoLock(t.dataset.audio);                       /* name it, without taking the VO lock */
           setTimeout(()=>{
             if(CARD.slides[state.idx] !== slide) return;
-            travelNudge(t, goal, slide, 1);                   /* the hand leads... */
+            travelNudge(t, goal, slide, 1, true);             /* [S01r8f] the hand leads... */
             setTimeout(()=> flyTileTo(t, goal, ()=> setTimeout(flyNext, 600)), 320);  /* ...the tile follows */
           }, 950);
         };
@@ -5157,7 +5166,7 @@ const SlideModules = {
              it can be overruled. */
           const _first = tray.children[0];
           const _goal = [...binsRow.children].find(b => b.dataset.gender === _first.dataset.gender) || binsRow;
-          travelNudge(_first, _goal, slide, 3);
+          travelNudge(_first, _goal, slide, 3, true);   /* [S01r8f] a demo may show the move */
           document.addEventListener("pointerdown", _demoOff, true);
         };
         setTimeout(_armDemo, 600);
