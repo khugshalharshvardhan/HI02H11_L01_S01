@@ -8441,3 +8441,46 @@ boot();
      QA-only ghost. Wrapping for the future AND catching the present costs three lines. */
   if(document.querySelector("#endScreen.show .end-mascot")) startCel();
 })();
+
+/* ═══ [S01r8e] tag the म glyphs, and only those ═════════════════════════════════════════════════
+   CSS cannot select an element by the text inside it, so the swap has to be applied by hand to the
+   glyphs that are actually the letter म. The test is deliberately strict - the element's whole
+   trimmed text must BE "म" - so this reaches the letter card on page 4 and the म option on page 11
+   and never touches म inside a word. मछली must stay in one face; half a word in Mukta and half in
+   Baloo would be a worse defect than the one being fixed.
+
+   It runs off a MutationObserver rather than at mount because these glyphs do not all exist at
+   mount: the sentence pages build their options behind a reveal sequence, and page 12's second half
+   rebuilds the board in place. The observer watches childList only, so adding a class cannot
+   re-trigger it, and the work is debounced to the end of the frame - the balloon field changes the
+   DOM constantly and this must not ride on every balloon.
+
+   NOTE ON SCOPE: the SME named pages 4 and 11, which is where they saw it. This tags म wherever it
+   is shown AS A LETTER, which also covers page 3 (म is the answer option there) and page 8 (म is
+   the target chip). Leaving those two alone would have put two different म shapes in one lesson,
+   which is the defect, not the fix. Restricting it to the two pages is one condition in `want`. */
+(function maaGlyphFont(){
+  const SEL = ".big-glyph, .meet-letter-box .glyph, .bin-title, .ltr-chip, .target-letter";
+  let queued = false;
+  const tag = ()=>{
+    queued = false;
+    try{
+      document.querySelectorAll(SEL).forEach(el => {
+        const want = (el.textContent || "").trim() === "\u092E";
+        if(want !== el.classList.contains("maa-glyph")) el.classList.toggle("maa-glyph", want);
+      });
+    }catch(e){}
+  };
+  const queue = ()=>{ if(queued) return; queued = true;
+                      (window.requestAnimationFrame || setTimeout)(tag, 0); };
+  const start = ()=>{
+    tag();
+    try{
+      const root = document.getElementById("stage") || document.body;
+      new MutationObserver(queue).observe(root, { childList:true, subtree:true });
+    }catch(e){}
+  };
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once:true });
+  else start();
+})();
+

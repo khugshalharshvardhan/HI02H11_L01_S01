@@ -2975,3 +2975,43 @@ html.no-anim .wg-fx{display:none;}
   animation:binTeach 1.35s ease-in-out infinite;
 }
 html.no-anim .bin-title.bin-teach{ animation:none; box-shadow:0 0 0 4px rgba(245,194,75,.5); }
+
+/* ═══ [S01r8e] म, AND ONLY म ════════════════════════════════════════════════════════════════════
+   SME: "in page 4 and 11 म letter is not looking like म" -> "just the letter माँ in page 4 and 11."
+
+   The cause is the FACE, not the weight. Baloo 2 is a rounded display family and it fills in the
+   small counter at the bottom left of म - the loop that is the whole difference between म and a
+   blob. Rendered side by side at 800, 700 and 600 it is closed at every one of them, so lightening
+   the existing weight could never have fixed it. Mukta draws the loop open.
+
+   That matters more here than anywhere else in the file: page 4 is the card where the child is
+   LEARNING the shape, and on page 11 म sits as a distractor beside ल and न - a mis-shapen म there
+   can lose a child a mark for a reason that has nothing to do with the sound it is testing.
+
+   WHAT THIS DOES NOT DO: it does not change --font-hi. Every other letter, every word and every
+   line of prose stays Baloo 2, because the SME asked for the letter and not the file. The font
+   below contains exactly ONE GLYPH - Google's subset endpoint was asked for U+092E and nothing
+   else - so even if .maa-glyph ever landed on an element holding other text, that text would fall
+   straight through to --font-hi. 2,780 bytes on disk; there is no lighter way to buy one letter.
+
+   font-weight is pinned to 700 and font-synthesis disabled ON PURPOSE. The glyphs it replaces are
+   set in 800, and asking a 700-only family for 800 makes the browser fake it by smearing the
+   outline - which thickens exactly the counter this change exists to keep open. */
+@font-face{
+  font-family:'MuktaMaa'; font-style:normal; font-weight:700; font-display:swap;
+  src:url(data:font/woff2;base64,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) format('woff2');
+  unicode-range:U+092E;
+}
+/* The weight needs the same specificity as the rules it is correcting, not more force: .big-glyph
+   and .meet-letter-box .glyph both set 800, and a bare .maa-glyph (0,1,0) loses to the second of
+   those (0,2,0). Measured that exact miss - computed weight came back 800 from a family that only
+   has 700, which is the browser smearing the outline to fake it and is precisely what re-closes the
+   counter. Compound selectors rather than !important, which this stylesheet spends several notes
+   warning about. */
+.maa-glyph,
+.big-glyph.maa-glyph,
+.bin-title.maa-glyph,
+.meet-letter-box .glyph.maa-glyph,
+.stage.thm-toybox .big-glyph.maa-glyph{
+  font-family:'MuktaMaa', var(--font-hi); font-weight:700; font-synthesis:none;
+}
