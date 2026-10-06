@@ -3035,3 +3035,11 @@ html.no-anim .bin-title.bin-teach{
 .stage.thm-toybox .big-glyph.maa-glyph{
   font-family:'MuktaMaa', var(--font-hi); font-weight:700; font-synthesis:none;
 }
+
+/* [S01r8h] the demo's hand, at cursor size and with the tap decoration off - see travelNudge. The
+   ripples and the press say "tap here"; a drag demonstration is showing a MOVE, and the task's own
+   affordance is the plain grab cursor. Only the travel animation remains, which is the point. */
+.nudge-hand.nh-cursor{ width:52px; height:52px;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.26)); }
+.nudge-hand.nh-cursor .nh-tapfx{ display:none; }
+.nudge-hand.nh-cursor img{ animation:none; }

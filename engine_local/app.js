@@ -1016,7 +1016,7 @@ function startNudge(slide, target){
 function stopNudge(){
   clearTimeout(state.nudgeTimer);
   if(state._handTravel){ try { state._handTravel.cancel(); } catch(e){} state._handTravel = null; }
-  $("nudgeHand").classList.remove("show");
+  $("nudgeHand").classList.remove("show", "nh-cursor");   /* [S01r8h] */
 }
 /* [28o] ON A DRAG, THE HAND SHOWS THE MOVE — it does not just sit on the tile.
    Yasir 2026-07-28: "on drag, the hand nudge guides the student precisely... move the hand nudge from
@@ -1076,16 +1076,29 @@ function flyTileTo(tile, bin, done){
    practice is a hint the child has not earned. A DEMONSTRATION is not a hint - nobody has been asked
    anything yet, and the whole purpose of those few seconds is to show the move - so the two demo
    calls opt in explicitly rather than the rule being widened to let every practice slide nudge. */
-function travelNudge(fromEl, toEl, slide, loops, force){
+function travelNudge(fromEl, toEl, slide, loops, force, asCursor){
   if(!fromEl) return;
   if(!toEl || typeof $("nudgeHand").animate !== "function"){ handOnAnswer(fromEl, slide, force); return; }
   if(!force && (!slide || !HAND_PHASES.has(slide.phase))) return;   // same phase rule as handOnAnswer
   stopNudge();
   const nh = $("nudgeHand");
+  /* [S01r8h] `asCursor` draws the SMALL PLAIN hand instead of the full tap nudge. SME: "don't show
+     this full hand nudge animation in it, use the little hand cursor type which we used for the
+     user interaction."
+     The nudge hand is built to say TAP HERE: 96px, a press bob, and two ripple wavefronts with a
+     spark breaking off the fingertip. That is right for pointing at an answer and wrong for showing
+     a DRAG - here the hand is standing in for the child's own finger travelling across the board,
+     which in the task is the plain grab cursor, so the decoration reads as a second thing happening
+     rather than as the move being demonstrated. The CSS half drops the ripples and the press and
+     takes it down to cursor size. */
+  nh.classList.toggle("nh-cursor", !!asCursor);
   const sw = document.querySelector(".slide-stage").getBoundingClientRect();
   const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--scale")) || 1;
+  /* [S01r8h] half the hand's OWN width, not a hardcoded 48. Both helpers centred the hand by
+     assuming it is 96px wide; in cursor size that put it 22px left of everything it pointed at. */
+  const HW = asCursor ? 52 : 96;
   const at = (el)=>{ const r = el.getBoundingClientRect();
-    return { left: (r.left - sw.left)/scale + r.width/scale/2 - 48,
+    return { left: (r.left - sw.left)/scale + r.width/scale/2 - HW/2,
              top:  (r.top  - sw.top )/scale + r.height/scale + 4 }; };
   /* [S01r4y] THE DESTINATION SITS IN THE MIDDLE OF THE BOX, NOT PARKED UNDER IT.
      at() places the hand just BELOW an element, which is the correct pose for POINTING AT a tile -
@@ -1099,7 +1112,7 @@ function travelNudge(fromEl, toEl, slide, loops, force){
      an "this one" gesture. -8 lifts the fingertip a touch above dead centre so the hand's body hangs
      inside the box rather than straddling its lower edge. */
   const into = (el)=>{ const r = el.getBoundingClientRect();
-    return { left: (r.left - sw.left)/scale + r.width/scale/2 - 48,
+    return { left: (r.left - sw.left)/scale + r.width/scale/2 - HW/2,
              top:  (r.top  - sw.top )/scale + r.height/scale/2 - 8 }; };
   const a = at(fromEl), b = into(toEl);
   nh.style.left = a.left + "px"; nh.style.top = a.top + "px";
@@ -5139,7 +5152,7 @@ const SlideModules = {
           speakNoLock(t.dataset.audio);                       /* name it, without taking the VO lock */
           setTimeout(()=>{
             if(CARD.slides[state.idx] !== slide) return;
-            travelNudge(t, goal, slide, 1, true);             /* [S01r8f] the hand leads... */
+            travelNudge(t, goal, slide, 1, true, true);       /* [S01r8f] the hand leads... */
             setTimeout(()=> flyTileTo(t, goal, ()=> setTimeout(flyNext, 600)), 320);  /* ...the tile follows */
           }, 950);
         };
@@ -5166,7 +5179,7 @@ const SlideModules = {
              it can be overruled. */
           const _first = tray.children[0];
           const _goal = [...binsRow.children].find(b => b.dataset.gender === _first.dataset.gender) || binsRow;
-          travelNudge(_first, _goal, slide, 3, true);   /* [S01r8f] a demo may show the move */
+          travelNudge(_first, _goal, slide, 3, true, true);   /* [S01r8f] a demo may show the move */
           document.addEventListener("pointerdown", _demoOff, true);
         };
         setTimeout(_armDemo, 600);
