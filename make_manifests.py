@@ -217,9 +217,75 @@ def audio_manifest():
             "    No added silence, no fades, no music bed, no normalisation to a brickwall - a clean room take.",
             "    Send the folder as-is; the build renames and encodes (Opus 28k mono) on its own."]):
         summ.cell(r0 + j, 1, line).font = _F(name="Arial", bold=(j == 0), size=10)
+    # ── a sheet that IS the recording session ──────────────────────────────────────────────────
+    # The full tab lists all 95 lines because the build needs every id accounted for. Nobody records
+    # from that: 73 of those rows are already delivered and must NOT be re-read, and the ones that
+    # matter are scattered among them. This tab carries only the lines that still need a take, in
+    # the order a session would work through them, so the sheet can be sent as-is.
+    from openpyxl.styles import Alignment, PatternFill
+    todo = []
+    for r in range(2, ws.max_row + 1):
+        aid = ws.cell(r, 2).value
+        if not aid:
+            continue
+        status = str(ws.cell(r, 6).value or "")
+        if status.startswith("delivered"):
+            continue
+        todo.append((aid, ws.cell(r, 3).value, ws.cell(r, 4).value,
+                     ws.cell(r, 5).value, status, ws.cell(r, 7).value))
+    # new first-takes before re-records: a fresh line blocks the build, a re-record improves
+    # something that already works, and a short session should spend itself on the blockers
+    rank = {"NOT RECORDED": 0, "SYNTHESISED": 1, "RE-RECORD": 2}
+    todo.sort(key=lambda t: (rank.get(t[4].split(" -")[0], 9), t[0]))
+
+    rec = wb.create_sheet("TO RECORD", 0)
+    rec.append(["#", "VO ID", "Deliver as (exact filename)", "Hindi line (speak exactly this)",
+                "Heard on", "Why it is on this list", "Chars"])
+    for c in rec[1]:
+        c.font = Font(name="Arial", bold=True, size=10)
+    head = PatternFill("solid", fgColor="FFF2CC")
+    for i, (aid, fn, text, where, status, chars) in enumerate(todo, 1):
+        rec.append([i, aid, fn, text, where, status, chars])
+        rec.cell(rec.max_row, 4).alignment = Alignment(wrap_text=True, vertical="top")
+        rec.cell(rec.max_row, 4).font = Font(name="Nirmala UI", size=12)
+        if status.startswith("NOT RECORDED"):
+            for col in range(1, 8):
+                rec.cell(rec.max_row, col).fill = head
+    for col, w in (("A", 5), ("B", 16), ("C", 26), ("D", 66), ("E", 34), ("F", 44), ("G", 7)):
+        rec.column_dimensions[col].width = w
+    rec.freeze_panes = "A2"
+
+    # A line can have a consequence beyond itself, and the sheet has to say so where it does -
+    # otherwise the take arrives, gets dropped in, and something downstream is quietly wrong. Only
+    # one such line exists today: the closing line drives Swiftie's mouth on the end screen, and her
+    # lip-sync is a track MEASURED from that exact recording.
+    AFTER = {"vo_p8_prompt":
+             "AFTER this take lands: re-run _assets_round4/make_lipsync.py. The end screen's "
+             "lip-sync is measured from THIS clip; a new take without it leaves her mouth running "
+             "to the old rhythm."}
+    for r in range(2, rec.max_row + 1):
+        note = AFTER.get(rec.cell(r, 2).value)
+        if note:
+            rec.cell(r, 6).value = (rec.cell(r, 6).value or "") + "  |  " + note
+            rec.cell(r, 6).alignment = Alignment(wrap_text=True, vertical="top")
+
+    r0 = rec.max_row + 2
+    rec.cell(r0, 1, "%d line(s) to record. Highlighted rows are new takes - nothing can play them "
+                    "until they arrive." % len(todo)).font = Font(name="Arial", bold=True, size=10)
+    for j, line in enumerate([
+            "",
+            "AUDIO FORMAT - please deliver exactly this:",
+            "    WAV, 16-bit PCM, MONO, 48 kHz.  One file per row, named as column C.",
+            "    16-bit WAV is a hard requirement, not a preference: the word-by-word highlighting is timed by",
+            "    reading the waveform, and that reader only understands 16-bit PCM WAV.",
+            "    No added silence, no fades, no music bed, no brickwall normalisation - a clean room take.",
+            "    Send the folder as-is; the build renames and encodes (Opus 28k mono) on its own."]):
+        rec.cell(r0 + 1 + j, 1, line).font = Font(name="Arial", bold=(j == 1), size=10)
+
     wb.save(out)
     print("  audio_manifest.xlsx  %d lines, %d unresolved %s"
           % (ws.max_row - 1, len(unresolved), unresolved or ""))
+    print("  TO RECORD tab        %d line(s) outstanding" % len(todo))
 
 
 # ── 2 · images ───────────────────────────────────────────────────────────────────────────────────

@@ -278,6 +278,12 @@ VO = {
     # is kept declared only so an existing recording would not be orphaned, and it is off the
     # outstanding list.
     "vo_g3_h1": "फिर से पढ़िए।",
+    # [r8d/r8e] vo_g3_h2 and vo_p4_h2 ARE NO LONGER REACHED and are off the recording list.
+    # Rung 2 on both sentence pages now replays the page's own whole_audio instead of a hint
+    # clip, so these two can never play. The TEXT is kept here rather than deleted because it
+    # records what rung 2 used to say, but the slides no longer declare h2 - an id a card
+    # declares is an id the manifest asks the studio to record, and asking for a clip nothing
+    # can play is how a recording session wastes an hour.
     "vo_g3_h2": "सुनिए, कौन-सी आवाज़ बार-बार आ रही है? उसी अक्षर पर टैप कीजिए।",
     "vo_g3_h3": "चूहे, चार, चने, चबाए… इन सबमें ‘च’ की आवाज़ है। ‘च’ पर टैप कीजिए।",
     "vo_p4_h1": "फिर से पढ़िए।",
@@ -631,7 +637,7 @@ def build_card():
         # rungs on this page, so the generic third one has nothing to attach to anyway.
         {"prompt": "vo_g3_prompt", "target": "vo_ltr_ch",
          "try_again": "vo_g3_try", "reveal": "vo_g3_reveal", "correct": "vo_g3_correct",
-         "h1": "vo_g3_h1", "h2": "vo_g3_h2", "h3": "vo_g3_h3"},   # [r7a]
+         "h1": "vo_g3_h1", "h3": "vo_g3_h3"},   # [r7a]
         hide_replay=True,      # [r4p] "remove the फिर से सुनो button"
         seq_say_whole=True,    # [r4p] ...so the sentence must play itself, before the letters
         fixed_order=True))     # [r4p] entry order is named in the flow: च -> ल -> र
@@ -748,7 +754,7 @@ def build_card():
         # "you heard the LAST sound, we want the repeated one" steer that it duplicated.
         {"prompt": "vo_g3_prompt", "target": "vo_ltr_n",   # [r7m] shared with page 10
          "try_again": "vo_p4_try", "reveal": "vo_p4_reveal", "correct": "vo_p4_correct",
-         "h1": "vo_p4_h1", "h2": "vo_p4_h2", "h3": "vo_p4_h3"},   # [r7a]
+         "h1": "vo_p4_h1", "h3": "vo_p4_h3"},   # [r7a]
         mark_initial=True,     # [r5n] "शुरुआत में" - see pick_sound
         hide_replay=True,      # [r5b] page 9's treatment - no «फिर से सुनो» pill
         seq_say_whole=True,    # [r5b] ...so the sentence plays itself, before the letters
