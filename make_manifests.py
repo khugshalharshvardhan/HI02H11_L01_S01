@@ -33,6 +33,93 @@ CODE = CARD.get("skill_code", "HI02H11_L01_S01")
 
 
 # ── where is each clip actually heard? ───────────────────────────────────────────────────────────
+def play_index():
+    """{audio id: (page, seq)} - where a clip is FIRST heard, and how far into that page.
+
+    The reviewer asked for the sheet "page-wise, with all audio files listed sequentially according
+    to the corresponding game page numbers" and for the clips inside a page to sit "in the exact
+    order in which they appear/play in the game". Page order is exact - page N is slides[N-1], and
+    the cover is page 0 because it is not a slide. Order WITHIN a page is a clean run: what a child
+    hears if they get everything right, and then the clips that only a mistake can reach.
+
+    It cannot be more exact than that, and the sheet says so rather than implying a precision it
+    does not have: hints only sound after a wrong answer, a word clip only when that picture is
+    tapped, and on the balloon board the order depends on which balloon the child reaches first. A
+    clip heard on several pages is listed under the FIRST one, which is the take the studio is
+    recording for.
+
+    The ranks below are the running order of a page, not a preference:
+      0  the instruction, and the sentence it is about
+      1  the guided narration that walks through it
+      2  the things on the board, in the order they are laid out
+      3  the letter or sound being taught
+      4  success
+      5  the error path - buzz, then the hint ladder in rung order
+      6  the closing line
+    """
+    seen, out = {}, []
+    def add(aid, page, rank, sub=0):
+        if not aid or aid in seen:
+            return
+        seen[aid] = (page, rank * 1000 + sub)
+        out.append(aid)
+
+    hero = CARD.get("landing_hero") or {}
+    add(hero.get("sync_audio"), 0, 0)
+    add(hero.get("picture_sfx"), 0, 2)
+    add(CARD.get("landing_audio") or "vo_landing", 0, 0)
+
+    def walk(d, roles, page):
+        """One half of a page: its role map plus everything hanging off its data."""
+        R = {"prompt": 0, "whole_audio": 0, "line": 0,
+             "target": 3, "word_name": 3, "sound": 3,
+             "correct": 4, "done": 6, "next": 6,
+             "wrong": 5, "try_again": 5,
+             "hint": 5, "h1": 5, "h2": 5, "h3": 5}
+        SUB = {"prompt": 0, "whole_audio": 1, "correct": 0, "done": 0, "next": 1,
+               "wrong": 0, "try_again": 1, "hint": 2, "h1": 3, "h2": 4, "h3": 5,
+               "target": 0, "word_name": 1, "sound": 2}
+        add(d.get("whole_audio"), page, 0, 1)
+        for role, aid in (roles or {}).items():
+            add(aid, page, R.get(role, 4), SUB.get(role, 9))
+        for i, step in enumerate(d.get("teach_seq") or []):
+            if isinstance(step, dict):
+                add(step.get("audio"), page, 1, i)
+        for i, it in enumerate(d.get("items") or []):
+            if isinstance(it, dict):
+                add(it.get("audio"), page, 2, i)
+        for i, o in enumerate(d.get("options") or []):
+            if isinstance(o, dict):
+                add(o.get("audio"), page, 2, 100 + i)
+        for i, b in enumerate(d.get("bins") or []):
+            if isinstance(b, dict):
+                add(b.get("audio"), page, 2, 200 + i)
+        for li, lv in enumerate(d.get("levels") or []):
+            for role, aid in (lv.get("audio") or {}).items():
+                add(aid, page, R.get(role, 4), 300 + li * 20 + SUB.get(role, 9))
+            for i, it in enumerate(lv.get("items") or []):
+                add(it.get("audio"), page, 2, 400 + li * 50 + i)
+            for i, it in enumerate(lv.get("spares") or []):
+                add(it.get("audio"), page, 2, 460 + li * 50 + i)
+
+    for i, sl in enumerate(CARD.get("slides", [])):
+        pg = i + 1
+        d = sl.get("data") or {}
+        walk(d, sl.get("audio"), pg)
+        # [r6s] a page can carry a second half - G5D demonstrates the sort and then BECOMES it, and
+        # everything that half needs travels inside data["then"]. It is the same PAGE to the child,
+        # so it stays under this page number and simply sorts after the first half.
+        then = d.get("then") or {}
+        if then:
+            walk(then.get("data") or {}, then.get("audio"), pg)
+
+    # anything the card declares but no page reaches - engine sounds, the phase transitions - is
+    # not page-wise by nature and goes in its own block at the end rather than being guessed at
+    for aid in sorted((CARD.get("assets", {}).get("audio") or {})):
+        add(aid, 99, 0)
+    return seen
+
+
 def usage_map():
     use = {}
     def add(aid, where):
@@ -217,43 +304,81 @@ def audio_manifest():
             "    No added silence, no fades, no music bed, no normalisation to a brickwall - a clean room take.",
             "    Send the folder as-is; the build renames and encodes (Opus 28k mono) on its own."]):
         summ.cell(r0 + j, 1, line).font = _F(name="Arial", bold=(j == 0), size=10)
+    # ── page order, on both sheets ─────────────────────────────────────────────────────────────
+    # Reviewer: "organize the Excel page-wise, with all audio files listed sequentially according to
+    # the corresponding game page numbers" and "audios within each page arranged in the exact order
+    # in which they appear/play in the game."
+    # The shared tool emits rows in card-declaration order, which is neither. Rather than shuffle
+    # its layout we rewrite the sheet with a PAGE column of our own, because a page-ordered sheet
+    # whose rows do not say which page they belong to just moves the guesswork.
+    from openpyxl.utils import get_column_letter
+    PI = play_index()
+    LAST = 10 ** 6
+
+    def sort_key(aid):
+        pg, sq = PI.get(aid, (98, 0))
+        return (pg if pg != 99 else 98.5, sq, str(aid))
+
+    def page_label(aid):
+        pg = PI.get(aid, (None, 0))[0]
+        if pg == 0:   return "cover"
+        if pg == 99:  return "engine"
+        if pg is None or pg == 98: return "-"
+        return "page %d" % pg
+
+    harvest = []
+    for r in range(2, ws.max_row + 1):
+        aid = ws.cell(r, 2).value
+        if not aid:
+            continue
+        harvest.append({"id": aid, "file": ws.cell(r, 3).value, "text": ws.cell(r, 4).value,
+                        "where": ws.cell(r, 5).value, "status": ws.cell(r, 6).value,
+                        "chars": ws.cell(r, 7).value})
+    harvest.sort(key=lambda h: sort_key(h["id"]))
+
+    HEAD = ["#", "Page", "VO ID", "Deliver as (exact filename)",
+            "Hindi line (speak exactly this)", "Heard on", "Status", "Chars"]
+
+    def write_sheet(sh, rows, highlight_new):
+        sh.delete_rows(1, sh.max_row)
+        sh.append(HEAD)
+        for c in sh[1]:
+            c.font = Font(name="Arial", bold=True, size=10)
+        fill = PatternFill("solid", fgColor="FFF2CC")
+        prev = None
+        for i, h in enumerate(rows, 1):
+            pg = page_label(h["id"])
+            sh.append([i, pg if pg != prev else "", h["id"], h["file"],
+                       h["text"], h["where"], h["status"], h["chars"]])
+            prev = pg
+            rr = sh.max_row
+            sh.cell(rr, 5).alignment = Alignment(wrap_text=True, vertical="top")
+            sh.cell(rr, 5).font = Font(name="Nirmala UI", size=12)
+            if highlight_new and str(h["status"] or "").startswith("NOT RECORDED"):
+                for col in range(1, 9):
+                    sh.cell(rr, col).fill = fill
+        for col, w in (("A", 5), ("B", 10), ("C", 16), ("D", 26),
+                       ("E", 64), ("F", 32), ("G", 44), ("H", 7)):
+            sh.column_dimensions[col].width = w
+        sh.freeze_panes = "A2"
+
+    from openpyxl.styles import Alignment, PatternFill
+    write_sheet(ws, harvest, highlight_new=True)
+
     # ── a sheet that IS the recording session ──────────────────────────────────────────────────
     # The full tab lists all 95 lines because the build needs every id accounted for. Nobody records
     # from that: 73 of those rows are already delivered and must NOT be re-read, and the ones that
     # matter are scattered among them. This tab carries only the lines that still need a take, in
     # the order a session would work through them, so the sheet can be sent as-is.
-    from openpyxl.styles import Alignment, PatternFill
-    todo = []
-    for r in range(2, ws.max_row + 1):
-        aid = ws.cell(r, 2).value
-        if not aid:
-            continue
-        status = str(ws.cell(r, 6).value or "")
-        if status.startswith("delivered"):
-            continue
-        todo.append((aid, ws.cell(r, 3).value, ws.cell(r, 4).value,
-                     ws.cell(r, 5).value, status, ws.cell(r, 7).value))
-    # new first-takes before re-records: a fresh line blocks the build, a re-record improves
-    # something that already works, and a short session should spend itself on the blockers
-    rank = {"NOT RECORDED": 0, "SYNTHESISED": 1, "RE-RECORD": 2}
-    todo.sort(key=lambda t: (rank.get(t[4].split(" -")[0], 9), t[0]))
+    # [page-order] the session follows the GAME, not the status. An earlier version led with the
+    # new takes on the grounds that they block the build - true, but it fought the reviewer's
+    # ask, and reading in game order is what keeps a voice consistent across a page: the prompt and
+    # its three hints are the same breath, and recording them an hour apart is audible.
+    todo = [h for h in harvest if not str(h["status"] or "").startswith("delivered")]
 
     rec = wb.create_sheet("TO RECORD", 0)
-    rec.append(["#", "VO ID", "Deliver as (exact filename)", "Hindi line (speak exactly this)",
-                "Heard on", "Why it is on this list", "Chars"])
-    for c in rec[1]:
-        c.font = Font(name="Arial", bold=True, size=10)
-    head = PatternFill("solid", fgColor="FFF2CC")
-    for i, (aid, fn, text, where, status, chars) in enumerate(todo, 1):
-        rec.append([i, aid, fn, text, where, status, chars])
-        rec.cell(rec.max_row, 4).alignment = Alignment(wrap_text=True, vertical="top")
-        rec.cell(rec.max_row, 4).font = Font(name="Nirmala UI", size=12)
-        if status.startswith("NOT RECORDED"):
-            for col in range(1, 8):
-                rec.cell(rec.max_row, col).fill = head
-    for col, w in (("A", 5), ("B", 16), ("C", 26), ("D", 66), ("E", 34), ("F", 44), ("G", 7)):
-        rec.column_dimensions[col].width = w
-    rec.freeze_panes = "A2"
+    write_sheet(rec, todo, highlight_new=True)
+    rec.cell(1, 7).value = "Why it is on this list"
 
     # A line can have a consequence beyond itself, and the sheet has to say so where it does -
     # otherwise the take arrives, gets dropped in, and something downstream is quietly wrong. Only
@@ -264,10 +389,10 @@ def audio_manifest():
              "lip-sync is measured from THIS clip; a new take without it leaves her mouth running "
              "to the old rhythm."}
     for r in range(2, rec.max_row + 1):
-        note = AFTER.get(rec.cell(r, 2).value)
+        note = AFTER.get(rec.cell(r, 3).value)
         if note:
-            rec.cell(r, 6).value = (rec.cell(r, 6).value or "") + "  |  " + note
-            rec.cell(r, 6).alignment = Alignment(wrap_text=True, vertical="top")
+            rec.cell(r, 7).value = (rec.cell(r, 7).value or "") + "  |  " + note
+            rec.cell(r, 7).alignment = Alignment(wrap_text=True, vertical="top")
 
     r0 = rec.max_row + 2
     rec.cell(r0, 1, "%d line(s) to record. Highlighted rows are new takes - nothing can play them "
