@@ -2605,7 +2605,11 @@ html.no-anim .meet-pic-box, html.no-anim .pic-label, html.no-anim .opt-cell.seq-
 .fx-confetti .w{display:block;perspective:600px;
   animation:cfGlide var(--rockT) linear var(--delay) infinite both;}
 .fx-confetti .f{display:block;position:relative;transform-style:preserve-3d;
-  width:calc(var(--w) * var(--z));height:calc(var(--h) * var(--z));
+  /* [S01r8p] --s is the kit call's size multiplier (HI02H11_L02_S02 bursts at 1.5x). It is a
+     separate factor from --z on purpose: --z is depth, and the fall speed and the dimming are
+     derived from it, so folding the scale into it would change how the pieces move as well as how
+     big they are. Defaults to 1, so nothing that does not set it is affected. */
+  width:calc(var(--w) * var(--z) * var(--s, 1));height:calc(var(--h) * var(--z) * var(--s, 1));
   opacity:var(--dim,1);
   animation:cfRock var(--rockT) linear var(--delay) infinite both;}
 .fx-confetti .f.tum{animation:cfTumble var(--rockT) linear var(--delay) infinite both;}
@@ -3546,48 +3550,67 @@ const CONF_SHAPES = ["st","st","st","st","rc","rc","ln","ln","sq","sq"];
    sfx_celebrate is the clip this bundle already ships for exactly this moment, so it costs nothing.
    It is NOT clapping - if the SME wants applause specifically, that is a new recording and this is
    the one line that would change. */
-/* [S01r8o] THE CONFETTI IS HI02H11_L02_S02'S, ON THE SME'S INSTRUCTION ("extract and use the same
-   confetti from this repo"). Theirs drops 48 plain rounded pieces in six colours from the top of the
-   PAGE and lets them fall the whole height, turning once as they go. Its own note records the ruling
-   behind it: "confetti is supposed to come from top of the screen and not from the sides", then
-   "it should drop from the top of the entire page".
+/* [S01r8p] THE CONFETTI IS THE KIT'S, WHICH IS WHAT HI02H11_L02_S02 ACTUALLY USES. r8o replaced
+   this with that lesson's `.conf-shot` side-cannon, and that was backwards: `.conf-shot` is defined
+   in their file but OVERRIDDEN near the end of it, where confettiCannon is reassigned to
+   FLNMotion.confetti.burst(...). Checked by running their build and firing the function - it
+   produces .fx-confetti and no .conf-shot at all. Their own note on that override says it "replaces
+   this engine's side-cannon confettiCannon()", so r8o ported the thing their change was getting rid
+   of. This restores r4's kit implementation and dials it to THEIR settings instead.
 
-   What this REPLACES is r4's parallax version - depth-sorted plates with flutter, sway, yaw and tilt
-   on a 3D-ish wrapper. It was the more elaborate of the two and that is rather the point: on a
-   screen that is already celebrating, the busier confetti competed with the thing being celebrated.
+   The styles did not need porting either way: our .fx-confetti CSS and theirs are the same kit
+   recipe, and the four shape sizes are byte-identical (compared). What differs is only how the kit
+   is called, so only the numbers move:
+       count 56  -> 100          their burst() count
+       fall 1.1-1.8s -> 1.6-2.6s their burst() fall, a slower drop
+       size  x1.5                their note's "1.5x size"
+   The 1.5x rides on its own --s property rather than on --z, because --z is the depth cue and the
+   CSS derives the fall speed and the dimming from it as well - scaling it would have made the big
+   pieces fall faster and sit brighter as a side effect of a size change.
 
-   Nothing in the CSS had to come across. `.conf-shot` and the `confShot` keyframes are already here
-   from the same shared kit, byte-identical to theirs (checked), and the two details their note calls
-   load-bearing were already true of ours: the pieces are parented to <body> in VIEWPORT coordinates
-   with position:fixed - the stage is inset, so spawning at ITS top edge begins part-way down the
-   page - and they sit above the end-screen overlay, or the celebration that matters most is the one
-   you cannot see.
-
-   KEPT FROM OURS, because they are this lesson's and not the kit's: the celebration sound r7g put
-   inside the cannon so that every confetti anywhere sounds, and R5's reduced-motion guard. `n` stays
-   in the signature - one caller forwards its own count - and simply sets how many pieces fall. */
+   Kept from ours, as in r8o: r7g's celebration sound inside the cannon so any confetti anywhere
+   sounds, and R5's reduced-motion guard. The host is already a body-level, whole-window fixed layer
+   above the end screen, which is what their #fxLayer is for. */
 function confettiCannon(n){
+  const host = document.body;
   try{ playSfx("sfx_celebrate"); }catch(e){}
   if(document.documentElement.classList.contains("no-anim")) return;   // R5
-  const VW = window.innerWidth || 1200, VH = window.innerHeight || 800;
-  const host = document.body;
-  const cols = ["#F9695E", "#FDC23C", "#4EBE6A", "#4EA3F0", "#9B7BE8", "#FF8FB1"];
-  const count = n || 48;
+  const R = (a, b)=> a + Math.random() * (b - a);
+  const count = n || 100;              /* [S01r8p] their count */
+  host.querySelectorAll(".fx-confetti").forEach(x => x.remove());
+  const dist = (window.innerHeight || 800) + 60;
+  let maxLife = 0;
+  const wrap = document.createElement("div"); wrap.className = "fx-confetti";
   for(let i = 0; i < count; i++){
-    const c = document.createElement("i");
-    c.className = "conf-shot";
-    c.style.background = cols[i % cols.length];
-    c.style.position = "fixed";
-    c.style.left = ((i + 0.5) * (VW / count) + (Math.random() * 16 - 8)).toFixed(0) + "px";
-    c.style.top = "-14px";                                     /* just above the page's top edge */
-    c.style.bottom = "auto";
-    c.style.zIndex = "100001";                                 /* above the end-screen overlay */
-    c.style.setProperty("--tx", (Math.random() * 140 - 70).toFixed(0) + "px");   /* gentle drift */
-    c.style.setProperty("--ty", (VH + 40).toFixed(0) + "px");  /* fall the WHOLE page height */
-    c.style.animationDelay = (Math.random() * 420).toFixed(0) + "ms";
-    host.appendChild(c);
-    setTimeout(()=> c.remove(), 2600);
+    const z = R(0.75, 1.15);               /* depth: nearer pieces are bigger... */
+    const fall = R(1.6, 2.6) / z;          /* ...and fall faster (parallax)       */
+    const delay = R(0, 0.35);
+    if(fall + delay > maxLife) maxLife = fall + delay;
+    const pair = CONF_PAIRS[i % CONF_PAIRS.length];
+    /* a fluttering plate zigzags but barely drifts; an autorotating one drifts but hardly zigzags */
+    const flutter = Math.random() > 0.22;
+    const rockT = flutter ? R(0.6, 1.2) : R(0.75, 1.5);
+    const sway  = flutter ? R(10, 34)   : R(2, 8);
+    const drift = flutter ? R(-12, 12)  : R(-45, 45);
+    const bob   = flutter ? R(3, 7)     : R(2, 4);
+    const p = document.createElement("i"); p.className = "p";
+    p.style.cssText =
+      "--x:" + R(-2, 98).toFixed(1) + "%;--dist:" + dist + "px;" +
+      "--fall:" + fall.toFixed(2) + "s;--delay:" + delay.toFixed(2) + "s;" +
+      "--drift:" + drift.toFixed(0) + "px;--sway:" + sway.toFixed(0) + "px;" +
+      "--bob:" + bob.toFixed(1) + "px;--rockT:" + rockT.toFixed(2) + "s;" +
+      "--amp:" + Math.round(R(28, 52)) + "deg;" +     /* capped short of edge-on so the face reads */
+      "--yaw:" + Math.round(R(-30, 30)) + "deg;--tilt:" + Math.round(R(-25, 25)) + "deg;" +
+      "--s:1.5;--z:" + z.toFixed(2) + ";--dim:" + (0.72 + (z - 0.75) / 0.4 * 0.28).toFixed(2) + ";" +
+      "--c:" + pair[0] + ";--c2:" + pair[1] + ";";
+    const w = document.createElement("i"); w.className = "w";
+    const f = document.createElement("i");
+    f.className = "f " + CONF_SHAPES[Math.floor(Math.random() * CONF_SHAPES.length)] +
+                  (flutter ? "" : " tum");
+    w.appendChild(f); p.appendChild(w); wrap.appendChild(p);
   }
+  host.appendChild(wrap);
+  setTimeout(()=> wrap.remove(), (maxLife + 0.3) * 1000);
 }
 /* [S01r4q · fln-animation-toolkit recipe 19] TILE-LEVEL CONFIRM, alongside the confetti.
    The tile presses IN (scale .966 at 11%) before it pops — that anticipation dip is small enough

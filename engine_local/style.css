@@ -2594,7 +2594,11 @@ html.no-anim .meet-pic-box, html.no-anim .pic-label, html.no-anim .opt-cell.seq-
 .fx-confetti .w{display:block;perspective:600px;
   animation:cfGlide var(--rockT) linear var(--delay) infinite both;}
 .fx-confetti .f{display:block;position:relative;transform-style:preserve-3d;
-  width:calc(var(--w) * var(--z));height:calc(var(--h) * var(--z));
+  /* [S01r8p] --s is the kit call's size multiplier (HI02H11_L02_S02 bursts at 1.5x). It is a
+     separate factor from --z on purpose: --z is depth, and the fall speed and the dimming are
+     derived from it, so folding the scale into it would change how the pieces move as well as how
+     big they are. Defaults to 1, so nothing that does not set it is affected. */
+  width:calc(var(--w) * var(--z) * var(--s, 1));height:calc(var(--h) * var(--z) * var(--s, 1));
   opacity:var(--dim,1);
   animation:cfRock var(--rockT) linear var(--delay) infinite both;}
 .fx-confetti .f.tum{animation:cfTumble var(--rockT) linear var(--delay) infinite both;}
