@@ -2683,7 +2683,7 @@ html.no-anim .wg-fx{display:none;}
 
 <!-- BOOT LOADER — [template] r4/P2: white boot screen, no-tap auto-dismiss (see boot()) -->
 <div class="boot-loader" id="bootLoader">
-  <img src="assets/UI/loader.gif" alt="">
+  <img src="assets/UI/loader.webp" alt="">
 </div>
 
 
@@ -10877,7 +10877,7 @@ function boot(){
                         if(window.__setStartBtnReady) window.__setStartBtnReady(true);
                         if(window.__armStartNudge) window.__armStartNudge(); }); };
   const sgVo = $("sgVo"); if(sgVo) sgVo.onclick = (e)=>{ e.stopPropagation(); playLanding(); };
-  // ---- [engine JS] r4/P2 boot loader: loader.gif until assets warm, then it dismisses ITSELF into
+  // ---- [engine JS] r4/P2 boot loader: loader.webp until assets warm, then it dismisses ITSELF into
   // the landing (NO tap gate). DUAL auto-dismiss (window 'load' OR a 2.5s watchdog — never strand the
   // child), deduped by .done. The same handler adds body.loaded (unblocks the concept-strip stagger)
   // and fires the landing VO. play() absorbs an autoplay block; the pulsing 🔊 chip is the fallback. ----

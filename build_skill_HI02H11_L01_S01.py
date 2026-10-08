@@ -190,8 +190,15 @@ VO = {
     "vo_p7_done":   "वाह! तुमने च की आवाज़ हर जगह पहचान ली।",
 
     # ---- celebration ---------------------------------------------------------------------
-    "vo_p8_prompt": "शाबाश! आज हमने सीखा — वाक्य ध्यान से सुनना, बार-बार आने वाली आवाज़ पहचानना, "
-                    "और प, च और म की आवाज़ ढूँढना।",
+    # [r8m] THE CLOSING LINE IS NOW THE STANDARD ONE. The SME re-recorded it, and the take says
+    # «बहुत बढ़िया, दोस्त! तुमने कमाल कर दिया!» - verified by three independent transcription
+    # passes, all agreeing, after check_clip_lengths refused a 3.48s clip for a 105-character
+    # line. That is one of the three standard end-screen dialogues the review checklist asks
+    # for, and the old text was a lesson-specific recap, which the checklist flagged. So the
+    # card follows the recording rather than the other way round.
+    # NOTE: this is the clip the end-screen lip-sync is measured from. end_anim.bits below was
+    # re-measured from THIS take; changing the line again means re-running make_lipsync.py.
+    "vo_p8_prompt": "बहुत बढ़िया, दोस्त! तुमने कमाल कर दिया!",
 
     # ---- letter sounds --------------------------------------------------------------------
     # *** RECORD A BARE SOUND, NOT THE CARRIER WORD. *** They read "<letter> से <word>" here ONLY
@@ -1046,7 +1053,7 @@ def build_card():
                             35
                     ]
             },
-            "bits": "0000000000000111111000111111111000011000000000000001111100000011111111100000110000001110000000000000000000111100000011110000011111111000011100001111111111110000000000000000001111110000111111111111111100111100111111110011111100000011000000011111111111110000000000000000111100000001111111000000000000000001111100000000000000111110011111111100000111110000011111000000011111000000000000",
+            "bits": "0000000000000000000001111000000110000001100001111000011111000000000000000011111111100000001111111111111111110000110000000011100000000000000",
             "step_ms": 25
     }
 

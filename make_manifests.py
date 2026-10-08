@@ -211,8 +211,26 @@ def image_usage():
 #   * master present and shipping, but the clip is far longer than the line now needs -> the line was
 #     re-scripted under a finished take. Same 2.5x ratio the build's own stale-take warning uses, so
 #     the sheet and the build can never disagree about which lines are outstanding.
-HUMAN_VO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "_assets_round4", "voiceovers_SME_20260922")
+# [r8m] THE MASTER IS LOOKED UP ACROSS EVERY DELIVERY, NEWEST FIRST - not pinned to one folder.
+# It used to name voiceovers_SME_20260922, and when the October delivery landed every one of the 92
+# new takes compared against a September master, differed, and was reported "RE-RECORD": the sheet
+# jumped from 20 outstanding to 85 and would have sent the studio back to re-record what they had
+# just delivered. Newest-first also handles the other half correctly - a clip delivered in September
+# and NOT re-delivered keeps its September master instead of looking unrecorded.
+_VO_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_assets_round4")
+HUMAN_VO_DIRS = sorted(
+    (os.path.join(_VO_ROOT, d) for d in (os.listdir(_VO_ROOT) if os.path.isdir(_VO_ROOT) else [])
+     if d.startswith("voiceovers_SME_") and os.path.isdir(os.path.join(_VO_ROOT, d))),
+    reverse=True)
+
+
+def human_master(aid):
+    """The most recent delivered take of this id, or None."""
+    for d in HUMAN_VO_DIRS:
+        p = os.path.join(d, aid + ".wav")
+        if os.path.exists(p):
+            return p
+    return None
 TEXT = (CARD.get("assets") or {}).get("audio_text") or {}
 DUR  = (CARD.get("assets") or {}).get("audio_dur") or {}
 # Clips that are SUPPOSED to differ from their master. These carry a bare अक्षर on the SME's own
@@ -220,7 +238,18 @@ DUR  = (CARD.get("assets") or {}).get("audio_dur") or {}
 # "<letter> से <word>" carrier — so build/ holds a trim, by design, and every one of them would
 # otherwise be reported as drift. vo_snd_ch is the visible case: a 2.36s carrier cut to 0.75s.
 # Kept in step with BARE_SOUND_IDS in build_skill_HI02H11_L01_S01.py.
-TRIMMED_ON_PURPOSE = {"vo_snd_ch", "vo_snd_l", "vo_snd_r",
+# [r8m] vo_snd_ch STAYS IN THIS SET, and the reasoning that briefly took it out was wrong. It does
+# look like the odd one out - 0.75s against vo_snd_p's 2.28s and vo_snd_m's 2.24s, with a card text
+# that reads the full carrier - but that is a RULING, not drift: the SME asked on page 9 for the
+# letter options to speak the bare sound, and r4e trimmed ch/l/r to the consonant alone. check_bare_
+# sounds in the recipe enforces it and refused the build the moment the full-phrase take went in.
+# The SME's new recording is not a reversal of that ruling; the studio simply recorded every line on
+# the sheet, including the one whose status said "do NOT re-record".
+# vo_landing is here for a different reason than the letter sounds: the October take carried
+# back the «मैं हूँ स्विफ्टी।» clause the SME removed three times (the studio read from the
+# September sheet), and splice_landing.py cut it at a 640ms silence. So build holds a
+# deliberate edit of a good take - not something to send back to the studio.
+TRIMMED_ON_PURPOSE = {"vo_landing", "vo_snd_ch", "vo_snd_l", "vo_snd_r",
                       "vo_ltr_ch", "vo_ltr_l", "vo_ltr_r", "vo_ltr_p", "vo_ltr_m", "vo_ltr_n",
                       }
 
@@ -233,13 +262,17 @@ TRIMMED_ON_PURPOSE = {"vo_snd_ch", "vo_snd_l", "vo_snd_r",
 # child hears - which is exactly where a different timbre is most audible - so it gets its own
 # status rather than being lumped in with "build differs from the delivered take", which would read
 # as drift rather than as a deliberate, flagged substitution.
-SYNTHESISED = {"vo_landing"}
+# [r8m] vo_landing came OFF this set - the October delivery includes a human take of it. The
+# delivered file also carried back the «मैं हूँ स्विफ्टी।» clause the SME removed three times,
+# because the studio read from the September sheet; splice_landing.py cuts that clause at a
+# 640ms silence and the build copy now holds a human reading of the approved line.
+SYNTHESISED = set()
 
 def vo_status(aid, line, dur):
     if aid in SYNTHESISED:
         return "SYNTHESISED - record a human take of the line in column D"
-    master = os.path.join(HUMAN_VO, aid + ".wav")
-    if not os.path.exists(master):
+    master = human_master(aid)
+    if not master:
         # [r7a] "machine TTS - replace" is only true of a line that HAS a generated clip. The review
         # doc's hint ladder added lines that have no audio of any kind yet, and telling a studio to
         # "replace" something that was never there reads as optional cleanup rather than as work.
