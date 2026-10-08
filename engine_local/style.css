@@ -3117,11 +3117,13 @@ body.vo-lock .sg-vo{ pointer-events:none !important; opacity:.45; filter:graysca
    Colours are the board's, not the feedback palette: this is Swiftie telling the child what to look
    for, and green or red here would read as a verdict on the tap they just made. */
 .bal-say{
-  /* over her HEAD, not the middle of her box. She is drawn holding a bunch of balloons on her
-     right, so centring on the box put the tail into the balloons instead of at her face - the
-     picture is 248px wide and her head sits at about 36% of it. */
-  position:absolute; left:36%; top:-26px; transform:translateX(-50%) scale(.6);
-  min-width:92px; padding:8px 22px 10px; box-sizing:border-box;
+  /* CLEAR OF HER AND OF THE BALLOONS SHE IS HOLDING. 36% put it over her head but still
+     overlapping the bunch in her right hand, and the bunch is the taller of the two - so the bubble
+     moves further left, to sit above her shoulder rather than between them. The padding comes in
+     with it: at 22px of side padding a single akshara was carrying a lot of empty bubble, which is
+     what made it wide enough to reach the balloons in the first place. */
+  position:absolute; left:21%; top:-30px; transform:translateX(-50%) scale(.6);
+  min-width:0; padding:4px 14px 7px; box-sizing:border-box;
   background:#fff; border:3px solid #BFDBFF; border-radius:24px;
   box-shadow:0 10px 20px rgba(11,61,140,.18);
   font-family:var(--font-hi); font-weight:800; font-size:54px; line-height:1.15;
