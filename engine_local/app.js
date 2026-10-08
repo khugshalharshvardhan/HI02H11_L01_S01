@@ -7617,10 +7617,62 @@ function _gateThreePiece(cb, toPhase, G){
       document.body.classList.remove("gating");
     }, G.hold_ms || 450);
   };
+  /* [S01r8n] THE TITLE WAITS FOR ITS OWN WORDS. SME, pointing at HI02H11_L02_S02: "चलिए शुरू करते
+     हैं text will appear only when the VO comes चलिए शुरू करते हैं."
+     r8a wiped the title in the moment she started talking, which on this clip is three and a half
+     seconds too early - vo_pt_tutorial opens with «ध्यान से देखिए और मेरे साथ जानिए।» and only then
+     says «चलिए शुरू करें।». So the line is held back to G.title_cue_ms and then TYPED across the
+     stretches where it is actually voiced (G.title_voice_ms), both measured from this lesson's own
+     clips. Letters are grouped by GRAPHEME, not code point, so «शु» arrives whole and a matra can
+     never appear without the letter it hangs on.
+     A phase with no cue keeps r8a's wipe exactly, which is what makes this safe for any other card
+     built on this engine. */
+  const _typeTitle = ()=>{
+    if(!title || tok !== _gateToken) return;
+    const segs = ((G.title_voice_ms || {})[toPhase] || []).slice();
+    const txt = title.textContent || "";
+    let parts = [txt];
+    try{
+      if(window.Intl && Intl.Segmenter)
+        parts = [...new Intl.Segmenter("hi", { granularity:"grapheme" }).segment(txt)].map(x => x.segment);
+    }catch(e){}
+    if(!segs.length || parts.length < 2){            /* nothing measured - r8a's wipe */
+      title.classList.remove("pg-wait"); void title.offsetWidth; title.classList.add("pg-write");
+      return;
+    }
+    title.textContent = "";
+    const spans = parts.map(ch => {
+      const sp = document.createElement("span");
+      sp.className = "pg-ch"; sp.textContent = ch;
+      if(!ch.trim()) sp.classList.add("on");         /* spaces cost no time */
+      title.appendChild(sp); return sp;
+    });
+    title.classList.remove("pg-wait"); title.classList.add("pg-typing");
+    const todo = spans.filter(sp => !sp.classList.contains("on"));
+    const total = segs.reduce((a, s2) => a + (s2[1] - s2[0]), 0) || 1;
+    const t0 = Date.now(), cue = (G.title_cue_ms || {})[toPhase] || 0;
+    let i = 0;
+    (function step(){
+      if(tok !== _gateToken) return;
+      /* how much VOICED time has passed since the phrase began - a letter lands in the pause only
+         when the pause is over, so the line finishes exactly as she stops speaking */
+      const now = cue + (Date.now() - t0);
+      let voiced = 0;
+      for(const [a, b] of segs){
+        if(now >= b) voiced += b - a;
+        else if(now > a) voiced += now - a;
+      }
+      const want = Math.min(todo.length, Math.round(todo.length * voiced / total));
+      while(i < want) todo[i++].classList.add("on");
+      if(i < todo.length) requestAnimationFrame(step);
+    })();
+  };
   const talk = ()=>{
     if(tok !== _gateToken){ closeGate(); return; }
-    if(title){ title.classList.remove("pg-wait"); void title.offsetWidth; title.classList.add("pg-write"); }
     if(im && G.talk) setImg(G.talk);
+    const cue = (G.title_cue_ms || {})[toPhase];
+    if(cue == null) _typeTitle();                    /* no measurement - behave as r8a did */
+    else setTimeout(()=>{ if(tok === _gateToken) _typeTitle(); }, cue);
     play(voSrc, finish);
     setTimeout(finish, 12000);                       /* never strand the child */
   };

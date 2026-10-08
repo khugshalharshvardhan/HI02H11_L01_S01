@@ -18,7 +18,40 @@
     "talk": "assets/UI/gate_talk.webp",
     "rest": "assets/UI/gate_rest.webp",
     "peek_ms": 1520,
-    "hold_ms": 450
+    "hold_ms": 450,
+    "title_cue_ms": {
+      "guided": 3760,
+      "practice": 920,
+      "tutorial": 3450
+    },
+    "title_voice_ms": {
+      "guided": [
+        [
+          3760,
+          4020
+        ],
+        [
+          4440,
+          4990
+        ]
+      ],
+      "practice": [
+        [
+          920,
+          1720
+        ]
+      ],
+      "tutorial": [
+        [
+          3450,
+          3730
+        ],
+        [
+          4090,
+          4560
+        ]
+      ]
+    }
   },
   "end_anim": {
     "cols": 6,

@@ -951,6 +951,18 @@ def build_card():
         "rest": "assets/UI/gate_rest.webp",   # mouth closed, from the moment it ends
         "peek_ms": 1520,                      # the reference's own timings - not re-tuned
         "hold_ms": 450,
+        # [r8n] WHEN THE TITLE IS ALLOWED TO APPEAR. SME, pointing at HI02H11_L02_S02:
+        # "चलिए शुरू करते हैं text will appear only when the VO comes चलिए शुरू करते हैं".
+        # title_cue_ms is where that phrase STARTS inside the clip and title_voice_ms are the
+        # stretches it is actually voiced over, so the letters are typed in step with her rather
+        # than on a timer of their own.
+        # MEASURED FROM OUR CLIPS, not copied from that lesson: its gate VO is a different
+        # recording and ours were trimmed in r8d besides. The rule is the start of the block after
+        # the LONGEST silence - the sentence break, 670ms on the tutorial clip against the 360ms
+        # breaths inside the phrase. Re-run _assets_round4/measure_gate_cue.py if a vo_pt_* clip
+        # is ever re-recorded or re-trimmed.
+        "title_cue_ms": {"guided": 3760, "practice": 920, "tutorial": 3450},
+        "title_voice_ms": {"guided": [[3760, 4020], [4440, 4990]], "practice": [[920, 1720]], "tutorial": [[3450, 3730], [4090, 4560]]},
     }
     END_ANIM = {
             "cols": 6,

@@ -3043,3 +3043,43 @@ html.no-anim .bin-title.bin-teach{
   filter:drop-shadow(0 3px 6px rgba(0,0,0,.26)); }
 .nudge-hand.nh-cursor .nh-tapfx{ display:none; }
 .nudge-hand.nh-cursor img{ animation:none; }
+
+/* ═══ [S01r8n] FROM HI02H11_L02_S02 ═════════════════════════════════════════════════════════════ */
+
+/* 1 · THE PLAY BUTTON IS NOT THERE UNTIL IT CAN BE PRESSED. SME: "the play button should only appear
+   when the VO is finished", pointing at that lesson, whose own note records the same ruling -
+   "we don't need a disabled play button". Ours has been drawing a grey disc for the whole greeting;
+   a button that is visible and dead is a worse signal than no button, because the child tries it.
+   The size is already theirs - 140px, the same round art - so only the appearance changes: nothing,
+   then a pop-in, then a plain scale pulse for as long as it waits. No ring and no glow; the soft
+   shadow is part of the SVG. */
+.sg-card.lh-card .sg-btn.sg-waiting{ visibility:hidden; opacity:0; }
+@keyframes ltPlayIn{
+  0%  { opacity:0; transform:translateX(-50%) scale(.4); }
+  70% { opacity:1; transform:translateX(-50%) scale(1.06); }
+  100%{ opacity:1; transform:translateX(-50%) scale(1); }
+}
+@keyframes ltPlayPulse{
+  0%,100%{ transform:translateX(-50%) scale(1); }
+  50%    { transform:translateX(-50%) scale(1.09); }
+}
+.sg-card.lh-card .sg-btn:not(.sg-waiting):not(:disabled){
+  animation:ltPlayIn .45s cubic-bezier(.34,1.4,.6,1) both,
+            ltPlayPulse 1.3s ease-in-out .45s infinite; }
+.sg-card.lh-card .sg-btn:not(.sg-waiting):not(:disabled):active{ animation:none; }
+@media (prefers-reduced-motion:reduce){
+  .sg-card.lh-card .sg-btn:not(.sg-waiting):not(:disabled){ animation:none; } }
+
+/* 2 · THE GATE TITLE TYPES ITSELF, one akshara at a time, across the stretches where Swiftie is
+   actually saying it - see the note on _typeTitle. Every akshara holds its place from the start and
+   only its opacity changes, so the line does not slide about as it grows. */
+.pg-title.pg-typing .pg-ch{ opacity:0; transition:opacity .12s linear; }
+.pg-title.pg-typing .pg-ch.on{ opacity:1; }
+
+/* 3 · आगे PULSES WITHOUT A RING. SME: "the next button should not have any glow, it will only pulse
+   in all pages." navIdlePulse carried an expanding amber ring in its box-shadow alongside the
+   scale - that ring is the glow. The scale stays, the resting shadow stays, the ring goes. */
+@keyframes navIdlePulse{
+  0%,100%{ transform:translateX(-50%) scale(1);    box-shadow:0 6px 6px rgba(0,0,0,.25); }
+  50%    { transform:translateX(-50%) scale(1.055); box-shadow:0 6px 6px rgba(0,0,0,.25); }
+}
