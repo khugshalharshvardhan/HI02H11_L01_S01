@@ -3122,7 +3122,14 @@ body.vo-lock .sg-vo{ pointer-events:none !important; opacity:.45; filter:graysca
      moves further left, to sit above her shoulder rather than between them. The padding comes in
      with it: at 22px of side padding a single akshara was carrying a lot of empty bubble, which is
      what made it wide enough to reach the balloons in the first place. */
-  position:absolute; left:21%; top:-30px; transform:translateX(-50%) scale(.6);
+  /* Placed off the ART, measured on a grid overlay of swifty_with_balloons: her head spans 8-46%
+     of the 248px box with its crown at about 30% of the height, and the balloon bunch starts at 33%
+     across. The bubble measures 26.6% of the box wide, so centring it on her head at 27% would put
+     its right edge at 40% - well into the bunch. Centred at 18% the right edge lands at ~31%, which
+     clears the balloons with a little to spare while still sitting over the left of her head.
+     `bottom` is pinned to her crown rather than `top` to the box, so the tail stays just above her
+     head however tall the bubble turns out to be - measured at 28% against a crown at 30%. */
+  position:absolute; left:18%; bottom:72%; transform:translateX(-50%) scale(.6);
   min-width:0; padding:4px 14px 7px; box-sizing:border-box;
   background:#fff; border:3px solid #BFDBFF; border-radius:24px;
   box-shadow:0 10px 20px rgba(11,61,140,.18);
