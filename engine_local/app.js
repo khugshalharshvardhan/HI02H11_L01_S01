@@ -6752,10 +6752,20 @@ const SlideModules = {
          toggles for precisely as long as a clip is sounding. So she gestures while the VO talks and
          freezes the moment it stops, with no timer of our own to drift. */
       const sw = document.createElement("div"); sw.className = "bal-swiftee";
+      /* [S01r8r] SHE SAYS WHICH LETTER, ON THE FIRST MISS. SME: "when the user makes one incorrect
+         attempt, then प / च - which letter we are talking about - likha aa jaye on Swiftee in a
+         speech bubble."
+         Until now the first miss was a buzz and nothing else, and the child had only the prompt they
+         had already heard. The second miss still earns the glow on every correct balloon, which is
+         what the SME confirmed should stay - so the ladder is now: buzz + the letter, then the letter
+         + the glow. It is a child's bubble pointing at her head, and it carries the letter the ROUND
+         is about (each round has its own target_sound), not the slide's. */
+      const say = document.createElement("div"); say.className = "bal-say";
       /* [S01r4w] ANIMATED WEBP, not GIF: 2,145 KB -> 456 KB at 408px/10fps, alpha intact.
          Originals in _assets_round4/sme_originals/. */
       sw.innerHTML = '<img class="bsw-anim" src="assets/gif/swifty_with_balloons.webp" alt="">' +
                      '<img class="bsw-still" src="assets/gif/swifty_with_balloons_still.webp" alt="">';
+      sw.appendChild(say);                 /* [S01r8r] AFTER innerHTML - it replaces every child */
       /* [S01r5h] SHE IS ALSO THE REPLAY CONTROL - the reference screen has no audio chip. */
       sw.onclick = ()=>{
         if(state.locked || isPlaying) return;
@@ -7209,9 +7219,19 @@ const SlideModules = {
             setTimeout(()=> b.classList.remove("bal-shake"), 620);
             SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
             const n = state.attempts;
+            /* [S01r8r] the letter goes up on the GESTURE, not behind the word clip. afterName waits
+               for the tapped balloon's name to finish, which is right for the voice but wrong for a
+               correction - by then the child has been looking at a shaken balloon for a second with
+               nothing told to them. */
+            try{
+              const want = (LEVELS[li] || {}).target_sound || d.target_sound || "";
+              if(want){ say.textContent = want;
+                        say.classList.remove("show"); void say.offsetWidth;
+                        say.classList.add("show"); }
+            }catch(e){}
             afterName(()=>{
               sfxWrongSoft(); setSwMood("tryagain");
-              /* 1st wrong: the buzz IS the feedback - the deck asks for no voice line here */
+              /* 1st wrong: the buzz and the letter in her bubble - the deck asks for no voice line */
               if(n < 2) return;
               /* [S01r5o] two misses earns the glow on every remaining answer. The hand is gone. */
               glowCorrect();
@@ -7249,6 +7269,7 @@ const SlideModules = {
         const its = (L.items || []).slice();
         need = its.filter(it => it.has === true).length;
         found = 0; state.locked = false; busy = false; revealing = false;
+        try{ say.classList.remove("show"); }catch(e){}   /* [S01r8r] each round starts her silent */
         doneImgs = new Set();                    /* [S01r7f] each round starts with all four open */
         clearTimeout(idleT); clearTimeout(voT); glowing = false;    /* [S01r7m] */
         killStream();
@@ -8555,7 +8576,7 @@ boot();
    the target chip). Leaving those two alone would have put two different म shapes in one lesson,
    which is the defect, not the fix. Restricting it to the two pages is one condition in `want`. */
 (function maaGlyphFont(){
-  const SEL = ".big-glyph, .meet-letter-box .glyph, .bin-title, .ltr-chip, .target-letter";
+  const SEL = ".big-glyph, .meet-letter-box .glyph, .bin-title, .ltr-chip, .target-letter, .bal-say";
   let queued = false;
   const tag = ()=>{
     queued = false;

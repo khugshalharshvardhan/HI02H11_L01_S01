@@ -3109,3 +3109,33 @@ body.vo-lock .tut-audio,
 body.vo-lock .sg-vo{ pointer-events:none !important; opacity:.45; filter:grayscale(.75);
   transition:opacity .18s ease, filter .18s ease; }
 .audio-chip, .tut-audio, .sg-vo{ transition:opacity .25s ease, filter .25s ease; }
+
+/* [S01r8r] SWIFTIE'S SPEECH BUBBLE on the balloon board - see the note in TAP_BALLOON_SOUND.
+   Anchored to HER, so it travels with her when she flies away at the end of the game and needs no
+   second position to keep in step. The tail is a rotated square rather than a border triangle,
+   because a triangle drawn with borders cannot carry the bubble's own outline and the join shows.
+   Colours are the board's, not the feedback palette: this is Swiftie telling the child what to look
+   for, and green or red here would read as a verdict on the tap they just made. */
+.bal-say{
+  /* over her HEAD, not the middle of her box. She is drawn holding a bunch of balloons on her
+     right, so centring on the box put the tail into the balloons instead of at her face - the
+     picture is 248px wide and her head sits at about 36% of it. */
+  position:absolute; left:36%; top:-26px; transform:translateX(-50%) scale(.6);
+  min-width:92px; padding:8px 22px 10px; box-sizing:border-box;
+  background:#fff; border:3px solid #BFDBFF; border-radius:24px;
+  box-shadow:0 10px 20px rgba(11,61,140,.18);
+  font-family:var(--font-hi); font-weight:800; font-size:54px; line-height:1.15;
+  color:var(--navy); text-align:center; white-space:nowrap;
+  z-index:6; pointer-events:none; opacity:0;
+}
+.bal-say::after{
+  content:""; position:absolute; left:50%; bottom:-11px; width:18px; height:18px;
+  background:#fff; border-right:3px solid #BFDBFF; border-bottom:3px solid #BFDBFF;
+  border-radius:0 0 5px 0; transform:translateX(-50%) rotate(45deg);
+}
+.bal-say.show{ animation:balSayIn .42s cubic-bezier(.34,1.5,.6,1) forwards; }
+@keyframes balSayIn{
+  0%  { opacity:0; transform:translateX(-50%) translateY(10px) scale(.6); }
+  100%{ opacity:1; transform:translateX(-50%) translateY(0)    scale(1);  }
+}
+html.no-anim .bal-say.show{ animation:none; opacity:1; transform:translateX(-50%) scale(1); }

@@ -3121,6 +3121,36 @@ body.vo-lock .sg-vo{ pointer-events:none !important; opacity:.45; filter:graysca
   transition:opacity .18s ease, filter .18s ease; }
 .audio-chip, .tut-audio, .sg-vo{ transition:opacity .25s ease, filter .25s ease; }
 
+/* [S01r8r] SWIFTIE'S SPEECH BUBBLE on the balloon board - see the note in TAP_BALLOON_SOUND.
+   Anchored to HER, so it travels with her when she flies away at the end of the game and needs no
+   second position to keep in step. The tail is a rotated square rather than a border triangle,
+   because a triangle drawn with borders cannot carry the bubble's own outline and the join shows.
+   Colours are the board's, not the feedback palette: this is Swiftie telling the child what to look
+   for, and green or red here would read as a verdict on the tap they just made. */
+.bal-say{
+  /* over her HEAD, not the middle of her box. She is drawn holding a bunch of balloons on her
+     right, so centring on the box put the tail into the balloons instead of at her face - the
+     picture is 248px wide and her head sits at about 36% of it. */
+  position:absolute; left:36%; top:-26px; transform:translateX(-50%) scale(.6);
+  min-width:92px; padding:8px 22px 10px; box-sizing:border-box;
+  background:#fff; border:3px solid #BFDBFF; border-radius:24px;
+  box-shadow:0 10px 20px rgba(11,61,140,.18);
+  font-family:var(--font-hi); font-weight:800; font-size:54px; line-height:1.15;
+  color:var(--navy); text-align:center; white-space:nowrap;
+  z-index:6; pointer-events:none; opacity:0;
+}
+.bal-say::after{
+  content:""; position:absolute; left:50%; bottom:-11px; width:18px; height:18px;
+  background:#fff; border-right:3px solid #BFDBFF; border-bottom:3px solid #BFDBFF;
+  border-radius:0 0 5px 0; transform:translateX(-50%) rotate(45deg);
+}
+.bal-say.show{ animation:balSayIn .42s cubic-bezier(.34,1.5,.6,1) forwards; }
+@keyframes balSayIn{
+  0%  { opacity:0; transform:translateX(-50%) translateY(10px) scale(.6); }
+  100%{ opacity:1; transform:translateX(-50%) translateY(0)    scale(1);  }
+}
+html.no-anim .bal-say.show{ animation:none; opacity:1; transform:translateX(-50%) scale(1); }
+
 </style>
 </head>
 <body class="is-start">
@@ -9991,10 +10021,20 @@ const SlideModules = {
          toggles for precisely as long as a clip is sounding. So she gestures while the VO talks and
          freezes the moment it stops, with no timer of our own to drift. */
       const sw = document.createElement("div"); sw.className = "bal-swiftee";
+      /* [S01r8r] SHE SAYS WHICH LETTER, ON THE FIRST MISS. SME: "when the user makes one incorrect
+         attempt, then प / च - which letter we are talking about - likha aa jaye on Swiftee in a
+         speech bubble."
+         Until now the first miss was a buzz and nothing else, and the child had only the prompt they
+         had already heard. The second miss still earns the glow on every correct balloon, which is
+         what the SME confirmed should stay - so the ladder is now: buzz + the letter, then the letter
+         + the glow. It is a child's bubble pointing at her head, and it carries the letter the ROUND
+         is about (each round has its own target_sound), not the slide's. */
+      const say = document.createElement("div"); say.className = "bal-say";
       /* [S01r4w] ANIMATED WEBP, not GIF: 2,145 KB -> 456 KB at 408px/10fps, alpha intact.
          Originals in _assets_round4/sme_originals/. */
       sw.innerHTML = '<img class="bsw-anim" src="assets/gif/swifty_with_balloons.webp" alt="">' +
                      '<img class="bsw-still" src="assets/gif/swifty_with_balloons_still.webp" alt="">';
+      sw.appendChild(say);                 /* [S01r8r] AFTER innerHTML - it replaces every child */
       /* [S01r5h] SHE IS ALSO THE REPLAY CONTROL - the reference screen has no audio chip. */
       sw.onclick = ()=>{
         if(state.locked || isPlaying) return;
@@ -10448,9 +10488,19 @@ const SlideModules = {
             setTimeout(()=> b.classList.remove("bal-shake"), 620);
             SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
             const n = state.attempts;
+            /* [S01r8r] the letter goes up on the GESTURE, not behind the word clip. afterName waits
+               for the tapped balloon's name to finish, which is right for the voice but wrong for a
+               correction - by then the child has been looking at a shaken balloon for a second with
+               nothing told to them. */
+            try{
+              const want = (LEVELS[li] || {}).target_sound || d.target_sound || "";
+              if(want){ say.textContent = want;
+                        say.classList.remove("show"); void say.offsetWidth;
+                        say.classList.add("show"); }
+            }catch(e){}
             afterName(()=>{
               sfxWrongSoft(); setSwMood("tryagain");
-              /* 1st wrong: the buzz IS the feedback - the deck asks for no voice line here */
+              /* 1st wrong: the buzz and the letter in her bubble - the deck asks for no voice line */
               if(n < 2) return;
               /* [S01r5o] two misses earns the glow on every remaining answer. The hand is gone. */
               glowCorrect();
@@ -10488,6 +10538,7 @@ const SlideModules = {
         const its = (L.items || []).slice();
         need = its.filter(it => it.has === true).length;
         found = 0; state.locked = false; busy = false; revealing = false;
+        try{ say.classList.remove("show"); }catch(e){}   /* [S01r8r] each round starts her silent */
         doneImgs = new Set();                    /* [S01r7f] each round starts with all four open */
         clearTimeout(idleT); clearTimeout(voT); glowing = false;    /* [S01r7m] */
         killStream();
@@ -11794,7 +11845,7 @@ boot();
    the target chip). Leaving those two alone would have put two different म shapes in one lesson,
    which is the defect, not the fix. Restricting it to the two pages is one condition in `want`. */
 (function maaGlyphFont(){
-  const SEL = ".big-glyph, .meet-letter-box .glyph, .bin-title, .ltr-chip, .target-letter";
+  const SEL = ".big-glyph, .meet-letter-box .glyph, .bin-title, .ltr-chip, .target-letter, .bal-say";
   let queued = false;
   const tag = ()=>{
     queued = false;
