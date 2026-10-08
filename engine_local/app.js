@@ -6761,6 +6761,24 @@ const SlideModules = {
          + the glow. It is a child's bubble pointing at her head, and it carries the letter the ROUND
          is about (each round has its own target_sound), not the slide's. */
       const say = document.createElement("div"); say.className = "bal-say";
+      /* [S01r8u] SHE HOLDS THE LETTER FOR FIVE SECONDS, THEN DROPS IT. SME: "when the speech bubble
+         will pop it will be there for 5 seconds, then the user again does a wrong answer then प
+         letter will pop and stay on the screen for 5 seconds, same for च."
+         So it is not a one-shot: every wrong tap puts it back up and restarts the five seconds, in
+         whichever round the child is in - the letter is read from the level each time, so the च
+         round says च without anything else changing.
+         The timer is cleared before it is re-armed, or two taps four seconds apart would leave the
+         first tap's hide to fire one second into the second tap's bubble. */
+      let sayT = 0;
+      const showSay = (letter)=>{
+        if(!letter) return;
+        clearTimeout(sayT);
+        say.textContent = letter;
+        say.classList.remove("show"); void say.offsetWidth;   /* replay the pop on a repeat tap */
+        say.classList.add("show");
+        sayT = setTimeout(()=>{ say.classList.remove("show"); }, 5000);
+      };
+      const hideSay = ()=>{ clearTimeout(sayT); say.classList.remove("show"); };
       /* [S01r4w] ANIMATED WEBP, not GIF: 2,145 KB -> 456 KB at 408px/10fps, alpha intact.
          Originals in _assets_round4/sme_originals/. */
       sw.innerHTML = '<img class="bsw-anim" src="assets/gif/swifty_with_balloons.webp" alt="">' +
@@ -7144,6 +7162,7 @@ const SlideModules = {
                watchdogged, counting a tap is not something that should depend on an audio callback
                at all - it is the one piece of state the round's end is computed from. The SPOKEN
                consequences still wait for the word, which is r5o's order. */
+            try{ hideSay(); }catch(e){}       /* [S01r8u] they found one - stop holding the letter */
             found++;
             doneImgs.add(it.img);              /* [S01r7f] never offered again this round */
             SwiftPAL.emit("sound_found", { slide_id: slide.id, phase: slide.phase, img: it.img });
@@ -7223,12 +7242,7 @@ const SlideModules = {
                for the tapped balloon's name to finish, which is right for the voice but wrong for a
                correction - by then the child has been looking at a shaken balloon for a second with
                nothing told to them. */
-            try{
-              const want = (LEVELS[li] || {}).target_sound || d.target_sound || "";
-              if(want){ say.textContent = want;
-                        say.classList.remove("show"); void say.offsetWidth;
-                        say.classList.add("show"); }
-            }catch(e){}
+            try{ showSay((LEVELS[li] || {}).target_sound || d.target_sound || ""); }catch(e){}
             afterName(()=>{
               sfxWrongSoft(); setSwMood("tryagain");
               /* 1st wrong: the buzz and the letter in her bubble - the deck asks for no voice line */
@@ -7269,7 +7283,7 @@ const SlideModules = {
         const its = (L.items || []).slice();
         need = its.filter(it => it.has === true).length;
         found = 0; state.locked = false; busy = false; revealing = false;
-        try{ say.classList.remove("show"); }catch(e){}   /* [S01r8r] each round starts her silent */
+        try{ hideSay(); }catch(e){}            /* [S01r8r] each round starts her silent */
         doneImgs = new Set();                    /* [S01r7f] each round starts with all four open */
         clearTimeout(idleT); clearTimeout(voT); glowing = false;    /* [S01r7m] */
         killStream();
