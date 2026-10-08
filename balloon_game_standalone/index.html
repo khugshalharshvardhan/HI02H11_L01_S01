@@ -2960,7 +2960,7 @@ html.no-anim .wg-fx{display:none;}
    This does NOT reopen the vo-lock dimming ban a few hundred lines above: that ruling is about
    LEARNING elements - the board must never grey out while a clip plays. This is a control, and the
    checklist asks for exactly this. Scoped to .sg-vo so nothing else can be caught by it. */
-.sg-vo.sg-vo-off{ opacity:.45; cursor:default; pointer-events:none; filter:saturate(.6); }
+.sg-vo.sg-vo-off{ opacity:.45; cursor:default; pointer-events:none; filter:grayscale(.75); }
 .sg-vo.sg-vo-off .wv{ opacity:0; }     /* the sound-wave arcs stop too - they say "tap me" */
 
 /* 2 · THE OPTION GLYPHS READ BIGGER. SME: "font size of options should be slightly larger to make it
@@ -3098,6 +3098,28 @@ html.no-anim .bin-title.bin-teach{
   0%,100%{ transform:translateX(-50%) scale(1);    box-shadow:0 6px 6px rgba(0,0,0,.25); }
   50%    { transform:translateX(-50%) scale(1.055); box-shadow:0 6px 6px rgba(0,0,0,.25); }
 }
+
+/* ═══ [S01r8q] THE SPEAKER BUTTONS, FROM HI02H11_L02_S02 ════════════════════════════════════════
+
+   1 · 70px. SME: "the size of the speaker button is 70px". Both lessons shipped it at 58; this is
+   the one number that is ours alone now. left/bottom are untouched, so it grows from its existing
+   anchor - the extra 12px goes up and to the right, away from Swiftie's foot.
+
+   2 · DISABLED LOOKS DISABLED, and grey rather than merely dimmer. r8d greyed only the cover's
+   speaker and used filter:saturate(.6), which at a glance still read as a live blue button. The
+   reference uses grayscale(.75) with the same .45 opacity - that is the grey in the SME's
+   screenshot - and applies it to EVERY audio control while a clip sounds, not just the cover's.
+   Ours now does both.
+
+   This is the documented exception to the vo-lock no-dimming ruling, and the reference states the
+   same reasoning in its own note: that ruling is about the ANSWER CARDS, where a dimmed board reads
+   as broken. A dimmed speaker reads as busy, which is exactly what it is. */
+.sg-vo{ width:70px; height:70px; }
+body.vo-lock .audio-chip,
+body.vo-lock .tut-audio,
+body.vo-lock .sg-vo{ pointer-events:none !important; opacity:.45; filter:grayscale(.75);
+  transition:opacity .18s ease, filter .18s ease; }
+.audio-chip, .tut-audio, .sg-vo{ transition:opacity .25s ease, filter .25s ease; }
 
 </style>
 </head>
