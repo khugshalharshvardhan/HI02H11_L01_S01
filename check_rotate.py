@@ -5,11 +5,15 @@ Device emulation via CDP rather than a narrow window: the rule is "(orientation:
 (pointer:coarse)", and only emulation gives a coarse pointer. A resized desktop window is portrait
 with a FINE pointer, which is exactly the case that must stay untouched.
 """
-import sys, time
+import os, sys, tempfile, time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 DIST = "D:/HI02H11_L01_S01_DEV_HANDOVER-20260914T100052Z-1-001/HI02H11_L01_S01_DEV_HANDOVER/dist"
+# [S01r8x] the screenshots go to the system temp dir, not next to the lesson. They were landing
+# in the handover root, where they are neither delivered content nor anything a reviewer would
+# think to clear out - and this check is meant to be run often.
+SHOTS = tempfile.gettempdir()
 fails = []
 
 
@@ -52,7 +56,7 @@ try:
     check("portrait phone: the lesson behind it is blocked", r["blocked"], str(r["blocked"]))
     check("portrait phone: nothing is talking to a hidden screen", not r["talking"],
           "vo-lock=%s" % r["talking"])
-    d.save_screenshot("rot_portrait.png")
+    d.save_screenshot(os.path.join(SHOTS, "rot_portrait.png"))
 
     # ── turned sideways ───────────────────────────────────────────────────────────────────────
     phone(d, 844, 390)
@@ -70,7 +74,7 @@ try:
             break
         time.sleep(0.2)
     check("landscape: the greeting then plays - it was held, not lost", spoke)
-    d.save_screenshot("rot_landscape.png")
+    d.save_screenshot(os.path.join(SHOTS, "rot_landscape.png"))
 finally:
     d.quit()
 
