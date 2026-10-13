@@ -3164,6 +3164,38 @@ body.vo-lock .sg-vo{ pointer-events:none !important; opacity:.45; filter:graysca
 }
 html.no-anim .bal-say.show{ animation:none; opacity:1; transform:translateX(-50%) scale(1); }
 
+/* ═══ [S01r8v] TURN THE PHONE ═══════════════════════════════════════════════════════════════════
+   Shown only on a COARSE POINTER in portrait. The orientation alone is not enough: a desktop window
+   dragged narrow is also "portrait", and telling someone at a laptop to rotate their phone is worse
+   than the small text would have been. The same query is used from JS (window.matchMedia) so the
+   gate and the lesson behind it can never disagree about which way up the device is. */
+.rot-gate{ display:none; }
+@media (orientation:portrait) and (pointer:coarse){
+  .rot-gate{
+    display:flex; position:fixed; inset:0; z-index:2147483000;
+    align-items:center; justify-content:center; padding:28px;
+    background:linear-gradient(180deg,#5BC2FB 0%,#2E8FE0 100%);
+    -webkit-user-select:none; user-select:none;
+  }
+  /* nothing behind it should be reachable, or a stray tap starts the lesson unseen */
+  body.rot-blocked .app-shell, body.rot-blocked .stage{ pointer-events:none; }
+}
+.rot-box{ text-align:center; color:#fff; max-width:320px; }
+.rot-ico{ width:132px; height:132px; display:block; margin:0 auto 18px; }
+.rot-phone{ fill:#fff; stroke:#0B3D8C; stroke-width:4; }
+.rot-arrow{ stroke:#FFD84D; }
+.rot-ico{ animation:rotTurn 2.4s ease-in-out infinite; transform-origin:50% 50%; }
+@keyframes rotTurn{
+  0%,18%  { transform:rotate(0deg); }
+  38%,62% { transform:rotate(-90deg); }
+  82%,100%{ transform:rotate(0deg); }
+}
+.rot-hi{ font-family:var(--font-hi); font-weight:800; font-size:34px; line-height:1.25;
+  text-shadow:0 3px 0 rgba(11,61,140,.35); }
+.rot-sub{ font-family:var(--font-hi); font-weight:700; font-size:18px; line-height:1.45;
+  margin-top:10px; opacity:.92; }
+@media (prefers-reduced-motion:reduce){ .rot-ico{ animation:none; transform:rotate(-90deg); } }
+
 </style>
 </head>
 <body class="is-start">
@@ -3200,7 +3232,8 @@ html.no-anim .bal-say.show{ animation:none; opacity:1; transform:translateX(-50%
     <!-- SLIDE STAGE (engine swaps slides here) -->
     <div class="slide-stage">
       <div class="slide-host" id="slideHost"></div>
-      <div class="nudge-hand" id="nudgeHand">
+      </div>
+<div class="nudge-hand" id="nudgeHand">
         <img src="assets/UI/nudge_hand_new.svg" alt="">
       </div>
     </div>
@@ -11512,12 +11545,39 @@ function boot(){
   // child), deduped by .done. The same handler adds body.loaded (unblocks the concept-strip stagger)
   // and fires the landing VO. play() absorbs an autoplay block; the pulsing 🔊 chip is the fallback. ----
   (function(){
+    /* [S01r8v] THE GREETING WAITS FOR THE PHONE TO BE TURNED. Without this the gate is a lie by
+       omission: the cover autoplays its line the moment the page loads, so a child holding the
+       phone upright hears Swiftie introduce the lesson to a screen that is telling them to rotate,
+       and by the time they have turned it the greeting is over and the play button is simply there.
+       They would have missed the one thing the cover exists to say.
+       So on a portrait phone the start is deferred, and the SAME media query the stylesheet uses
+       decides it - one source of truth for which way up the device is. Anything that is not a
+       portrait touch screen is unaffected and starts exactly as before. */
+    const _rotQ = (window.matchMedia
+                   && window.matchMedia("(orientation:portrait) and (pointer:coarse)")) || null;
+    const _gated = ()=> !!(_rotQ && _rotQ.matches);
+    document.body.classList.toggle("rot-blocked", _gated());
+    const _whenUpright = (go)=>{
+      if(!_gated()){ go(); return; }
+      stopAudio();                         /* nothing should be sounding behind the gate */
+      const on = ()=>{
+        if(_gated()) return;
+        document.body.classList.remove("rot-blocked");
+        try{ _rotQ.removeEventListener("change", on); }catch(e){ try{ _rotQ.removeListener(on); }catch(e2){} }
+        window.removeEventListener("orientationchange", on);
+        setTimeout(go, 250);               /* let the rotation settle so fit() has run */
+      };
+      try{ _rotQ.addEventListener("change", on); }catch(e){ try{ _rotQ.addListener(on); }catch(e2){} }
+      window.addEventListener("orientationchange", on);
+    };
+    window.__whenUpright = _whenUpright;
+
     /* [S01r8d] warm the button sounds before anything can ask for one - see playSfx. The cover's
        pop is the first sound the file ever plays, so it is the one with nothing ahead of it to have
        paid the fetch already, and it was the one the SME heard arrive late. */
     _warmSfx(["sfx_pop", "sfx_tap", "sfx_correct", "sfx_wrong", "sfx_celebrate", "sfx_bal_pop"]);
     const bl = $("bootLoader"); if(!bl){ document.body.classList.add("loaded");
-      playLanding(); return; }      /* [S01r8b] the greeting is back on arrival */
+      _whenUpright(playLanding); return; }   /* [S01r8b/r8v] greeting, once upright */
     // [16l] BRAND SPLASH MIN-HOLD: locally, window.load fires in ~100ms and the CG loader was
     // removed before it ever painted ("no CG logo at the start"). The loader now holds for a
     // minimum beat so the ConveGenius mark is always seen; the watchdog still caps the worst case.
@@ -11529,7 +11589,7 @@ function boot(){
       setTimeout(()=>{
         bl.classList.add("done");                  // NOW start the fade (after the brand beat)
         document.body.classList.add("loaded");     // starts the .sg-acell pop chain
-        playLanding();                             /* [S01r8b] the greeting is back on arrival */
+        _whenUpright(playLanding);                 /* [S01r8b/r8v] greeting, once upright */
         setTimeout(()=> bl.remove(), 450);
       }, Math.max(0, MIN_MS - (performance.now() - T0)));
     };
@@ -11898,5 +11958,31 @@ boot();
 
 
 </script>
+<!-- [S01r8v] IT HAS TO LIVE OUTSIDE .stage. First attempt put it beside #nudgeHand, which is
+     inside the stage - and the stage carries transform:scale() and overflow:hidden. A transformed
+     ancestor becomes the containing block for position:fixed, so the "full-screen" overlay was laid
+     out inside the scaled box and then clipped by it. The DOM said display:flex and the screenshot
+     showed the cover with no gate on it at all, which is the only reason it was caught. -->
+<!-- [S01r8v] PORTRAIT GATE. The stage is a fixed 1333x750 box scaled by min(vw/1333, vh/750), so
+     a 390x844 phone held upright scales it to 0.29 and every letter, picture and button is a third
+     of its intended size - which is what the SME saw. Turned sideways the same phone scales to 0.52.
+     The lesson cannot reflow to portrait (its whole layout is that one box), so the honest answer is
+     to ask for the rotation rather than ship something unreadable.
+     The icon is inline SVG, not an asset: the delivery has ~52 KB of headroom and this is worth
+     about two of them. -->
+<div class="rot-gate" id="rotGate" role="alertdialog" aria-live="polite">
+  <div class="rot-box">
+    <svg class="rot-ico" viewBox="0 0 120 120" aria-hidden="true">
+      <rect class="rot-phone" x="42" y="18" width="36" height="84" rx="7"/>
+      <rect x="54" y="25" width="12" height="3" rx="1.5" fill="#BBD6FF"/>
+      <circle cx="60" cy="95" r="3" fill="#BBD6FF"/>
+      <path class="rot-arrow" d="M22 60a38 38 0 0 1 10-25" fill="none" stroke-width="5"
+            stroke-linecap="round"/>
+      <path class="rot-arrow" d="M32 24v12h-12" fill="none" stroke-width="5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="rot-hi">फ़ोन को घुमाइए</div>
+    <div class="rot-sub">यह खेल आड़े फ़ोन पर सबसे अच्छा चलता है।</div>
+  </div>
 </body>
 </html>

@@ -3152,3 +3152,35 @@ body.vo-lock .sg-vo{ pointer-events:none !important; opacity:.45; filter:graysca
   100%{ opacity:1; transform:translateX(-50%) translateY(0)    scale(1);  }
 }
 html.no-anim .bal-say.show{ animation:none; opacity:1; transform:translateX(-50%) scale(1); }
+
+/* ═══ [S01r8v] TURN THE PHONE ═══════════════════════════════════════════════════════════════════
+   Shown only on a COARSE POINTER in portrait. The orientation alone is not enough: a desktop window
+   dragged narrow is also "portrait", and telling someone at a laptop to rotate their phone is worse
+   than the small text would have been. The same query is used from JS (window.matchMedia) so the
+   gate and the lesson behind it can never disagree about which way up the device is. */
+.rot-gate{ display:none; }
+@media (orientation:portrait) and (pointer:coarse){
+  .rot-gate{
+    display:flex; position:fixed; inset:0; z-index:2147483000;
+    align-items:center; justify-content:center; padding:28px;
+    background:linear-gradient(180deg,#5BC2FB 0%,#2E8FE0 100%);
+    -webkit-user-select:none; user-select:none;
+  }
+  /* nothing behind it should be reachable, or a stray tap starts the lesson unseen */
+  body.rot-blocked .app-shell, body.rot-blocked .stage{ pointer-events:none; }
+}
+.rot-box{ text-align:center; color:#fff; max-width:320px; }
+.rot-ico{ width:132px; height:132px; display:block; margin:0 auto 18px; }
+.rot-phone{ fill:#fff; stroke:#0B3D8C; stroke-width:4; }
+.rot-arrow{ stroke:#FFD84D; }
+.rot-ico{ animation:rotTurn 2.4s ease-in-out infinite; transform-origin:50% 50%; }
+@keyframes rotTurn{
+  0%,18%  { transform:rotate(0deg); }
+  38%,62% { transform:rotate(-90deg); }
+  82%,100%{ transform:rotate(0deg); }
+}
+.rot-hi{ font-family:var(--font-hi); font-weight:800; font-size:34px; line-height:1.25;
+  text-shadow:0 3px 0 rgba(11,61,140,.35); }
+.rot-sub{ font-family:var(--font-hi); font-weight:700; font-size:18px; line-height:1.45;
+  margin-top:10px; opacity:.92; }
+@media (prefers-reduced-motion:reduce){ .rot-ico{ animation:none; transform:rotate(-90deg); } }

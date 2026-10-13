@@ -8230,12 +8230,39 @@ function boot(){
   // child), deduped by .done. The same handler adds body.loaded (unblocks the concept-strip stagger)
   // and fires the landing VO. play() absorbs an autoplay block; the pulsing 🔊 chip is the fallback. ----
   (function(){
+    /* [S01r8v] THE GREETING WAITS FOR THE PHONE TO BE TURNED. Without this the gate is a lie by
+       omission: the cover autoplays its line the moment the page loads, so a child holding the
+       phone upright hears Swiftie introduce the lesson to a screen that is telling them to rotate,
+       and by the time they have turned it the greeting is over and the play button is simply there.
+       They would have missed the one thing the cover exists to say.
+       So on a portrait phone the start is deferred, and the SAME media query the stylesheet uses
+       decides it - one source of truth for which way up the device is. Anything that is not a
+       portrait touch screen is unaffected and starts exactly as before. */
+    const _rotQ = (window.matchMedia
+                   && window.matchMedia("(orientation:portrait) and (pointer:coarse)")) || null;
+    const _gated = ()=> !!(_rotQ && _rotQ.matches);
+    document.body.classList.toggle("rot-blocked", _gated());
+    const _whenUpright = (go)=>{
+      if(!_gated()){ go(); return; }
+      stopAudio();                         /* nothing should be sounding behind the gate */
+      const on = ()=>{
+        if(_gated()) return;
+        document.body.classList.remove("rot-blocked");
+        try{ _rotQ.removeEventListener("change", on); }catch(e){ try{ _rotQ.removeListener(on); }catch(e2){} }
+        window.removeEventListener("orientationchange", on);
+        setTimeout(go, 250);               /* let the rotation settle so fit() has run */
+      };
+      try{ _rotQ.addEventListener("change", on); }catch(e){ try{ _rotQ.addListener(on); }catch(e2){} }
+      window.addEventListener("orientationchange", on);
+    };
+    window.__whenUpright = _whenUpright;
+
     /* [S01r8d] warm the button sounds before anything can ask for one - see playSfx. The cover's
        pop is the first sound the file ever plays, so it is the one with nothing ahead of it to have
        paid the fetch already, and it was the one the SME heard arrive late. */
     _warmSfx(["sfx_pop", "sfx_tap", "sfx_correct", "sfx_wrong", "sfx_celebrate", "sfx_bal_pop"]);
     const bl = $("bootLoader"); if(!bl){ document.body.classList.add("loaded");
-      playLanding(); return; }      /* [S01r8b] the greeting is back on arrival */
+      _whenUpright(playLanding); return; }   /* [S01r8b/r8v] greeting, once upright */
     // [16l] BRAND SPLASH MIN-HOLD: locally, window.load fires in ~100ms and the CG loader was
     // removed before it ever painted ("no CG logo at the start"). The loader now holds for a
     // minimum beat so the ConveGenius mark is always seen; the watchdog still caps the worst case.
@@ -8247,7 +8274,7 @@ function boot(){
       setTimeout(()=>{
         bl.classList.add("done");                  // NOW start the fade (after the brand beat)
         document.body.classList.add("loaded");     // starts the .sg-acell pop chain
-        playLanding();                             /* [S01r8b] the greeting is back on arrival */
+        _whenUpright(playLanding);                 /* [S01r8b/r8v] greeting, once upright */
         setTimeout(()=> bl.remove(), 450);
       }, Math.max(0, MIN_MS - (performance.now() - T0)));
     };

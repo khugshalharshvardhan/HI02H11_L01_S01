@@ -2711,7 +2711,8 @@ html.no-anim .wg-fx{display:none;}
     <!-- SLIDE STAGE (engine swaps slides here) -->
     <div class="slide-stage">
       <div class="slide-host" id="slideHost"></div>
-      <div class="nudge-hand" id="nudgeHand">
+      </div>
+<div class="nudge-hand" id="nudgeHand">
         <img src="assets/UI/nudge_hand_new.svg" alt="">
       </div>
     </div>
@@ -11034,5 +11035,31 @@ function buildDevNav(){
 boot();
 
 </script>
+<!-- [S01r8v] IT HAS TO LIVE OUTSIDE .stage. First attempt put it beside #nudgeHand, which is
+     inside the stage - and the stage carries transform:scale() and overflow:hidden. A transformed
+     ancestor becomes the containing block for position:fixed, so the "full-screen" overlay was laid
+     out inside the scaled box and then clipped by it. The DOM said display:flex and the screenshot
+     showed the cover with no gate on it at all, which is the only reason it was caught. -->
+<!-- [S01r8v] PORTRAIT GATE. The stage is a fixed 1333x750 box scaled by min(vw/1333, vh/750), so
+     a 390x844 phone held upright scales it to 0.29 and every letter, picture and button is a third
+     of its intended size - which is what the SME saw. Turned sideways the same phone scales to 0.52.
+     The lesson cannot reflow to portrait (its whole layout is that one box), so the honest answer is
+     to ask for the rotation rather than ship something unreadable.
+     The icon is inline SVG, not an asset: the delivery has ~52 KB of headroom and this is worth
+     about two of them. -->
+<div class="rot-gate" id="rotGate" role="alertdialog" aria-live="polite">
+  <div class="rot-box">
+    <svg class="rot-ico" viewBox="0 0 120 120" aria-hidden="true">
+      <rect class="rot-phone" x="42" y="18" width="36" height="84" rx="7"/>
+      <rect x="54" y="25" width="12" height="3" rx="1.5" fill="#BBD6FF"/>
+      <circle cx="60" cy="95" r="3" fill="#BBD6FF"/>
+      <path class="rot-arrow" d="M22 60a38 38 0 0 1 10-25" fill="none" stroke-width="5"
+            stroke-linecap="round"/>
+      <path class="rot-arrow" d="M32 24v12h-12" fill="none" stroke-width="5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="rot-hi">फ़ोन को घुमाइए</div>
+    <div class="rot-sub">यह खेल आड़े फ़ोन पर सबसे अच्छा चलता है।</div>
+  </div>
 </body>
 </html>
