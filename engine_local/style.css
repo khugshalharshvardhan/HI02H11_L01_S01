@@ -3181,6 +3181,4 @@ html.no-anim .bal-say.show{ animation:none; opacity:1; transform:translateX(-50%
 }
 .rot-hi{ font-family:var(--font-hi); font-weight:800; font-size:34px; line-height:1.25;
   text-shadow:0 3px 0 rgba(11,61,140,.35); }
-.rot-sub{ font-family:var(--font-hi); font-weight:700; font-size:18px; line-height:1.45;
-  margin-top:10px; opacity:.92; }
 @media (prefers-reduced-motion:reduce){ .rot-ico{ animation:none; transform:rotate(-90deg); } }
