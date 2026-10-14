@@ -3029,12 +3029,28 @@ html.no-anim .bin-title.bin-teach{
    else - so even if .maa-glyph ever landed on an element holding other text, that text would fall
    straight through to --font-hi. 2,780 bytes on disk; there is no lighter way to buy one letter.
 
-   font-weight is pinned to 700 and font-synthesis disabled ON PURPOSE. The glyphs it replaces are
-   set in 800, and asking a 700-only family for 800 makes the browser fake it by smearing the
-   outline - which thickens exactly the counter this change exists to keep open. */
+   [S01r8y] THE WEIGHT IS NOW A REAL 800, which is what QA BUG_07 is about: "in 11th slide, 'la' is
+   more bolder than rest of the options... consistent boldness among options".
+   Measured first, because the filed claim is not quite what is happening. On slide 11 the options
+   are म ल न, and ल and न are IDENTICAL - same family, same 800, same 112px, and 15px of stroke
+   each when the rendered pixels are measured. ल only looks heavier because Baloo 2 draws it with
+   more curved mass. The letter actually out of step is म, at 14px against their 18-19px in a
+   like-for-like render: this font is a lighter drawing than Baloo 2, so swapping it in for one
+   glyph also lightened that glyph.
+   The old note pinned 700 and said 800 was unavailable - "asking a 700-only family for 800 makes
+   the browser fake it by smearing the outline, which thickens exactly the counter this change
+   exists to keep open". That was true of the file that was embedded, not of the family: Mukta ships
+   an 800, and the subset endpoint gives it for U+092E alone just as readily. So the smearing
+   objection is gone - this is a drawn ExtraBold, not a synthesized one, and font-synthesis stays
+   off so it can never become one.
+   What it buys, measured the same way: stroke 14px -> 15px, and the counter stays open at 372px of
+   enclosed white against Baloo 2's 288px - still half again as open as the glyph this swap exists
+   to avoid. It does NOT close the gap to ल and न entirely, and nothing short of giving every option
+   letter the same family would: the remaining difference is between two typefaces, not two weights.
+   16 bytes larger than the 700. */
 @font-face{
-  font-family:'MuktaMaa'; font-style:normal; font-weight:700; font-display:swap;
-  src:url(data:font/woff2;base64,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) format('woff2');
+  font-family:'MuktaMaa'; font-style:normal; font-weight:800; font-display:swap;
+  src:url(data:font/woff2;base64,d09GMgABAAAAAArsABEAAAAAFYAAAAqQAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhYbgSYcNAZgADwIgSIJmm0RCAqCGIIQCwgAATYCJAMMBCAFhDQHIAyBPBtIFBEVrR8i00hZOH8//ys17XcD5MTgAIcPtUCPiQYVEmXTMo0mSMuUbSqjHRtDzjjGo0s3oXwLu3s5PnBTvIdcd+0xXUMmPPB1vn/uOBNXnEqPzBOdpBB39aqfnE8vvQPhP+73apN06ACFARSehJqzJ+/9NbkpEwszAC6z7SbU3IRn66Y1wwP7zXws66JYIbdjDhGURX9fdhJEtExtJRokX7Fi+kU6Tl3ye/1L1+jeycHHJ2HFkTeLD9/2JD+947SR4Y2D99+m+Y7jfwQTJK1SXfjPk2AYWqB5ktSmxZVEEm1vGnKE7l0sl7GL/HQjzf2ClkMEbVrmLPCZ3bHw4Ek6ebEHUHdYiXF6T049phoRspR5ywzfTxAv0bbgELlEtfDP6DMPX5byBNnwWp+6xAst//X//TUp4r8ut5noi90OuCM/EdKktFd5Qm03SbDXpz1ehzNBvNCyQ4qo2R///geNWh1P9Dl9Lj+iN+gN77a8JW+x4v//ybstS3lr9r///4m+Qd+gN+lNcUfcsS2X+Mvsb7PxKnf5MZ7y56uLzO6Vt2Z/k79Rzb1O79A7dIku0T9njv43e17+xL3r4sfec+J7IM2g63lmmYffo9XLQ9SvPpfjdIA96w65vJ5DRsX352mexmO1H4QhyIKM6k1JkHFpAqHB7jCB1Dxh/GwEv/HcdE8smWycoZ7lIbzIXnk+D1UYlDljNOpM27UBoz3KQ7St5UpoRhQT7GFLgYzjKn1ci/1sSj7ksiwYi6PcBQxerRc/xVl2dinOWhtARlg0Y9CVHDRMGR9i0QSIBzI/MCy+t05j5f/W92q0b+2ksBCxtQo0yg+sTeBpzhh+VEwYNTPKUVMp6ioNwtBCuAS+VqEKeVLV9lNGXaWoZ3lQiSWTjSuxZFBz2RheM2TUDZdcQsTV8VoEv3E5d6OguGJzZUPL6F7NIeIgRNcq0Cg/sAlqGnMmnpIk49IEdY05lSoGqbSA3D+EGEM41JoJ5jRzxlg24+/5tM+gUY6us4cQY9eDcAnm9XRumUyWNsOS6mRBl5xZNDCViBXIwI8cZ6UqSlF615OCEkgDB+h6KBu8SBW9v2/O0m8jcXSUN5vs/oItIzdbNF1a9LI8DFRom2GCFV1JmWFS9BKsagjHjBXzVK0QY0WlFqsSv8JXsyZY04z14vjg/D2fxqUqsGYcl46xplKVYF0Pr+WVP+nZo1g5UJ8m2NDDy/nw6hKPIOw4bZ24qStaN9ffsb5uIIoUa3GEZ4KM0mrlha++C2JXMbxolFcFlxl+lJYlbzP3ajNUEMW3CVRI7yWjhTdYrJgBVs3AJQ33w1Sd4E1bEW2pHoQBXZgKIXofwZamimR2Lce6SjnDskqxpFBzKTuI4tubm4LWKE1LV23WY9yOgyM2wbauaCtOsKMr8c52hWR3CY/dLXx2j6ixe0WdBWKO3Sfm2f1iIfRhrXz+TtTd8FquuAXx4t7RP0Fzzc7dbe+dG+9sbHv/kX5AE1Zi1/iD/AHOeFchQB0BKAVQRwEqAqgGQD0EUHuAKK25U0VZ8g6HTcdGQbg4UIXwhI7Tz6alkcRImgmOaeYBl2CkKtrq9Fl9pQ4cdz0e1shqeS6LsuFwrFnVxE6WH7cO1j9RNNVSR53UfMbqkFOaaCLLbmiI2A6sCqLdb52zCvUuqHZ1Uuy4+UBOa+7wwPYvCWSKdoIzunVXJ8HZdEuAMON2gnO6krQbcYsHR4GpIKOLZTlQA1Vwvh8cZReh0ulZIXa2mwnaGrSLjSTJj+BHaSauFinFgokPypZi7pTt5ALnvbjVSmX4KtUMZLjTyPK7l/NvSvY4+KZsePfaNFWMecOl0r5H1XfwzT6q3enNOvssTRo3UfBMMRnlkKYI4Bl3aqtUf+pCMcNvqH7RDhTmTf/M5DVvMujScV0rEhV84wJx7VpUoGYwEH7DIYp2YHfk5MmzXDaxNsEjfjiLmVFr5FGddoJHl3thXuXcB1tECbp1ig85sbxcFHQtb3FHhedVe4lmm+ww3A31CLXo4jWCFcAqI90uKa2qe/3HrHA1obqmA7vD/DrCm3hBK2558Af3sWHyUXDF5tyxraoltuMEjysuvRKMmu5uVm3tG35Cox1vrXCqcT4umTvx1c2ynS4DfNNCq0Ymv4hN0/B6coFFleYblTOn4g63VNt07p6u5v0oTV+b1fmnGEQw3MEp7MqOagdhrPiE1kaWhVI79kiJvq7ofByqlu3I5fzzgdnZ5z2ndHC/kK0WTjcTPLlqSRd1RWJ7C2eaCZ7SONdMMPRg6Uxxi/ulKjzleUlX5jdiGCd4Wk+JenGS+Iyekvhgz5JYUCMk+rKaZ+IKhL4K0NcA/tf1N/GgJxp7buhvyk9204hFlWOhrY4Q4jkp9PNI9AtI9IvZcSNeQle/DNAOoAs174t9oMcAPQHQgU08dTpEj14B0KsAeg1ArwPoDQC9CUh7S1f0SPDobckDF9rb3uGP63cLXI54N+Y9XQm1eX8InHSY2S5Y0I9UgxSSJCY8BGYrSMu2uYi1ZrsAZgeA7fQjzRTtkiRm9xCYPQC+115r9glg9gPYAT/STdFBSWIODYE5DOBH7LXmqADmGCDX8c0POhTpZnaM7E33GX33yasrt52facsdbvD/eO9Z5SvXlN7kW1xS7xa5YmbuOn+ZFFmWZWWh6lU8I666Jrm2qb62vqG+A6dovPSQecJ++h6x//Kdt5xOYQovpmIK03bZrnOhucffukcN77IbF5x46/hbq9p22bvsqA8WvnDxhQs7+pcuXvRhVMfyOU+IQof8Qutg9WDlohPfXcwBCGzxetxOh6FrBgWKkGXRhhDLSgCpDUlaSqlpmi7T5ff7VH3+pkBAEWoBkm7okrEfQxYIgxF0fVmJpjhkIdR2VHWJWgpLFi9auGD+vLlzZvt9hoaM7Df1uZsQbk5x3P7p99CNDm/ar4ZX/mI3ot7O2f79+3yf3rz1b9m/3xg+ZRhwPFsw3LU/s37837I/fjJ899x7ZcnFvoiSMv7/TREkc/WJBlqjxZHPScB2j+kGGvTf33sojlbIHlH5fVSwTMQclfCI1Udl4vihvqI+qnKN6gCNZS2LzXqIAwYJEmSSFCKJZIYephlikmBtbwQzSxolggmmGSCSCvIppYynAm8P0sUW8thGkGmGz2aCUXqpp4/pjd7nBONYxBBBPLEkkUolNVhEE0EUUcSQyiATBOnRo/BqldDCbPh4oklljC5G6NMo2U8EowzRbQ4Din82kxRFKpYTb+unixBBJhhs8vEki/WEsxuYwAZLXk4eJdSST6ozvPrJA4QYpYtpvYtZWXOYYJLtHqQBzyLroB42eGH4KKKJYzMWBQyp+cxwFrl0MUqYodUBeYyIk2vZziR9gRZZT1TaYxmkGSmojxlP5wzTRy8RB/B98v9h5jAeueQxXq1uvF+IM033iWujKSbvR89+BDIiVqps/DFLwFWi5Cixxjptoa4a88NUSAVSqrZFsdRkclf207Px48ZE24eKo8H8fgQmkqXIvbn3rxbHqhrvCxxrvF8m9/610jC2sQ+hBI711Pa2pqmpqSngKpPypHhtg7JYVV0bHxP/H75POX2/RO6Daq9Gbi4A) format('woff2');
   unicode-range:U+092E;
 }
 /* The weight needs the same specificity as the rules it is correcting, not more force: .big-glyph
@@ -3048,7 +3064,7 @@ html.no-anim .bin-title.bin-teach{
 .bin-title.maa-glyph,
 .meet-letter-box .glyph.maa-glyph,
 .stage.thm-toybox .big-glyph.maa-glyph{
-  font-family:'MuktaMaa', var(--font-hi); font-weight:700; font-synthesis:none;
+  font-family:'MuktaMaa', var(--font-hi); font-weight:800; font-synthesis:none;
 }
 
 /* [S01r8h] the demo's hand, at cursor size and with the tap decoration off - see travelNudge. The
@@ -3115,9 +3131,16 @@ html.no-anim .bin-title.bin-teach{
    same reasoning in its own note: that ruling is about the ANSWER CARDS, where a dimmed board reads
    as broken. A dimmed speaker reads as busy, which is exactly what it is. */
 .sg-vo{ width:70px; height:70px; }
+/* [S01r8y] `vo-chip-off` is the same disabled look held for a whole ANNOUNCEMENT rather than for
+   each clip in it - see the ticker in app.js. Added to the selector rather than given a rule of its
+   own so the two can never drift into two different greys, and kept OFF the answer-card rules
+   above: this class must never reach the board, which is the whole reason it is not vo-lock. */
 body.vo-lock .audio-chip,
 body.vo-lock .tut-audio,
-body.vo-lock .sg-vo{ pointer-events:none !important; opacity:.45; filter:grayscale(.75);
+body.vo-lock .sg-vo,
+body.vo-chip-off .audio-chip,
+body.vo-chip-off .tut-audio,
+body.vo-chip-off .sg-vo{ pointer-events:none !important; opacity:.45; filter:grayscale(.75);
   transition:opacity .18s ease, filter .18s ease; }
 .audio-chip, .tut-audio, .sg-vo{ transition:opacity .25s ease, filter .25s ease; }
 
@@ -3391,6 +3414,37 @@ const SwiftPAL = window.SwiftPAL = {
 
 /* ---------- 3. AUDIO ---------- */
 let isPlaying=false, currentAudio=null, _audioGen=0, _voStart=0;
+/* [S01r8y] WHEN THE LAST CLIP STOPPED, and whether the tab is watching.
+   `_lastAudioEnd` exists because a CHAIN is not one clip: the option walk, the reveal sequence and
+   the teach steps all stop and start an element every 180-260ms, and anything keyed off isPlaying
+   alone therefore flickers in those gaps (QA BUG_04 saw it on the speaker). A settle window turns
+   "is a clip sounding" into "is the voice still talking", which is the question the UI wants asked.
+   `_pageHidden` is the tab-switch guard - see the visibilitychange block further down. */
+let _lastAudioEnd = 0, _pageHidden = false;
+const _verdictSfx = [];
+const _hidePaused = [];
+function _holdForHide(el){ try{ if(el && !el.paused){ el.pause(); _hidePaused.push(el); } }catch(e){} }
+/* the word a drag mechanic speaks on pick-up rides its own element (see speakNoLock), so stopAudio
+   never saw it and every verdict sound landed on top of it - QA BUG_08, measured at 691ms of
+   overlap between the tile's name and the wrong-box buzz. */
+function stopWordVoice(){ try{ if(_wordVoice){ _wordVoice.pause(); _wordVoice = null; } }catch(e){} }
+/* and the verdict sounds themselves outlive the tap that earned them: sfx_wrong runs 0.84s and
+   sfx_correct 0.96s, which on the balloon board is longer than the gap between two taps. Measured:
+   814ms of the previous answer's buzz sounding underneath the next balloon's name (QA BUG_09). */
+/* [S01r8y] A LIST, NOT ONE ELEMENT. _sfxFile builds a fresh Audio per call, so two correct taps
+   half a second apart leave TWO dings in the air - and holding only the latest meant stopSfx cut
+   that one and left the older still ringing. Measured after the first cut of this fix: 260ms of a
+   previous ding still sounding under the next balloon's word. Entries drop out as they finish, so
+   the list is normally empty and never grows. */
+function stopVerdicts(){
+  try{ while(_verdictSfx.length){ const a = _verdictSfx.pop();
+        if(a && !a.paused){ a.pause(); try{ a.currentTime = 0; }catch(e){} } } }catch(e){}
+}
+function stopSfx(){
+  stopVerdicts();
+  try{ for(const k in _SFX){ const a = _SFX[k];
+        if(a && !a.paused){ a.pause(); try{ a.currentTime = 0; }catch(e){} } } }catch(e){}
+}
 let isMuted = false;
 function setMuted(m){ isMuted = m; if(m && typeof stopAudio==="function") stopAudio();
   document.querySelectorAll(".audio-chip").forEach(c => c.classList.toggle("muted", m)); }
@@ -3399,6 +3453,7 @@ function setPlaying(on){
   // .playing toggle across the header chip AND the tut-card replay chip (the header is hidden in the
   // tut frame, so the in-card .tut-audio is the only visible affordance and must react to VO too).
   isPlaying=on;
+  if(!on) _lastAudioEnd = Date.now();   /* [S01r8y] the settle clock */
   if(on) _voStart = Date.now();   // drag VO-gate 4s safety: stamp when a VO began so a stalled clip can't soft-lock the tiles
   document.querySelectorAll(".audio-chip, .tut-audio, .sg-vo").forEach(c => {
     c.classList.toggle("playing", on && !isMuted);
@@ -3426,6 +3481,7 @@ function setPlaying(on){
    NEW clip on top of the current one, or resume onto the next screen. */
 function stopAudio(){
   _audioGen++;
+  stopWordVoice();   /* [S01r8y] a new clip silences a pick-up word too - see stopWordVoice */
   if(currentAudio){ try{ currentAudio.onended=null; currentAudio.onerror=null; currentAudio.pause(); }catch(e){} currentAudio=null; }
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){}   // [20a] also stop the TTS placeholder
   setPlaying(false);
@@ -3476,7 +3532,12 @@ function play(src, onEnd){
        this never runs": true only AFTER a user gesture, which the landing does not have.
        fire() on this path is NOT optional — play() has already run setPlaying(true), so returning without
        it leaves body.vo-lock on and the whole screen untappable. */
-    a.play().catch((err)=>{
+    /* [S01r8y] a clip that a CHAIN starts while the tab is hidden must not sound either. The
+       visibilitychange handler can only pause what was already playing; this covers the element
+       that starts afterwards, and hands it to the same list so it resumes with everything else. */
+    const _pr = a.play();
+    if(_pr && _pr.then) _pr.then(()=>{ if(_pageHidden) _holdForHide(a); }, ()=>{});
+    if(_pr && _pr.catch) _pr.catch((err)=>{
       const nm = err && err.name;
       if(nm === "NotAllowedError" || nm === "AbortError"){
         if(handled || myGen!==_audioGen) return;
@@ -3534,6 +3595,14 @@ function playSfx(id){
 let _wordVoice = null;
 function speakNoLock(id){
   if(!id || isMuted) return;
+  /* [S01r8y] THE OTHER DIRECTION OF QA BUG_08. sfxCorrect/sfxWrongSoft now stop a word that is
+     still sounding when a verdict arrives - but the reverse happens just as easily on a sort board:
+     the buzz for a wrong box runs 0.84s, and a child who reaches for the next tile inside that
+     window got their new word underneath the last one's verdict. Measured at 520ms. The spoken
+     feedback that FOLLOWS the buzz is already handled - installDragVoGate swallows the press while
+     a VO is sounding - so this is the one gap left, and it is the same rule from the other side:
+     the sound being made about the last action stops when the child starts the next one. */
+  try{ stopSfx(); }catch(e){}
   try{
     if(_wordVoice){ _wordVoice.pause(); _wordVoice = null; }
     const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
@@ -3562,8 +3631,20 @@ const sfxTap       = ()=> _tone([520], "sine", 0.09, 0.09);
    rather than to silence — and the WebAudio path is still what unlocks on first gesture. */
 function _sfxFile(id, fallback){
   try{
+    /* [S01r8y] A VERDICT SUPERSEDES THE LAST VERDICT. On the balloon board the spoken consequence
+       of a tap is deferred behind that balloon's word, so tapping quickly lands two of these within
+       a few hundred ms of each other with no tap in between to clear the first - measured at 643ms
+       of one ding sounding through another. There is never a reason to hear two at once: the second
+       is a verdict on a newer answer. Only the verdict pool is cleared, NOT the warmed sfx pool -
+       sfx_celebrate is fired alongside sfx_correct by the confetti and the two belong together. */
+    stopVerdicts();
     const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
     a.volume = 0.7;
+    /* kept so stopSfx can cut it - it outlives the tap by up to a second, see stopSfx */
+    _verdictSfx.push(a);
+    const _drop = ()=>{ const i = _verdictSfx.indexOf(a); if(i >= 0) _verdictSfx.splice(i, 1); };
+    a.addEventListener("ended", _drop, { once:true });
+    a.addEventListener("pause", _drop, { once:true });
     /* decode/404/autoplay all land here; the synthesized cue then covers for it */
     a.onerror = ()=>{ try{ fallback(); }catch(e){} };
     const p = a.play();
@@ -3572,8 +3653,12 @@ function _sfxFile(id, fallback){
 }
 const _toneCorrect = ()=> _tone([660, 880, 1180], "sine", 0.42, 0.13);   // rising major arpeggio
 const _toneWrong   = ()=> _tone([300, 235], "triangle", 0.20, 0.08);      // gentle, never harsh
-const sfxCorrect   = ()=> _sfxFile("sfx_correct", _toneCorrect);
-const sfxWrongSoft = ()=> _sfxFile("sfx_wrong",   _toneWrong);
+/* [S01r8y] A VERDICT SILENCES THE WORD IT IS A VERDICT ON. The drag mechanics speak the tile's
+   name on pick-up through speakNoLock, which deliberately keeps its own element so the VO lock
+   cannot kill the drag - but that also meant nothing ever stopped it, and the buzz for a wrong box
+   simply played on top. Here rather than at the two call sites, so a third one cannot forget. */
+const sfxCorrect   = ()=>{ stopWordVoice(); _sfxFile("sfx_correct", _toneCorrect); };
+const sfxWrongSoft = ()=>{ stopWordVoice(); _sfxFile("sfx_wrong",   _toneWrong); };
 /* a joyful star/confetti pop, centred on the play stage (upper-middle) */
 function burstStars(){ const stage = document.querySelector(".slide-stage") || document.body;
   try{ playSfx("sfx_celebrate"); }catch(e){}   /* [S01r7g] the other celebration visual, same sound */
@@ -4034,7 +4119,10 @@ function makeMusicBed(cfg){
            volume 0 still holds a decoder and still advances currentTime, so leaving it would bring
            the lesson back mid-phrase somewhere the child never heard it reach. */
         if(M.suspended){ if(v <= 0.001 && !el.paused){ try{ el.pause(); }catch(e){} } }
-        else if(el.paused){ try{ const pr = el.play(); if(pr && pr.catch) pr.catch(()=>{}); }catch(e){} }
+        /* [S01r8y] ...and never while the tab is away. Without this guard the 40ms ticker simply
+           restarted the bed a frame after the visibilitychange handler paused it, and the music
+           played on in a background tab - which is the half of QA BUG_10 a child's parent hears. */
+        else if(el.paused && !_pageHidden){ try{ const pr = el.play(); if(pr && pr.catch) pr.catch(()=>{}); }catch(e){} }
       }, 40);
       /* STARTED LAST, AND IN ITS OWN TRY. play() is only specified to return a promise in modern
          engines; where it does not, `.catch` on undefined throws - and with this call placed BEFORE
@@ -4077,6 +4165,36 @@ function balMusicStop(){
   BAL_MUSIC.stop();
   try{ BG_MUSIC.resume(); }catch(e){}
 }
+/* ── [S01r8y] THE TAB GOES QUIET WHEN IT IS NOT BEING WATCHED (QA BUG_10) ─────────────────────
+   "When user switches from current game tab to another tab, audio should not be played globally.
+   Instead when user comes back to the game tab, the audio should resume from the last paused state."
+   Pause rather than stop, and resume the same ELEMENTS, so a clip comes back mid-word where it was
+   rather than starting over - `currentTime` is kept by the element itself, so nothing has to be
+   remembered. Everything that can make a sound is covered: the VO chain, a drag mechanic's pick-up
+   word, the verdict sounds, the warmed sfx pool and both music beds.
+   The beds are paused DIRECTLY rather than through suspend(), because suspend() means "another bed
+   has the floor" - the balloon game suspends the lesson bed for its own - and borrowing that flag
+   here would have un-suspended the lesson bed the moment the child came back to the balloon board.
+   A plain pause leaves that state exactly as it was. */
+function _pauseForHide(){
+  _pageHidden = true;
+  _holdForHide(currentAudio);
+  _holdForHide(_wordVoice);
+  try{ for(const a of _verdictSfx.slice()) _holdForHide(a); }catch(e){}
+  try{ for(const k in _SFX) _holdForHide(_SFX[k]); }catch(e){}
+  try{ for(const M of _BEDS) _holdForHide(M.el); }catch(e){}
+}
+function _resumeAfterShow(){
+  _pageHidden = false;
+  while(_hidePaused.length){
+    const el = _hidePaused.pop();
+    try{ const pr = el.play(); if(pr && pr.catch) pr.catch(()=>{}); }catch(e){}
+  }
+}
+document.addEventListener("visibilitychange", ()=>{
+  try{ if(document.hidden) _pauseForHide(); else _resumeAfterShow(); }catch(e){}
+});
+
 function buildSky(){
   try{
     if(_skyStill()) return;                                              // kit R5
@@ -4689,7 +4807,19 @@ function resetIdleVo(){ stopIdleVo(); _idleVoFired = false; }
    that re-armed a FULL 7s whenever it found audio playing, which stretched the real delay to as much
    as 14s — measured in-browser, it never fired. A ticker that resets the silence clock is exact.) */
 function armIdleVo(){
-  if(_idleVoFired){ stopIdleVo(); return; }      // [27f] one reminder per slide — already spent
+  /* [S01r8y] THE REMINDER REPEATS (QA BUG_11, and the second half of BUG_06): "there should be
+     nudge every 7s infinitely", filed P1 against slides 7-9 and 10-11 and marked as agreed with
+     Aamir (LXD).
+     This REVERSES [27f], which made it fire exactly once per slide on Yasir's 2026-07-27 ruling
+     ("once the audio is played after 7 second, no need to be replayed after that"). Recording that
+     plainly because the next person to read this will find the two rulings and need to know which
+     is current: 27f is the older one.
+     What drove 27f was a real complaint - sound coming from an unattended tab he had left open -
+     and that complaint is answered in this same round by the visibilitychange handler above, which
+     stops a hidden tab making any sound at all. So the reason for the once-only limit is gone, and
+     a child who sits still now keeps being invited rather than being left in silence after one try.
+     Still bounded by everything that already held it: a correct answer sets state.locked, the
+     ticker holds while anything is speaking, and slide teardown clears it. */
   _idleSince = 0;                                // any (re)arm restarts the silence clock
   const slide = CARD.slides[state.idx];
   if(!slide || slide.type === "CELEBRATION" || !IDLE_VO_PHASES.has(slide.phase)){ stopIdleVo(); return; }
@@ -4706,14 +4836,52 @@ function armIdleVo(){
     if(state.locked || state.hintActive || isPlaying || state.revealing || state.demoRunning){ _idleSince = 0; return; }
     if(!_idleSince){ _idleSince = Date.now(); return; }
     if(Date.now() - _idleSince < ms) return;
-    // [27f] ONE reminder, then done for this slide. Mark spent and stop the ticker BEFORE speaking,
-    // so a pointerdown arriving during the replay cannot re-arm it.
-    _idleVoFired = true;
-    stopIdleVo();
+    /* [S01r8y] the silence clock restarts instead of the ticker stopping. Reset BEFORE speaking:
+       the tick re-zeroes it for as long as isPlaying anyway, so the next 7s is measured from the
+       moment the replay finishes rather than from the moment it began. */
+    _idleSince = 0;
     SwiftPAL.emit("idle_vo_replay", { slide_id: s.id, phase: s.phase });
     if(state.replayAudio) state.replayAudio(); else autoPlayChain(s);
   }, IDLE_VO_TICK);
 }
+/* ── [S01r8y] THE SPEAKER IS GREY FOR THE WHOLE ANNOUNCEMENT, NOT PER CLIP (QA BUG_04) ────────
+   "When option 1 is announced, the speaker transitions to the greyed out state for a minute second.
+   Similar with the other 2 options... Speaker should remain greyed out until all the options aren't
+   announced."
+   The chip's look was driven off setPlaying, which is exact per CLIP - and an announcement is a
+   CHAIN of them, handed on every 180-260ms (revStep uses 180, the word walk 260). So the speaker
+   went blue in each gap and grey again on the next word, three times over, while a tap on it was
+   refused throughout. The appearance was telling the child something the code did not mean.
+   So the look now follows the chip's OWN refusal rule - the same flags mountSlide's handler reads -
+   widened by a settle window that spans those gaps. It is a SECOND class rather than vo-lock, so
+   this cannot alter what is tappable anywhere on the board; the stylesheet hangs only the grey on
+   it, beside the rule that was already there.
+   Polled rather than pushed, deliberately: `revealing`, `demoRunning` and `ownsAudio` are plain
+   properties set from several dozen places, and a ticker sees every one of them without each
+   having to remember to announce itself. 150ms is a frame and a half - invisible, and ~7 boolean
+   reads a second.
+
+   The same quiet moment is what tells Swiftie to drop the face she pulled (QA BUG_01): "Swiftee
+   should come back to normal state after the video explanation of wrong answer is over". setSwMood
+   is sticky by design - every other mood is replaced by the next thing that happens - but
+   `tryagain` is the one that has nothing following it when the child simply stops, so it sat on
+   her for the rest of the slide. Only `tryagain` is reset: `hint` belongs with a hand that is still
+   pointing, and `teach`/`celebrate` are replaced by the beat that comes next anyway. */
+const VO_SETTLE_MS = 600;
+function _voiceBusy(){
+  if(isPlaying) return true;
+  if(_lastAudioEnd && Date.now() - _lastAudioEnd < VO_SETTLE_MS) return true;
+  try{ if(state.revealing || state.demoRunning) return true; }catch(e){}
+  return false;
+}
+setInterval(()=>{
+  try{
+    const busy = _voiceBusy();
+    document.body.classList.toggle("vo-chip-off", busy);
+    if(!busy && swMood === "tryagain") setSwMood("point");
+  }catch(e){}
+}, 150);
+
 // ONE document-level listener for the whole session (a per-slide listener would pile up across the
 // drag slides — the same trap the drag mechanics warn about). armIdleVo() itself re-checks phase, so
 // a pointerdown on a tutorial slide is a cheap no-op.
@@ -4970,7 +5138,16 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
       // stopNudge() FIRST kills any flow-nudge timer already in flight, so it cannot fire a moment
       // later and drag the hand off the answer (see the [27e] guard in startNudge).
       stopNudge();
-      handOnAnswer(el, slide);
+      /* [S01r8y] FORCED, so it actually lands (QA BUG_06): "in sentence sound, after wrong options,
+         there should be hand nudge for the correct answer" - slides 10 and 11.
+         The [27d] note directly above has claimed since then that the hand lands "in EVERY phase",
+         and the reasoning in it is sound - we only reach here through terminal help, so the answer
+         is already revealed and the hand gives nothing away. But the call passed no `force`, and
+         handOnAnswer's own gate is HAND_PHASES (tutorial + guided), so on a PRACTICE slide it
+         returned immediately and the hand never appeared. The comment and the code have disagreed
+         ever since; this makes the code do what the comment says. The round-3 hand ban is untouched
+         for every un-earned route - startNudge and pointNudgeAt still refuse practice outright. */
+      handOnAnswer(el, slide, true);
     }
     SwiftPAL.emit("answer_revealed", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts, reason });
     /* [S01r5m] THE HELP IS THE SLIDE'S OWN HINT WHEN IT HAS ONE. This spoke the reveal clip, and
@@ -9542,7 +9719,13 @@ const SlideModules = {
                never revisit. The SME: "after one correct if any other element is disabled then
                enable it so user can tap on that too". Clearing the lock, not the attempt count:
                another wrong tap re-locks immediately, so the scaffold ladder is unchanged. */
-            chips.forEach(c => c.classList.remove("nope", "wrong-flash"));
+            /* [S01r8y] ...but NOT once the third miss has disabled the wrong ones (QA BUG_05).
+               [S01r5m] reopens the board on a correct find, which was right when `nope` landed on
+               the SECOND wrong and could strand a card the child still needed. At the third it is
+               the terminal rung - "user should not be able to select them" - and reopening it there
+               would hand the distractors straight back. */
+            if(state.attempts < 3) chips.forEach(c => c.classList.remove("nope", "wrong-flash"));
+            else chips.forEach(c => c.classList.remove("wrong-flash"));
             /* [S01r5m] ...and this card leaves play. It was already untappable (the guard above
                returns on .got), but it still LOOKED live, so the child had no way to tell which
                cards were still in question. Two seconds is long enough for the green to register as
@@ -9582,7 +9765,16 @@ const SlideModules = {
             setTimeout(()=>{
               if(chip.classList.contains("correct")) return;   /* [28s] no helpShown guard — see the tap path */
               chip.classList.remove("wrong-flash");
-              if(state.attempts >= 3) chip.classList.add("nope");
+              /* [S01r8y] EVERY wrong card, not just the one just tapped (QA BUG_05): "after 3rd
+                 wrong attempts, wrong options should get disabled... user should not be able to
+                 select them". It disabled only the tapped chip, so the child could carry straight
+                 on through the remaining distractors with the ladder already spent. The correct
+                 ones are never touched - the page is a multi-select hunt and the answers have to
+                 stay available for the child to finish it themselves. */
+              if(state.attempts >= 3){
+                chips.forEach((c, ix)=>{ if(items[ix] && items[ix].has === true) return;
+                                         c.classList.add("nope"); });
+              }
             }, 700);
             $("hintBtn").classList.add("show","hint-glow");
             SwiftPAL.emit("answer_wrong", { slide_id: slide.id, phase: slide.phase, attempts: state.attempts });
@@ -9602,7 +9794,7 @@ const SlideModules = {
                 if(k >= chips.length){
                   chips.forEach(c => c.classList.remove("sw-read"));
                   state.locked = false;
-                  play(audioFor(slide, "h2") || audioFor(slide, "hint") || null, ()=>{});
+                  /* [S01r8y] the closing line is gone - it is now what OPENS this rung, above. */
                   return;
                 }
                 chips.forEach(c => c.classList.remove("sw-read"));
@@ -9618,8 +9810,16 @@ const SlideModules = {
                    of that rung - the card glowing and its first akshara lifting - is live. */
                 play(w, ()=> setTimeout(()=> walk(k + 1), 260));
               };
+              /* [S01r8y] RUNG 2 SAYS ITS LINE ONCE, BEFORE THE WALK (QA BUG_05): "the line is
+                 repeated twice... should be there either before the options announcement only".
+                 It opened with h1 - the clip the FIRST miss already played - and then closed the
+                 walk with h2, and the two are the same sentence: h1 is "फिर से सुनिए। जिन शब्दों की
+                 शुरुआत प की आवाज़ से होती है, उन पर टैप कीजिए।" and h2 is that second half on its own.
+                 So the child heard the instruction at the top of the rung and again at the bottom,
+                 with the four words read in between. Now h2 opens the rung and nothing closes it:
+                 one line per rung, h1 at the first miss, h2 at the second, h3 at the third. */
               state.locked = true;
-              play(audioFor(slide, "h1") || audioFor(slide, "hint") || null, ()=> walk(0));
+              play(audioFor(slide, "h2") || audioFor(slide, "hint") || null, ()=> walk(0));
               return;
             }
             /* [S01r4] EARNED HAND, SME deck page 9: "After repeated incorrect attempts, show a
@@ -9925,7 +10125,25 @@ const SlideModules = {
           play(st.audio ? ("assets/Audio/" + st.audio + "." + AUDIO_EXT) : null, next);
         };
 
-        state.replayAudio = ()=> play(whole, ()=>{});
+        /* [S01r8y] THE SPEAKER REPEATS THE EXPLANATION, NOT JUST THE SENTENCE (QA BUG_03):
+           "in Slide 1 and Slide 3 there is no full explanation when speaker icon is pressed...
+           playback of speaker should be same as original".
+           It replayed `whole` - the sentence clip alone - while what the page had actually said was
+           the authored teach_seq: the sentence, then the letter, then the marking pass, then the
+           closing line. So the child who asked to hear it again got the first quarter of it.
+           Re-running the sequence rather than stitching its clips into a chain, because the steps
+           carry the karaoke highlighting and the marking with them: an audio-only repeat would have
+           talked about words that were no longer lighting up. `done` is cleared first or finish()
+           returns early and leaves demoRunning set, which would brick the speaker for the rest of
+           the slide; the fail-safe is re-armed for the same reason the mount arms one. आगे is
+           deliberately NOT taken away again - the child has already been given it, and a replay
+           they chose should not be able to trap them on the page. */
+        state.replayAudio = ()=>{
+          if(!alive() || state.demoRunning) return;
+          done = false; state.demoRunning = true;
+          run(0);
+          setTimeout(()=>{ if(alive()) finish(); }, STEPS.length * 9000 + 6000);
+        };
         $("navBtn").onclick = ()=> completeSlide(true);
         setTimeout(()=> run(0), 400);
         /* FAIL-SAFE: आगे never stays dead if a clip blocks or stalls */
@@ -10419,6 +10637,13 @@ const SlideModules = {
              instead of being thrown away. */
           if(state.locked || cell.busy || b.classList.contains("popped")) return;
           if(isPlaying) stopAudio();
+          /* [S01r8y] ...and the last tap's VERDICT with it (QA BUG_09): "audio overlapping when
+             options are chosen fastly". stopAudio only reaches the play() chain; sfx_correct and
+             sfx_wrong ride their own elements and run 0.96s and 0.84s, which is longer than the
+             gap between two taps on a board of rising balloons. Measured before the fix: 814ms of
+             the previous answer's buzz sounding underneath the next balloon's name. The pop that
+             this tap fires a few lines below is unaffected - it is this tap's own sound. */
+          stopSfx();
           state._balFb = false;
           stopNudge(); armIdleGlow();        /* [S01r7g] a tap is activity - restart the quiet clock */
           cell.busy = true;
