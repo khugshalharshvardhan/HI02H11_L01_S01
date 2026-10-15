@@ -1,7 +1,24 @@
 <!doctype html>
-<html lang="hi">
+<html lang="hi" translate="no" class="notranslate"><!-- [S01r9b] see the note by the meta tag below -->
 <head>
 <meta charset="utf-8">
+<!-- [S01r9b] DO NOT OFFER TO TRANSLATE THIS PAGE (QA BUG_02). "Choosing English in the Google
+     Translate popup converts all hindi text to english, distorting all of the UI/UX behavior of
+     the game."
+     It is worse than it sounds for this particular file: the lesson TEACHES Hindi letters, so a
+     machine translation of the page replaces the very thing the child is being asked to look at -
+     प becomes "pa", the sentence whose repeated sound they are hunting for becomes an English
+     paraphrase with no repeated sound in it, and the answer cards stop matching the question.
+     There is no version of this page that should be translated.
+     Three mechanisms rather than one, because browsers do not agree on which they honour: the meta
+     tag is Google's documented opt-out, translate="no" is the HTML standard attribute and
+     inherits to every descendant, and the notranslate class is the older convention some engines
+     still key on. All three are declarations ABOUT the markup - none of them is text, none of them
+     renders, and none can alter a single character the SME wrote. (Verified by diffing the visible
+     text of the built page before and after: identical.)
+     lang="hi" above stays and matters: it is what stops the browser guessing the page is English
+     to begin with. -->
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><!-- [24a N9] pinch-zoom lock: a child two-finger-zooms the game off-centre in any real browser without it -->
 <title>SwiftPAL · MTKGA02_L02_S02 · क्रम में लगाओ</title>
 <!-- OFFLINE BUILD — factory.py replaces the marker below with a <style>@font-face…</style>.
