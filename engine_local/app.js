@@ -85,7 +85,23 @@ let isPlaying=false, currentAudio=null, _audioGen=0, _voStart=0;
    alone therefore flickers in those gaps (QA BUG_04 saw it on the speaker). A settle window turns
    "is a clip sounding" into "is the voice still talking", which is the question the UI wants asked.
    `_pageHidden` is the tab-switch guard - see the visibilitychange block further down. */
-let _lastAudioEnd = 0, _pageHidden = false;
+let _lastAudioEnd = 0, _pageHidden = false, _sfxBusyUntil = 0;
+/* [S01r9a] HOW LONG A SOUND EFFECT HAS LEFT TO RUN. Read off the card's own duration table rather
+   than off the element: playSfx reuses a warmed element whose `duration` is NaN until metadata
+   arrives, and the first tap of the game is exactly when that is still pending.
+   Capped, because this number DELAYS SPEECH - an id missing from the table, or a duration written
+   in seconds somewhere that meant milliseconds, must not be able to leave a slide silent. The
+   longest effect in this lesson is sfx_celebrate at 1.09s, so 1.3s is the real ceiling plus a
+   little, and anything beyond it is a bug rather than a sound. */
+function _sfxDurMs(id){
+  try{ const t = CARD && CARD.assets && CARD.assets.audio_dur;
+       const sec = t && t[id];
+       if(sec) return Math.round(sec * 1000) + 60;   /* +60ms so the tail is clear, not clipped */
+  }catch(e){}
+  return 700;
+}
+function _noteSfx(id){ _sfxBusyUntil = Date.now() + _sfxDurMs(id); }
+function _sfxWaitMs(){ return Math.max(0, Math.min(1300, _sfxBusyUntil - Date.now())); }
 const _verdictSfx = [];
 const _hidePaused = [];
 function _holdForHide(el){ try{ if(el && !el.paused){ el.pause(); _hidePaused.push(el); } }catch(e){} }
@@ -106,6 +122,9 @@ function stopVerdicts(){
         if(a && !a.paused){ a.pause(); try{ a.currentTime = 0; }catch(e){} } } }catch(e){}
 }
 function stopSfx(){
+  /* [S01r9a] and nothing is left to wait for - or RULE B would hold the voice back for an effect
+     that was silenced a moment ago. */
+  _sfxBusyUntil = 0;
   stopVerdicts();
   try{ for(const k in _SFX){ const a = _SFX[k];
         if(a && !a.paused){ a.pause(); try{ a.currentTime = 0; }catch(e){} } } }catch(e){}
@@ -178,6 +197,28 @@ function _ttsSay(src, onDone){
 function play(src, onEnd){
   stopAudio(); setPlaying(true);
   const myGen=_audioGen;
+  /* [S01r9a] RULE B - THE VOICE WAITS FOR THE EFFECT, never the other way round. QA BUG_09, after
+     r8y: "there should be no sound overlapping when options are chosen."
+     The two pairs left over from r8y both have this shape - a balloon's pop and then its word, a
+     verdict ding and then the line that explains it - and both are the same call order: an effect
+     fires, and the speech for the same event starts in the next statement. So the wait belongs
+     here rather than at the call sites, where the next mechanic to be written would forget it.
+     Effects stay instant: the SME asked separately for the pop to land on the gesture, and it
+     still does. What moves is the voice, by at most the length of a short effect.
+     setPlaying(true) has ALREADY run, so the screen is locked and the chip is grey for the whole
+     wait - the child cannot tap into the gap, and nothing reads as idle. A newer play() or a
+     stopAudio() bumps the generation and this deferred start is dropped on arrival, which is the
+     same guard every other delayed path in this function uses.
+     Silence is not deferred: play(null) is a pacing beat, and delaying it would only lengthen a
+     gap that has nothing to sit on top of. */
+  const _wait = src ? _sfxWaitMs() : 0;
+  if(_wait > 0){
+    setTimeout(()=>{ if(myGen === _audioGen) _playNow(src, onEnd, myGen); }, _wait);
+    return;
+  }
+  _playNow(src, onEnd, myGen);
+}
+function _playNow(src, onEnd, myGen){
   let done=false; const fire=()=>{ if(done || myGen!==_audioGen)return; done=true; setPlaying(false); if(onEnd) onEnd(); };
   if(src){
     const a=new Audio(src); currentAudio=a;
@@ -212,6 +253,41 @@ function play(src, onEnd){
     });
   } else { setTimeout(fire, 800); }   // [30o] no src: silent beat, never TTS
 }
+/* [S01r9a] playThen(src, cb): SPEAK, THEN DO THE THING - and do the thing even if the speaking
+   never happens. play()'s onEnd is guarded by the playback generation, which is correct and is what
+   stops a stale chain talking over the current screen; but it also means ANY later play() or
+   stopAudio() silently discards the callback. That is fine for a line of encouragement and fatal
+   for the call that advances the lesson.
+   This is the third time that distinction has cost this file a working game - r8d (balloon scoring
+   lost behind a superseded word), r8x's cousin, and now a round that completed and then sat there
+   because a late wrong-tap hint superseded the completion line 369ms into it. Measured on the
+   trace: `play -> vo_g1_correct` at 20904ms, `play -> vo_g1_hint` at 21273ms, no completeSlide.
+   So the consequence gets its own clock. _clipNetMs is the same generous net the reveal chains use
+   (the clip's length plus 1.5s, floor 4.5s), plus whatever RULE B is holding the voice back by.
+   Run-once, so the natural end and the net cannot both fire it. */
+/* [S01r9a] _whenVisible(fn): HOLD A SAFETY NET UNTIL SOMEONE IS WATCHING.
+   The chains that narrate a page each carry a net - "if this clip has not ended in its length plus
+   a second and a half, move on anyway" - so one stalled clip can never leave a slide silent. Those
+   nets are wall-clock timers, and a hidden tab does not stop them. Since r8y pauses the audio when
+   the tab goes away, the two came apart: the clip stayed where it was and the net advanced the
+   narration anyway, so a child who looked away for five seconds came back a word further on than
+   they left. Measured: paused during vo_w_kela, returned during vo_w_patang.
+   That is the opposite of what the tab fix was for, and it was introduced BY the tab fix - before
+   it the audio simply kept playing and stayed in step with its own net.
+   So a net that comes due while nobody is watching waits for them to come back. The clip is paused,
+   not stalled, so there is nothing for the net to rescue until the tab is visible again. */
+function _whenVisible(fn){
+  if(!_pageHidden){ fn(); return; }
+  const h = ()=>{ if(_pageHidden) return;
+                  document.removeEventListener("visibilitychange", h); fn(); };
+  document.addEventListener("visibilitychange", h);
+}
+function playThen(src, cb){
+  let ran = false;
+  const once = ()=>{ if(ran) return; ran = true; try{ cb(); }catch(e){} };
+  setTimeout(()=> _whenVisible(once), (src ? _clipNetMs(src) : 1200) + _sfxWaitMs() + 400);
+  play(src, once);
+}
 /* playSfx(id): fire-and-forget sound effect on its OWN Audio element so it can
    overlap the spoken VO (does NOT touch currentAudio / the play() chain).
    Silently no-ops if the file is missing or playback is blocked. */
@@ -232,6 +308,14 @@ function _warmSfx(ids){
 }
 function playSfx(id){
   if(!id) return;
+  /* [S01r9a] RULE A - a new effect REPLACES the one still sounding, rather than layering over it.
+     This reverses the clone-on-overlap below, which existed so "two quick pops do not cut each
+     other". Cutting each other is now the point: on a stream of balloons two pops half a second
+     apart were two sounds at once, and the SME counts that as overlap like any other.
+     On the beat where a round completes it means the celebration replaces the correct-ding, since
+     confettiCannon fires immediately after sfxCorrect. That is the right one to keep. */
+  stopSfx();
+  _noteSfx(id);
   /* [S01r6q] SME: the bed drops for sfx as well as speech. Announced HERE rather than at each call
      site so a sound effect added later cannot forget to do it. A time window rather than a flag
      because this element is fire-and-forget - nothing here waits for it to end. */
@@ -239,10 +323,9 @@ function playSfx(id){
   try{
     let a = _SFX[id];
     if(!a){ _warmSfx([id]); a = _SFX[id]; }
-    /* already sounding - clone so two pops in quick succession do not cut each other */
-    if(a && !a.paused && a.currentTime > 0 && !a.ended){
-      const c = a.cloneNode(); c.volume = 0.7; c.play().catch(()=>{}); return;
-    }
+    /* [S01r9a] rewound and played again, never cloned - see RULE A above. A clone could not be
+       stopped by stopSfx either, since nothing held a reference to it, so the old path was also
+       how a pop could outlive the tap that made it. */
     if(a){ try{ a.currentTime = 0; }catch(e){} a.volume = 0.7; a.play().catch(()=>{}); }
   }catch(e){}
 }
@@ -302,7 +385,10 @@ function _sfxFile(id, fallback){
        of one ding sounding through another. There is never a reason to hear two at once: the second
        is a verdict on a newer answer. Only the verdict pool is cleared, NOT the warmed sfx pool -
        sfx_celebrate is fired alongside sfx_correct by the confetti and the two belong together. */
-    stopVerdicts();
+    /* [S01r9a] the whole effect pool, not just the other verdicts - RULE A. A verdict landing
+       while the tap's own pop is still going was one of the pairs the SME heard. */
+    stopSfx();
+    _noteSfx(id);
     const a = new Audio("assets/Audio/" + id + "." + AUDIO_EXT);
     a.volume = 0.7;
     /* kept so stopSfx can cut it - it outlives the tap by up to a second, see stopSfx */
@@ -1909,7 +1995,7 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
       let advanced = false, fb = null;
       const go = ()=>{ if(advanced || _done) return; advanced = true; if(fb) clearTimeout(fb); next(); };
       play(src || null, go);
-      fb = setTimeout(go, _clipNetMs(src));                                    // safety net: never stall on one clip
+      fb = setTimeout(()=> _whenVisible(go), _clipNetMs(src));                                    // safety net: never stall on one clip
     };
     const _revStep = (i)=>{
       if(_done || CARD.slides[state.idx] !== slide) return;         // [24a bug-hunt F1] navigated away OR net fired → abort the chain
@@ -1973,7 +2059,7 @@ function sortSeqReveal(tray, slide){
     if(done || CARD.slides[state.idx] !== slide) return;
     let advanced = false, fb = null;
     const go = ()=>{ if(advanced || done) return; advanced = true; if(fb) clearTimeout(fb); next(); };
-    play(src || null, go); fb = setTimeout(go, _clipNetMs(src));
+    play(src || null, go); fb = setTimeout(()=> _whenVisible(go), _clipNetMs(src));
   };
   const step = ()=>{
     if(done || CARD.slides[state.idx] !== slide) return;         // navigated away / net fired -> abort
@@ -6549,7 +6635,7 @@ const SlideModules = {
           let advanced = false, fb = null;
           const go = ()=>{ if(advanced || revDone) return; advanced = true; if(fb) clearTimeout(fb); next(); };
           play(src || null, go);
-          fb = setTimeout(go, _clipNetMs(src));
+          fb = setTimeout(()=> _whenVisible(go), _clipNetMs(src));
         };
         const revStep = (i)=>{
           if(revDone || CARD.slides[state.idx] !== slide) return;
@@ -7338,10 +7424,24 @@ const SlideModules = {
           const afterName = (cb)=>{
             let ran = false;
             const go = ()=>{ if(ran) return; ran = true;
-                             clearTimeout(vb); clearTimeout(wd); cell.busy = false; if(alive()) cb(); };
+                             clearTimeout(vb); clearTimeout(wd); cell.busy = false;
+                             /* [S01r9a] ...and not if the round ended while this was waiting. The
+                                watchdog above deliberately runs a superseded tap's consequence so
+                                the SCORING is never lost (r8d) - but the consequence also SPEAKS,
+                                and a "try again" line arriving after the board has been finished is
+                                both wrong on its own terms and what knocked the completion line off
+                                the air. state.locked is false when the completing tap's own
+                                callback runs - it is set INSIDE it - so this never blocks the one
+                                that matters. */
+                             if(alive() && !state.locked) cb(); };
             const dur = (CARD.assets && CARD.assets.audio_dur && it.audio
                          && CARD.assets.audio_dur[it.audio]) || 1.4;
-            const wd = setTimeout(go, Math.round(dur * 1000) + 500);
+            /* [S01r9a] ...plus however long RULE B holds the word back behind the pop. This
+               watchdog is sized to outlast the clip it is backing up; without the wait in it, a
+               word deferred by 0.26s could have its consequence run before it had finished
+               speaking - which is the overlap this round exists to remove, reintroduced by the
+               safety net meant to protect it. */
+            const wd = setTimeout(go, Math.round(dur * 1000) + 500 + _sfxWaitMs());
             if(name) play(name, go); else setTimeout(go, 120);
           };
 
@@ -7387,7 +7487,9 @@ const SlideModules = {
                   slide_id: slide.id, phase: slide.phase, value: state.attempts === 0,
                   attempts: state.attempts, latency_ms: Date.now() - state.slideStart, level: li + 1 });
                 const last = (li >= LEVELS.length - 1);
-                play(lvlAudio(last ? "done" : "correct") || lvlAudio("correct") || null,
+                /* [S01r9a] playThen, not play: this callback is what ENDS THE ROUND, and losing
+                   it leaves the board finished, locked and going nowhere. See playThen. */
+                playThen(lvlAudio(last ? "done" : "correct") || lvlAudio("correct") || null,
                      ()=>{ if(!alive()) return;
                            /* [S01r6q] SME: "when all the levels of the balloon game end, Swiftie
                               will also fly along with the balloons." The last board used to just
