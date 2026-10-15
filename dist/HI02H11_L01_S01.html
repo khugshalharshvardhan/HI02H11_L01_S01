@@ -3029,29 +3029,29 @@ html.no-anim .bin-title.bin-teach{
    else - so even if .maa-glyph ever landed on an element holding other text, that text would fall
    straight through to --font-hi. 2,780 bytes on disk; there is no lighter way to buy one letter.
 
-   [S01r8y] THE WEIGHT IS NOW A REAL 800, which is what QA BUG_07 is about: "in 11th slide, 'la' is
-   more bolder than rest of the options... consistent boldness among options".
-   Measured first, because the filed claim is not quite what is happening. On slide 11 the options
-   are म ल न, and ल and न are IDENTICAL - same family, same 800, same 112px, and 15px of stroke
-   each when the rendered pixels are measured. ल only looks heavier because Baloo 2 draws it with
-   more curved mass. The letter actually out of step is म, at 14px against their 18-19px in a
-   like-for-like render: this font is a lighter drawing than Baloo 2, so swapping it in for one
-   glyph also lightened that glyph.
-   The old note pinned 700 and said 800 was unavailable - "asking a 700-only family for 800 makes
-   the browser fake it by smearing the outline, which thickens exactly the counter this change
-   exists to keep open". That was true of the file that was embedded, not of the family: Mukta ships
-   an 800, and the subset endpoint gives it for U+092E alone just as readily. So the smearing
-   objection is gone - this is a drawn ExtraBold, not a synthesized one, and font-synthesis stays
-   off so it can never become one.
-   What it buys, measured the same way: stroke 14px -> 15px, and the counter stays open at 372px of
-   enclosed white against Baloo 2's 288px - still half again as open as the glyph this swap exists
-   to avoid. It does NOT close the gap to ल and न entirely, and nothing short of giving every option
-   letter the same family would: the remaining difference is between two typefaces, not two weights.
-   16 bytes larger than the 700. */
+   [S01r8z] AND IT IS NO LONGER ABOUT ONE LETTER. The SME, after r8y: "la and na is more bolder
+   than rest of the options, make laa and na font similar to maa font - consistent boldness among
+   options."
+   r8y measured the three cards on slide 11 and reported that ल and न are identical to each other
+   (same family, same 800, same 112px, 15px of stroke each) and that the odd one out is म at 11px,
+   because this face is a lighter drawing than Baloo 2. Two ways to make them agree, and the SME
+   picked the one that ends the matter: bring the others to म rather than keep pushing म at them.
+   So the face now carries all six letters the lesson ever displays on its own - च न प म र ल,
+   measured by walking every slide and reading .big-glyph/.glyph/.bin-title - and the option cards
+   are set in it outright. Every one of those elements holds exactly ONE akshara (checked, not
+   assumed), so there is no word anywhere that could come out half in one face and half in the
+   other, which is the thing that would have made this a bad idea.
+   This REMOVES a special case rather than adding one: there is no longer a letter that is treated
+   differently from its neighbours, and the JS tagger that used to find म is no longer what decides
+   the font - it is kept only because .maa-glyph still reaches म in places that are not letter
+   cards.
+   3,684 bytes for six glyphs against 2,796 for one; the subset endpoint was asked for exactly
+   these six codepoints and nothing else. */
 @font-face{
-  font-family:'MuktaMaa'; font-style:normal; font-weight:800; font-display:swap;
-  src:url(data:font/woff2;base64,d09GMgABAAAAAArsABEAAAAAFYAAAAqQAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhYbgSYcNAZgADwIgSIJmm0RCAqCGIIQCwgAATYCJAMMBCAFhDQHIAyBPBtIFBEVrR8i00hZOH8//ys17XcD5MTgAIcPtUCPiQYVEmXTMo0mSMuUbSqjHRtDzjjGo0s3oXwLu3s5PnBTvIdcd+0xXUMmPPB1vn/uOBNXnEqPzBOdpBB39aqfnE8vvQPhP+73apN06ACFARSehJqzJ+/9NbkpEwszAC6z7SbU3IRn66Y1wwP7zXws66JYIbdjDhGURX9fdhJEtExtJRokX7Fi+kU6Tl3ye/1L1+jeycHHJ2HFkTeLD9/2JD+947SR4Y2D99+m+Y7jfwQTJK1SXfjPk2AYWqB5ktSmxZVEEm1vGnKE7l0sl7GL/HQjzf2ClkMEbVrmLPCZ3bHw4Ek6ebEHUHdYiXF6T049phoRspR5ywzfTxAv0bbgELlEtfDP6DMPX5byBNnwWp+6xAst//X//TUp4r8ut5noi90OuCM/EdKktFd5Qm03SbDXpz1ehzNBvNCyQ4qo2R///geNWh1P9Dl9Lj+iN+gN77a8JW+x4v//ybstS3lr9r///4m+Qd+gN+lNcUfcsS2X+Mvsb7PxKnf5MZ7y56uLzO6Vt2Z/k79Rzb1O79A7dIku0T9njv43e17+xL3r4sfec+J7IM2g63lmmYffo9XLQ9SvPpfjdIA96w65vJ5DRsX352mexmO1H4QhyIKM6k1JkHFpAqHB7jCB1Dxh/GwEv/HcdE8smWycoZ7lIbzIXnk+D1UYlDljNOpM27UBoz3KQ7St5UpoRhQT7GFLgYzjKn1ci/1sSj7ksiwYi6PcBQxerRc/xVl2dinOWhtARlg0Y9CVHDRMGR9i0QSIBzI/MCy+t05j5f/W92q0b+2ksBCxtQo0yg+sTeBpzhh+VEwYNTPKUVMp6ioNwtBCuAS+VqEKeVLV9lNGXaWoZ3lQiSWTjSuxZFBz2RheM2TUDZdcQsTV8VoEv3E5d6OguGJzZUPL6F7NIeIgRNcq0Cg/sAlqGnMmnpIk49IEdY05lSoGqbSA3D+EGEM41JoJ5jRzxlg24+/5tM+gUY6us4cQY9eDcAnm9XRumUyWNsOS6mRBl5xZNDCViBXIwI8cZ6UqSlF615OCEkgDB+h6KBu8SBW9v2/O0m8jcXSUN5vs/oItIzdbNF1a9LI8DFRom2GCFV1JmWFS9BKsagjHjBXzVK0QY0WlFqsSv8JXsyZY04z14vjg/D2fxqUqsGYcl46xplKVYF0Pr+WVP+nZo1g5UJ8m2NDDy/nw6hKPIOw4bZ24qStaN9ffsb5uIIoUa3GEZ4KM0mrlha++C2JXMbxolFcFlxl+lJYlbzP3ajNUEMW3CVRI7yWjhTdYrJgBVs3AJQ33w1Sd4E1bEW2pHoQBXZgKIXofwZamimR2Lce6SjnDskqxpFBzKTuI4tubm4LWKE1LV23WY9yOgyM2wbauaCtOsKMr8c52hWR3CY/dLXx2j6ixe0WdBWKO3Sfm2f1iIfRhrXz+TtTd8FquuAXx4t7RP0Fzzc7dbe+dG+9sbHv/kX5AE1Zi1/iD/AHOeFchQB0BKAVQRwEqAqgGQD0EUHuAKK25U0VZ8g6HTcdGQbg4UIXwhI7Tz6alkcRImgmOaeYBl2CkKtrq9Fl9pQ4cdz0e1shqeS6LsuFwrFnVxE6WH7cO1j9RNNVSR53UfMbqkFOaaCLLbmiI2A6sCqLdb52zCvUuqHZ1Uuy4+UBOa+7wwPYvCWSKdoIzunVXJ8HZdEuAMON2gnO6krQbcYsHR4GpIKOLZTlQA1Vwvh8cZReh0ulZIXa2mwnaGrSLjSTJj+BHaSauFinFgokPypZi7pTt5ALnvbjVSmX4KtUMZLjTyPK7l/NvSvY4+KZsePfaNFWMecOl0r5H1XfwzT6q3enNOvssTRo3UfBMMRnlkKYI4Bl3aqtUf+pCMcNvqH7RDhTmTf/M5DVvMujScV0rEhV84wJx7VpUoGYwEH7DIYp2YHfk5MmzXDaxNsEjfjiLmVFr5FGddoJHl3thXuXcB1tECbp1ig85sbxcFHQtb3FHhedVe4lmm+ww3A31CLXo4jWCFcAqI90uKa2qe/3HrHA1obqmA7vD/DrCm3hBK2558Af3sWHyUXDF5tyxraoltuMEjysuvRKMmu5uVm3tG35Cox1vrXCqcT4umTvx1c2ynS4DfNNCq0Ymv4hN0/B6coFFleYblTOn4g63VNt07p6u5v0oTV+b1fmnGEQw3MEp7MqOagdhrPiE1kaWhVI79kiJvq7ofByqlu3I5fzzgdnZ5z2ndHC/kK0WTjcTPLlqSRd1RWJ7C2eaCZ7SONdMMPRg6Uxxi/ulKjzleUlX5jdiGCd4Wk+JenGS+Iyekvhgz5JYUCMk+rKaZ+IKhL4K0NcA/tf1N/GgJxp7buhvyk9204hFlWOhrY4Q4jkp9PNI9AtI9IvZcSNeQle/DNAOoAs174t9oMcAPQHQgU08dTpEj14B0KsAeg1ArwPoDQC9CUh7S1f0SPDobckDF9rb3uGP63cLXI54N+Y9XQm1eX8InHSY2S5Y0I9UgxSSJCY8BGYrSMu2uYi1ZrsAZgeA7fQjzRTtkiRm9xCYPQC+115r9glg9gPYAT/STdFBSWIODYE5DOBH7LXmqADmGCDX8c0POhTpZnaM7E33GX33yasrt52facsdbvD/eO9Z5SvXlN7kW1xS7xa5YmbuOn+ZFFmWZWWh6lU8I666Jrm2qb62vqG+A6dovPSQecJ++h6x//Kdt5xOYQovpmIK03bZrnOhucffukcN77IbF5x46/hbq9p22bvsqA8WvnDxhQs7+pcuXvRhVMfyOU+IQof8Qutg9WDlohPfXcwBCGzxetxOh6FrBgWKkGXRhhDLSgCpDUlaSqlpmi7T5ff7VH3+pkBAEWoBkm7okrEfQxYIgxF0fVmJpjhkIdR2VHWJWgpLFi9auGD+vLlzZvt9hoaM7Df1uZsQbk5x3P7p99CNDm/ar4ZX/mI3ot7O2f79+3yf3rz1b9m/3xg+ZRhwPFsw3LU/s37837I/fjJ899x7ZcnFvoiSMv7/TREkc/WJBlqjxZHPScB2j+kGGvTf33sojlbIHlH5fVSwTMQclfCI1Udl4vihvqI+qnKN6gCNZS2LzXqIAwYJEmSSFCKJZIYephlikmBtbwQzSxolggmmGSCSCvIppYynAm8P0sUW8thGkGmGz2aCUXqpp4/pjd7nBONYxBBBPLEkkUolNVhEE0EUUcSQyiATBOnRo/BqldDCbPh4oklljC5G6NMo2U8EowzRbQ4Din82kxRFKpYTb+unixBBJhhs8vEki/WEsxuYwAZLXk4eJdSST6ozvPrJA4QYpYtpvYtZWXOYYJLtHqQBzyLroB42eGH4KKKJYzMWBQyp+cxwFrl0MUqYodUBeYyIk2vZziR9gRZZT1TaYxmkGSmojxlP5wzTRy8RB/B98v9h5jAeueQxXq1uvF+IM033iWujKSbvR89+BDIiVqps/DFLwFWi5Cixxjptoa4a88NUSAVSqrZFsdRkclf207Px48ZE24eKo8H8fgQmkqXIvbn3rxbHqhrvCxxrvF8m9/610jC2sQ+hBI711Pa2pqmpqSngKpPypHhtg7JYVV0bHxP/H75POX2/RO6Daq9Gbi4A) format('woff2');
-  unicode-range:U+092E;
+  font-family:'MuktaGlyph'; font-style:normal; font-weight:800; font-display:swap;
+  src:url(data:font/woff2;base64,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) format('woff2');
+  /* च न प म र ल - every single letter this lesson displays, and nothing else */
+  unicode-range:U+091A, U+0928, U+092A, U+092E, U+0930, U+0932;
 }
 /* The weight needs the same specificity as the rules it is correcting, not more force: .big-glyph
    and .meet-letter-box .glyph both set 800, and a bare .maa-glyph (0,1,0) loses to the second of
@@ -3059,13 +3059,9 @@ html.no-anim .bin-title.bin-teach{
    has 700, which is the browser smearing the outline to fake it and is precisely what re-closes the
    counter. Compound selectors rather than !important, which this stylesheet spends several notes
    warning about. */
-.maa-glyph,
-.big-glyph.maa-glyph,
-.bin-title.maa-glyph,
-.meet-letter-box .glyph.maa-glyph,
-.stage.thm-toybox .big-glyph.maa-glyph{
-  font-family:'MuktaMaa', var(--font-hi); font-weight:800; font-synthesis:none;
-}
+/* the rule that uses this face is at the END of this stylesheet - see
+   "ONE FAMILY FOR THE LETTER CARDS". It has to be last: .bal-say sets its own font-family further
+   down, and a rule of equal specificity placed here would lose to it on source order. */
 
 /* [S01r8h] the demo's hand, at cursor size and with the tap decoration off - see travelNudge. The
    ripples and the press say "tap here"; a drag demonstration is showing a MOVE, and the task's own
@@ -3216,6 +3212,27 @@ html.no-anim .bal-say.show{ animation:none; opacity:1; transform:translateX(-50%
 .rot-hi{ font-family:var(--font-hi); font-weight:800; font-size:34px; line-height:1.25;
   text-shadow:0 3px 0 rgba(11,61,140,.35); }
 @media (prefers-reduced-motion:reduce){ .rot-ico{ animation:none; transform:rotate(-90deg); } }
+
+/* ═══ [S01r8z] ONE FAMILY FOR THE LETTER CARDS ═══════════════════════════════
+   LAST IN THE FILE ON PURPOSE. Three of the selectors below are matched by rules earlier in this
+   stylesheet at the SAME specificity - .bal-say sets font-family:var(--font-hi) at (0,1,0), and
+   .meet-letter-box .glyph sets its weight at (0,2,0) - so a tie is broken by source order and this
+   has to come after them. The previous cut of this rule sat beside the @font-face two thousand
+   lines up and would have lost to .bal-say silently.
+   Specificity is matched rather than forced: no !important anywhere, which this stylesheet spends
+   several notes warning about.
+   font-synthesis:none so the browser can never fake a weight this family does not have - the whole
+   reason the letter is not simply Baloo 2 is that a smeared outline closes up म's bottom-left loop,
+   and a synthesized weight would do exactly that again. */
+.big-glyph,
+.stage.thm-toybox .big-glyph,
+/* ...and म wherever it appears outside a letter card, which is all the tagger is for now */
+.maa-glyph,
+.meet-letter-box .glyph.maa-glyph,
+.bin-title.maa-glyph,
+.bal-say.maa-glyph{
+  font-family:'MuktaGlyph', var(--font-hi); font-weight:800; font-synthesis:none;
+}
 
 </style>
 </head>
