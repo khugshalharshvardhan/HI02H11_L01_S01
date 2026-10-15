@@ -7308,6 +7308,33 @@ const SlideModules = {
       /* one place to stop the spawner: the round change, the slide exit and a rebuild all need it,
          and a stream that outlives its board keeps adding balloons to a dead page */
       const killStream = ()=>{ clearTimeout(spawnTimer); spawnTimer = 0; };
+      /* ── [S01r9c] ONE BALLOON AT A TIME ───────────────────────────────────────────────────
+         SME: "other balloons we cannot tap until the one we tapped has finished its VO."
+         The board is held from the tap until that tap has finished SPEAKING - the word, the
+         verdict, and the line after it - and then released. This is a BOARD lock and deliberately
+         not state.locked: that one means "this round is over" and is read by the stale-consequence
+         guard and by the idle timers, and overloading it would have the round-complete path and a
+         half-second of feedback looking identical to everything downstream.
+
+         WHY THIS IS SEPARATE FROM "is anything playing". The obvious implementation - refuse a tap
+         while isPlaying - is what the board used to do, and it is wrong for a reason that is easy
+         to miss: the 7s idle reminder speaks on this slide too, so a child who paused to think and
+         then reached for a balloon would have the tap swallowed by a prompt they did not ask for.
+         The lock is armed BY A TAP and released by that tap's own consequence, so nothing else
+         speaking can take the board away from them.
+
+         THE FAIL-SAFE IS NOT OPTIONAL. Every release below sits in an audio callback, and this
+         file's history is three separate occasions where a consequence behind a callback was
+         silently dropped and the game stopped being finishable. If one is ever missed, the board
+         frees itself after the longest chain it could possibly be waiting on (word 1.2s + ding
+         0.85s + line 3.9s, plus the r9a deferrals and clip-net margins) and the child plays on. A
+         few seconds of a board that is slow to wake is recoverable; a board that never wakes is
+         the bug that keeps coming back. */
+      const BOARD_HOLD_MAX = 9000;
+      let boardBusy = false, boardHoldT = 0;
+      const releaseBoard = ()=>{ boardBusy = false; clearTimeout(boardHoldT); boardHoldT = 0; };
+      const holdBoard = ()=>{ boardBusy = true; clearTimeout(boardHoldT);
+                              boardHoldT = setTimeout(releaseBoard, BOARD_HOLD_MAX); };
       /* [S01r7d] THE DECORATIVE LAYER IS GONE. SME: "remove the balloons which are in the
          background, we don't need them." r6r added them to make the sky feel full while only eight
          balloons were playable; now every balloon in the sky IS playable, so a second set that
@@ -7386,7 +7413,9 @@ const SlideModules = {
              So the lock is now PER BALLOON (a second tap on the same one still does nothing, which
              is right - it is already answered), and a tap that arrives over speech cuts the speech
              instead of being thrown away. */
-          if(state.locked || cell.busy || b.classList.contains("popped")) return;
+          /* [S01r9c] boardBusy: the previous tap is still being answered - see ONE BALLOON AT A
+             TIME above. Ahead of the per-balloon checks because it is the broader rule. */
+          if(state.locked || boardBusy || cell.busy || b.classList.contains("popped")) return;
           if(isPlaying) stopAudio();
           /* [S01r8y] ...and the last tap's VERDICT with it (QA BUG_09): "audio overlapping when
              options are chosen fastly". stopAudio only reaches the play() chain; sfx_correct and
@@ -7395,6 +7424,7 @@ const SlideModules = {
              the previous answer's buzz sounding underneath the next balloon's name. The pop that
              this tap fires a few lines below is unaffected - it is this tap's own sound. */
           stopSfx();
+          holdBoard();   /* [S01r9c] this tap now owns the board until it has finished speaking */
           state._balFb = false;
           stopNudge(); armIdleGlow();        /* [S01r7g] a tap is activity - restart the quiet clock */
           cell.busy = true;
@@ -7534,7 +7564,9 @@ const SlideModules = {
                   try{ b.remove(); }catch(e){}
                   const ix = cells.indexOf(cell); if(ix >= 0) cells.splice(ix, 1);
                 }, 560);
-                play(lvlAudio("correct") || null, ()=>{});
+                /* [S01r9c] the board comes back when this line is done - it is the last thing
+                   this tap says. */
+                play(lvlAudio("correct") || null, releaseBoard);
               }
             });
           } else {
@@ -7550,13 +7582,19 @@ const SlideModules = {
             afterName(()=>{
               sfxWrongSoft(); setSwMood("tryagain");
               /* 1st wrong: the buzz and the letter in her bubble - the deck asks for no voice line */
-              if(n < 2) return;
+              if(n < 2){
+                /* [S01r9c] nothing more will be SAID, but the buzz is still sounding and the SME's
+                   rule is that the board waits for the tap to finish being answered. _sfxWaitMs is
+                   what r9a already uses to know how much of an effect is left to run. */
+                setTimeout(releaseBoard, _sfxWaitMs() + 60);
+                return;
+              }
               /* [S01r5o] two misses earns the glow on every remaining answer. The hand is gone. */
               glowCorrect();
               state._balFb = true; state.scaffoldLevel = Math.max(state.scaffoldLevel, 3);
               SwiftPAL.emit("hint_shown", { slide_id: slide.id, attempts: n });
               play(lvlAudio("hint") || lvlAudio("try_again") || null,
-                   ()=>{ state._balFb = false; });
+                   ()=>{ state._balFb = false; releaseBoard(); });   /* [S01r9c] */
             });
           }
         };
@@ -7588,6 +7626,7 @@ const SlideModules = {
         need = its.filter(it => it.has === true).length;
         found = 0; state.locked = false; busy = false; revealing = false;
         try{ hideSay(); }catch(e){}            /* [S01r8r] each round starts her silent */
+        releaseBoard();                        /* [S01r9c] ...and tappable */
         doneImgs = new Set();                    /* [S01r7f] each round starts with all four open */
         clearTimeout(idleT); clearTimeout(voT); glowing = false;    /* [S01r7m] */
         killStream();
