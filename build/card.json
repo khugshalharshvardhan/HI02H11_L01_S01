@@ -2759,7 +2759,7 @@
       "vo_w_mama": [
         [
           0.23,
-          0.96
+          1.01
         ]
       ],
       "vo_w_muli": [
@@ -2902,7 +2902,7 @@
       "vo_w_laddu": 1.4,
       "vo_w_machhli": 1.28,
       "vo_w_mala": 1.24,
-      "vo_w_mama": 1.32,
+      "vo_w_mama": 1.37,
       "vo_w_muli": 1.12,
       "vo_w_pani": 1.12,
       "vo_w_papita": 1.16,
