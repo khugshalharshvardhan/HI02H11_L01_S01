@@ -5210,7 +5210,19 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
             else if(runHint) runHint(); else play(midHint(slide), ()=>{ _fb = false; }); }   /* [28k] rung 2 */
           // [24a A2] 1st wrong: the slide's OWN hint1 clip when authored ("यह … नहीं है…"), else the
           // generic try_again — additive, cards without hint1 are byte-for-byte unchanged.
-          else { state.scaffoldLevel = Math.max(state.scaffoldLevel, 1); play(audioFor(slide, "hint1") || audioFor(slide, "try_again") || null, ()=>{ _fb = false; }); }
+          /* [S01r9d] ...AND `h1`, WHICH IS WHAT THIS CARD ACTUALLY AUTHORS. audioFor is an exact
+             key lookup, so a slide carrying `h1` matched nothing here and fell through to
+             try_again. The effect was that an instruction the SME gave in r8d - "first hint should
+             be फिर से पढ़ो" - never reached the game: the clip was re-scripted, the studio recorded
+             it, and slides 10 and 11 went on playing "यह च की आवाज़ नहीं है।" instead. Found by
+             recording what each wrong attempt actually says rather than reading the ladder.
+             h1 goes FIRST because a card that names it means it; hint1 stays for the fleet's cards
+             that use that spelling, and try_again is still the floor. Nothing that does not author
+             h1 changes. (Slides 7-9 were never affected - TAP_ALL_WITH_SOUND has its own ladder and
+             reads h1 by name.) */
+          else { state.scaffoldLevel = Math.max(state.scaffoldLevel, 1);
+                 play(audioFor(slide, "h1") || audioFor(slide, "hint1")
+                      || audioFor(slide, "try_again") || null, ()=>{ _fb = false; }); }
         });
       }
     };
@@ -5276,7 +5288,24 @@ function mountTapOptions({slide, host, signalName, stimulus, options, isCorrect,
        SME asked to replace with the sentence played again and the letter lit. hintAction is exactly
        that, already written for the rung below, so terminal help now runs it instead of naming the
        answer aloud. Slides without one keep the clip ladder they always had. */
-    if(runHint) runHint();
+    /* [S01r9d] THE HAND SAYS WHAT IT IS POINTING AT. SME: "BUG_06 में hand nudge पर आना चाहिए -
+       'ये सही उत्तर है, इस पर टैप करें'", and separately "slide 10 to 11 should say ये सही उत्तर है".
+       Until now terminal help on those two slides pointed the hand and replayed the SENTENCE, so
+       nothing told the child what the hand meant. Worse, rung 2 on the same slides is ALSO the
+       sentence replayed, so a child who got to the third miss heard the same line twice with a
+       pointing hand appearing silently between them.
+       The line it now speaks is the slide's own `h3`, which was recorded and then never played:
+       "चूहे, चार, चने, चबाए… इन सबमें 'च' की आवाज़ है। 'च' पर टैप कीजिए।" That is the SME's ask with a
+       reason attached - it names the answer AND says to tap it - and it needs no new recording,
+       which matters with 14KB left under the size cap.
+       It REPLACES the sentence replay here rather than following it: the replay is rung 2's
+       teaching move and it has already happened by this point. Cards with no h3 are untouched and
+       still run hintAction exactly as before.
+       NOTE this reverses part of [S01r5m], which took "ध्यान से देखो, सही जवाब च है" OFF this rung in
+       favour of the replay. The SME has asked for a line back; h3 is the one they scripted. */
+    const _h3 = audioFor(slide, "h3");
+    if(_h3) play(_h3, ()=>{});
+    else if(runHint) runHint();
     else play(audioFor(slide, "hint") || audioFor(slide, "reveal") || audioFor(slide, "correct") || audioFor(slide, "try_again") || null, ()=>{});
   }
   $("hintBtn").onclick = ()=>{ if(state.locked || state.hintActive) return;
@@ -9933,13 +9962,21 @@ const SlideModules = {
               /* [S01r8y] RUNG 2 SAYS ITS LINE ONCE, BEFORE THE WALK (QA BUG_05): "the line is
                  repeated twice... should be there either before the options announcement only".
                  It opened with h1 - the clip the FIRST miss already played - and then closed the
-                 walk with h2, and the two are the same sentence: h1 is "फिर से सुनिए। जिन शब्दों की
-                 शुरुआत प की आवाज़ से होती है, उन पर टैप कीजिए।" and h2 is that second half on its own.
-                 So the child heard the instruction at the top of the rung and again at the bottom,
-                 with the four words read in between. Now h2 opens the rung and nothing closes it:
-                 one line per rung, h1 at the first miss, h2 at the second, h3 at the third. */
+                 walk with h2, and the two are the same sentence.
+                 [S01r9d] AND NOW IT SAYS NO LINE AT ALL. SME: "slide 7 to 9 में 2nd time wrong करने
+                 पर question statement repeat होती है." h2 is the question restated - "जिन शब्दों की
+                 शुरुआत प की आवाज़ से होती है, उन पर टैप कीजिए" - so the one surviving copy is still a
+                 repeat of what the page asked at the top.
+                 This reverses r8y, which was itself written to the SME's earlier wording on BUG_05
+                 ("should be there either before the options announcement only"). Both notes are
+                 kept so the sequence is legible: BUG_05 removed the second copy, this removes the
+                 first. The rung is now the buzz and then the four words read with each opening
+                 akshara lifted - which is the teaching move the review doc actually asks for here,
+                 with nothing said over the top of it.
+                 h2 is left in the card and in the manifest rather than deleted: it is a recorded
+                 clip and the decision that silenced it is one the SME has already changed once. */
               state.locked = true;
-              play(audioFor(slide, "h2") || audioFor(slide, "hint") || null, ()=> walk(0));
+              walk(0);
               return;
             }
             /* [S01r4] EARNED HAND, SME deck page 9: "After repeated incorrect attempts, show a
