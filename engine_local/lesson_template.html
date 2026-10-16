@@ -19,6 +19,18 @@
      lang="hi" above stays and matters: it is what stops the browser guessing the page is English
      to begin with. -->
 <meta name="google" content="notranslate">
+<!-- [S01r9f] A TAB ICON, SO THE BROWSER STOPS ASKING FOR ONE. A page that declares no icon makes
+     every browser request /favicon.ico by convention; nothing is deployed at that path, so the
+     console carried a red 404 on every load. Harmless - it is the browser asking for a picture for
+     the tab, not the lesson failing - but it was the ONLY issue the console reported, which made a
+     clean run look like a broken one to anyone glancing at it.
+     Inlined as a data URI rather than shipped as a file for the same reason everything else here is:
+     this lesson has to run as one self-contained file from a folder with no server. An SVG rather
+     than an .ico because it is a few hundred bytes instead of a few thousand, and 8.7KB is all the
+     room left under the cap.
+     The mark is the speaker the lesson already uses on its own audio buttons, in the same blue -
+     there is no wordmark in it, so nothing here needs translating or localising. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiMyRThGRTAiLz48cGF0aCBkPSJNMTMgMjVoOGwxMS05djMybC0xMS05aC04eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik00MiAyM2ExMyAxMyAwIDAgMSAwIDE4TTQ5IDE3YTIxIDIxIDAgMCAxIDAgMzAiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSI0LjUiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><!-- [24a N9] pinch-zoom lock: a child two-finger-zooms the game off-centre in any real browser without it -->
 <title>SwiftPAL · MTKGA02_L02_S02 · क्रम में लगाओ</title>
 <!-- OFFLINE BUILD — factory.py replaces the marker below with a <style>@font-face…</style>.
