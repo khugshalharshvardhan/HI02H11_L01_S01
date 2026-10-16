@@ -9838,6 +9838,31 @@ const SlideModules = {
       head.appendChild(badge);
       const strip = document.createElement("div"); strip.className = "tap-all-strip";
       const chips = [];
+      /* [S01r9e] THE HAND MOVES ON TO THE ONE THAT IS LEFT. SME: "in page 7 and 9, in the last hint
+         when it says पपीता या पतंग की शुरुआत प से होती है, उन पर टैप करो, there is a hand nudge on
+         पपीता - after tapping on पपीता give a hand nudge on पतंग as well, because that is the only
+         option left for the प word."
+         The last hint names BOTH answers and asks for both, and the hand pointed at the first and
+         then simply went out when it was tapped - so a child who had been told exactly what to do
+         was left, mid-instruction, with no indication of where the second one was. The hand was not
+         wrong, it was unfinished.
+         It is re-pointed after the "एक और … पर टैप कीजिए" line rather than on the tap itself, so the
+         page is not asking for the next one while it is still praising the last.
+         `handEarned` gates it: the hand only reappears for a child who reached the third miss and
+         earned it. A child who finds the first answer unaided gets no hand for the second - the
+         round-3 rule that terminal help is the ONLY route to a hand outside tutorial is untouched,
+         and handOnAnswer still carries the phase check itself.
+         This lands on pages 7, 8 AND 9. The SME named 7 and 9, but all three are this one mechanic
+         with the same two-answer shape and the same last hint; leaving 8 out would mean writing
+         extra code to make one page behave worse than its neighbours. */
+      let handEarned = false;
+      const pointAtNext = ()=>{
+        if(!handEarned || state.locked) return;
+        if(CARD.slides[state.idx] !== slide) return;
+        const nx = chips.find((c, ix) => items[ix] && items[ix].has === true
+                                      && !c.classList.contains("got"));
+        if(nx) handOnAnswer(nx, slide, !!d.allow_hand);
+      };
       items.forEach(it => {
         const chip = document.createElement("div"); chip.className = "tap-all-item";
         chip.dataset.nudgeBelow = "1";   /* [S01r5m] the earned hand sits under the word, not on it */
@@ -9886,7 +9911,8 @@ const SlideModules = {
                  Nothing was said between the first find and the last, so the page went quiet
                  exactly when it should have been asking for the other one. */
               if(found < need && CARD.slides[state.idx] === slide){
-                play(audioFor(slide, "more") || null, ()=>{});
+                /* [S01r9e] ...and then the hand points at the one still to find */
+                play(audioFor(slide, "more") || null, pointAtNext);
               }
               if(found >= need){
                 state.locked = true; setSwMood("celebrate"); confettiCannon();
@@ -10004,6 +10030,7 @@ const SlideModules = {
                  the balloon page already uses, so a practice slide can ask for the hand by name
                  rather than the rule being loosened for the whole fleet. */
               if(t){ handOnAnswer(t, slide, !!d.allow_hand); state.nudgeUsed = true;
+                     handEarned = true;        /* [S01r9e] ...and it follows the child to the next */
                      state.scaffoldLevel = Math.max(state.scaffoldLevel, 3);
                      SwiftPAL.emit("nudge_invoked", { slide_id: slide.id, phase: slide.phase }); }
             });
